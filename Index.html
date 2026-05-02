@@ -11,7 +11,7 @@
 <!-- Firebase SDKs -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup,signInWithRedirect, getRedirectResult signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot,
   collection, addDoc, query, where, getDocs, arrayUnion, arrayRemove,
@@ -502,8 +502,13 @@ function unsubscribeAll() {
 // ── Auth ───────────────────────────────────────────────────
 async function signInWithGoogle() {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      await signInWithRedirect(auth, googleProvider);
+    } else {
+      const result = await signInWithPopup(auth, googleProvider);
+      return result.user;
+    }
   } catch(e) {
     console.error("Sign in error:", e);
     showToast("Sign-in failed. Please try again.", "error");
@@ -516,7 +521,7 @@ async function handleSignOut() {
   currentUser = null; userDoc = null; currentFamily = null; familyId = null;
   renderAuth();
 }
-
+getRedirectResult(auth).then(async(result)=>{if(result?.user){currentUser=result.user;await initUserSession(result.user);}}).catch(e=>console.error(e));
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;

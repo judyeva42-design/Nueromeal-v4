@@ -1,4 +1,4 @@
-// NeuroMeal v4 — Secure Claude AI Proxy
+// NeuroMeal v4 — Secure Claude AI Proxy .
 // API key lives ONLY here, never in the frontend
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {

@@ -521,7 +521,7 @@ async function handleSignOut() {
   currentUser = null; userDoc = null; currentFamily = null; familyId = null;
   renderAuth();
 }
-getRedirectResult(auth).then(async(result)=>{if(result?.user){currentUser=result.user;await initUserSession(result.user);}}).catch(e=>console.error(e));
+getRedirectResult(auth).then(async(result)=>{if(result?.user){currentUser=result.user; await initUserSession(result.user);}}).catch(e=>console.error(e));
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;

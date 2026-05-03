@@ -520,7 +520,14 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     await initUserSession(user);
   } else {
+    getRedirectResult(auth).then(result => {
+  if (result?.user) {
+    currentUser = result.user;
+    initUserSession(result.user);
+  } else {
     renderAuth();
+  }
+}).catch(() => renderAuth());
   }
 });
 

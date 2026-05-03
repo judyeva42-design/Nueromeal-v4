@@ -508,8 +508,8 @@ async function signInWithGoogle() {
   } catch(e) {
     console.error("Sign in error:", e);
     showToast("Sign-in failed. Please try again.", "error");
-}
- }
+  }   // ← closes the catch block
+}     // ← closes the function ✅
 async function handleSignOut() {
   unsubscribeAll();
   await signOut(auth);

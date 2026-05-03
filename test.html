@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body>
+<button onclick="test()">Sign in with Google</button>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyBDpERr9gjGnHQcAB6LJqtt2_v2mFOk6KQ",
+  authDomain: "nueromeal.firebaseapp.com",
+  projectId: "nueromeal"
+});
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+getRedirectResult(auth).then(result => {
+  if (result?.user) document.body.innerHTML = "✅ Signed in as " + result.user.email;
+});
+
+window.test = () => signInWithRedirect(auth, provider);
+</script>
+</body>
+</html>

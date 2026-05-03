@@ -509,7 +509,7 @@ async function signInWithGoogle() {
     console.error("Sign in error:", e);
     showToast("Sign-in failed. Please try again.", "error");
 }
-
+}
 async function handleSignOut() {
   unsubscribeAll();
   await signOut(auth);

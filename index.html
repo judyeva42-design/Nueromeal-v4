@@ -820,8 +820,8 @@ function renderTopBar() {
         <div id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:var(--green)" title="Connected"></div>
         <div style="font-size:9px;color:var(--gray)">Synced</div>
       </div>
-      <button onclick="showInviteCode()" style="padding:3px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.2);border-radius:16px;cursor:pointer;color:var(--cyan);font-size:9px;font-weight:700;font-family:var(--fb)">+ Invite</button>
-      <button onclick="handleSignOut()" style="padding:3px 9px;background:transparent;border:1px solid var(--border);border-radius:16px;cursor:pointer;color:var(--gray);font-size:9px;font-family:var(--fb)">Sign out</button>
+      <button onclick="currentUser ? handleSignOut() : signInWithGoogle()" style="padding:3px 10px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:16px;cursor:pointer;color:#000;font-size:9px;font-weight:800;font-family:var(--fb)">⚡ Get Active</button>
+    
     </div>
   </div>`;
 }

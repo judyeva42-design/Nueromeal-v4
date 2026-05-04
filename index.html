@@ -222,17 +222,26 @@ async function handleClerkUser(clerkUser) {
 async function signInWithGoogle() {
   try {
     if (!window.Clerk) {
-      showToast("Loading... tap again in 2 seconds!", "warn");
-      setTimeout(() => signInWithGoogle(), 2000);
+      showToast("Loading... tap again!", "warn");
+      setTimeout(() => signInWithGoogle(), 1500);
       return;
     }
-    if (!window.Clerk.openSignIn) {
-      await window.Clerk.load();
+    if (!window.Clerk.load) {
+      showToast("Auth not ready, try again!", "warn");
+      return;
     }
-    await window.Clerk.openSignIn();
+    // Use redirectToSignIn for Safari compatibility (no popup)
+    await window.Clerk.redirectToSignIn({
+      redirectUrl: window.location.href
+    });
   } catch(e) {
     console.error("Sign in error:", e);
-    showToast("Sign-in failed. Please try again.", "error");
+    // Fallback: try openSignIn
+    try {
+      await window.Clerk.openSignIn();
+    } catch(e2) {
+      showToast("Sign-in failed. Please try again.", "error");
+    }
   }
 }
 

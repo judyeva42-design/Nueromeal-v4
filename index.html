@@ -744,7 +744,7 @@ function renderDash() {
     </div>`;
   }
 
-  if (!currentFamily || !userDoc) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:40px;margin-bottom:12px">👨‍👩‍👧</div><div style="font-size:16px;font-weight:700;margin-bottom:16px">Set up your family circle!</div><button onclick="UI.tab='family';renderMain()" style="padding:12px 24px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd)">Set Up Family</button></div>`;
+  if (!currentFamily || !userDoc) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:40px;margin-bottom:12px">👨‍👩‍👧</div><div style="font-size:16px;font-weight:700;margin-bottom:16px">Set up your family circle!</div><button onclick="setTab('family')" style="padding:12px 24px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd)">Set Up Family</button></div>`;
 
   const ws = calcWeekScore();
   const hist = currentFamily?.weekHistory||[];

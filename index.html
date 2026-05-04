@@ -503,7 +503,7 @@ function unsubscribeAll() {
 // ── Auth ───────────────────────────────────────────────────
 async function signInWithGoogle() {
   try {
-    await signInWithRedirect(auth, googleProvider);
+    await signInWithPopup(auth, googleProvider);
   } catch(e) {
     console.error("Sign in error:", e);
     showToast("Sign-in failed. Please try again.", "error");

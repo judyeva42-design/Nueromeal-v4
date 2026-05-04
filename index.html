@@ -519,18 +519,20 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
     await initUserSession(user);
-  } else {
-    getRedirectResult(auth).then(result => {
-  if (result?.user) {
-    currentUser = result.user;
-    initUserSession(result.user);
-  } else {
-    renderAuth();
-  }
-}).catch(() => renderAuth());
+ } else {
+    try {
+      const result = await getRedirectResult(auth);
+      if (result?.user) {
+        currentUser = result.user;
+        await initUserSession(result.user);
+      } else {
+        renderAuth();
+      }
+    } catch(e) {
+      renderAuth();
+    }
   }
 });
-
 async function initUserSession(user) {
   // Load or create user document
   const userRef = doc(db,"users",user.uid);

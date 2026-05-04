@@ -207,7 +207,22 @@ onAuthStateChanged(auth, async (user) => {
     };
     await initUserSession(currentUser);
   } else {
-    if (!currentUser) {
+    // Check for redirect result first (returning from signin page)
+    try {
+      const result = await getRedirectResult(auth);
+      if (result?.user) {
+        currentUser = {
+          uid: result.user.uid,
+          displayName: result.user.displayName || "User",
+          email: result.user.email || "",
+          photoURL: result.user.photoURL || "",
+        };
+        await initUserSession(currentUser);
+      } else {
+        renderApp();
+      }
+    } catch(e) {
+      console.error("Redirect result error:", e);
       renderApp();
     }
   }

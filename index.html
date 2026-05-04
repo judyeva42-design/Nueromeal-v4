@@ -513,7 +513,7 @@ async function handleSignOut() {
   unsubscribeAll();
   await signOut(auth);
   currentUser = null; userDoc = null; currentFamily = null; familyId = null;
-  renderAuth();
+  renderApp();
 }
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -526,10 +526,10 @@ onAuthStateChanged(auth, async (user) => {
         currentUser = result.user;
         await initUserSession(result.user);
       } else {
-        renderAuth();
+      renderApp();
       }
     } catch(e) {
-      renderAuth();
+      renderApp();
     }
   }
 });

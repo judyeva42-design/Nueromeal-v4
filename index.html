@@ -220,15 +220,16 @@ async function handleClerkUser(clerkUser) {
 }
 
 async function signInWithGoogle() {
-  if (!clerkReady) { showToast("Auth loading, try again!", "warn"); return; }
   try {
-    await window.Clerk.openSignIn({
-      appearance: {
-        elements: {
-          rootBox: { zIndex: 9999 }
-        }
-      }
-    });
+    if (!window.Clerk) {
+      showToast("Loading... tap again in 2 seconds!", "warn");
+      setTimeout(() => signInWithGoogle(), 2000);
+      return;
+    }
+    if (!window.Clerk.openSignIn) {
+      await window.Clerk.load();
+    }
+    await window.Clerk.openSignIn();
   } catch(e) {
     console.error("Sign in error:", e);
     showToast("Sign-in failed. Please try again.", "error");

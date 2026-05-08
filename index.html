@@ -739,7 +739,7 @@ function renderOnboarding() {
         ${current.type === 'choice' ? `
         <div style="display:flex;flex-direction:column;gap:8px">
           ${current.options.map((opt,i) => `
-          <button onclick="selectOnboardChoice('${current.field}','${opt.replace(/'/g, "\'")}',this)" style="padding:12px 16px;border-radius:12px;border:2px solid ${UI.onboardData?.[current.field]===opt?'var(--cyan)':'var(--border)'};background:${UI.onboardData?.[current.field]===opt?'rgba(105,201,208,.1)':'transparent'};cursor:pointer;text-align:left;font-size:13px;font-weight:600;color:var(--white);font-family:var(--fb);transition:all .2s">${opt}</button>`).join('')}
+          <button onclick="window.selectOnboardChoice('${current.field}','${opt.replace(/'/g, "\'")}',this)" style="padding:12px 16px;border-radius:12px;border:2px solid ${UI.onboardData?.[current.field]===opt?'var(--cyan)':'var(--border)'};background:${UI.onboardData?.[current.field]===opt?'rgba(105,201,208,.1)':'transparent'};cursor:pointer;text-align:left;font-size:13px;font-weight:600;color:var(--white);font-family:var(--fb);transition:all .2s">${opt}</button>`).join('')}
         </div>` : ""}
 
         ${current.type === 'complete' ? `
@@ -761,14 +761,14 @@ function renderOnboarding() {
       </div>
 
       <div style="display:flex;gap:10px">
-        ${step > 0 && !isFirst ? `<button onclick="obBack()" style="flex:1;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;color:var(--gray);font-weight:700;font-size:14px;cursor:pointer;font-family:var(--fb)">← Back</button>` : ""}
+        ${step > 0 && !isFirst ? `<button onclick="window.obBack()" style="flex:1;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;color:var(--gray);font-weight:700;font-size:14px;cursor:pointer;font-family:var(--fb)">← Back</button>` : ""}
         ${isLast ? `
-        <button onclick="completeOnboarding()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">Let's Go! 🚀</button>` : `
-        <button onclick="obNext()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${isFirst?'Start My Profile! 🧠':'Next →'}</button>`}
+        <button onclick="window.completeOnboarding()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">Let's Go! 🚀</button>` : `
+        <button onclick="window.obNext()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${isFirst?'Start My Profile! 🧠':'Next →'}</button>`}
       </div>
 
       ${step > 0 && !isLast ? `
-      <button onclick="skipOnboarding()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:11px;font-family:var(--fb)">Skip for now (I'll set up my profile later)</button>` : ""}
+      <button onclick="window.skipOnboarding()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:11px;font-family:var(--fb)">Skip for now (I'll set up my profile later)</button>` : ""}
     </div>
   </div>`;
 }

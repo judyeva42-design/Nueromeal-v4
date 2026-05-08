@@ -40,6 +40,7 @@ const DIET_T = {
   "Gluten-Free": {protein:130,carbs:200,fat:65,fiber:22,calories:2000,fruits:2,vegetables:3,dairy:2,grains:4},
   "Dairy-Free":  {protein:130,carbs:250,fat:60,fiber:28,calories:2000,fruits:2,vegetables:3,dairy:0,grains:6},
   "Paleo":       {protein:160,carbs:100,fat:100,fiber:20,calories:2000,fruits:2,vegetables:5,dairy:0,grains:0},
+  "GLP-1":      {protein:180,carbs:100,fat:60,fiber:25,calories:1400,fruits:2,vegetables:5,dairy:1,grains:1},
 };
 const DIET_C = {Standard:"#69C9D0",Keto:"#fb923c",Mediterranean:"#4ade80",Vegetarian:"#a78bfa",Vegan:"#34d399","Gluten-Free":"#facc15","Dairy-Free":"#60a5fa",Paleo:"#f97316"};
 const OCCASIONS = ["🎂 Birthday","🤒 Sick Day","🎉 Treat Night","🏃 Active Day","❄️ Cozy Night","🌿 Health Reset","👨‍👩‍👧 Family Night","🎃 Holiday"];
@@ -164,8 +165,11 @@ let UI = {
   timerActive:false, timerSecs:0, timerTotal:0, timerInterval:null,
   triviaIdx:0, triviaAns:null, triviaScore:0,
   matchCards:[], matchFlipped:[], matchMatched:[], matchScore:0,
+  spinnerResult:null, spinnerSpinning:false,
+  memoryCards:[], memoryFlipped:[], memoryMatched:[], memoryLocked:false,
   spinResult:null,
   memCards:[], memFlipped:[], memMatched:[], memLocked:false,
+  onboardStep:0, onboardData:{},
   todayWellness:{energy:null,stress:null,selfCare:null,water:null},
   showChallengeForm:false,
   activeGame:"trivia",
@@ -388,6 +392,8 @@ async function initUserSession(user) {
       cookedMeals: {},
       checkedSteps: {},
       familyIds: [],
+      profileComplete: false,
+      profile: {},
       createdAt: serverTimestamp(),
     };
     await setDoc(userRef, userDoc);
@@ -556,6 +562,11 @@ function exportData() {
 // ── Render ─────────────────────────────────────────────────
 function renderApp() {
   const _app = document.getElementById("app"); if(!_app) return;
+  // Show onboarding for new users who haven't completed their profile
+  if (currentUser && userDoc && !userDoc.profileComplete) {
+    renderOnboarding();
+    return;
+  }
   _app.innerHTML = `
   <div class="shell">
     <div class="topbar" id="topbar"></div>
@@ -567,6 +578,279 @@ function renderApp() {
   renderHeader();
   renderNav();
   renderMain();
+}
+
+function renderOnboarding() {
+  const _app = document.getElementById("app"); if(!_app) return;
+  const step = UI.onboardStep || 0;
+  const steps = [
+    {
+      emoji: "🧠",
+      nori: "Well HELLO there, superstar!! I'm Nori — your NeuroMeal brain guide! I'm about to ask you a few questions so I can make this app feel like it was built JUST for you. Ready to make some magic? ✨",
+      type: "welcome"
+    },
+    {
+      emoji: "👋",
+      nori: "First things first — what do we call you? Not just 'hey you' 😄",
+      label: "Your name",
+      placeholder: "What's your name?",
+      field: "name",
+      type: "text"
+    },
+    {
+      emoji: "🌍",
+      nori: "How many trips around the sun have you taken? No judgment — Aria just wants to make sure your meal portions are on point! 🌞",
+      label: "Your age",
+      placeholder: "Your age",
+      field: "age",
+      type: "number"
+    },
+    {
+      emoji: "⚧️",
+      nori: "Which best describes you? This helps Aria nail your nutrition targets! 💪",
+      field: "sex",
+      type: "choice",
+      options: ["Female 👩", "Male 👨", "Non-binary 🌈", "Prefer not to say 🤐"]
+    },
+    {
+      emoji: "📏",
+      nori: "Height and weight time! Don't worry — Aria keeps your secrets. This is just so your nutrition goals are actually realistic for YOUR body! 🤫",
+      fields: ["height", "weight"],
+      labels: ["Height (e.g. 5ft 4in or 163cm)", "Weight (lbs or kg)"],
+      type: "double"
+    },
+    {
+      emoji: "⚡",
+      nori: "On a typical day, how active are you? Be honest — Aria can handle the truth! 😄",
+      field: "activity",
+      type: "choice",
+      options: ["🛋️ Mostly sitting (desk job, Netflix champion)", "🚶 Lightly active (walks, light errands)", "💃 Moderately active (regular workouts)", "🏃 Very active (daily intense exercise)", "🔥 Super active (athlete or physical job)"]
+    },
+    {
+      emoji: "🎯",
+      nori: "What's your main goal right now? Aria will keep this in mind with EVERY suggestion she makes!",
+      field: "goal",
+      type: "choice",
+      options: ["⚖️ Lose weight", "💪 Build muscle", "🔋 More energy", "🧠 Brain-friendly eating (AuDHD/ADHD)", "❤️ General health", "💊 Managing a health condition", "🌱 Just eat better overall"]
+    },
+    {
+      emoji: "🍽️",
+      nori: "Does your eating follow any particular style? Pick the one that fits best — or close enough! Aria is flexible like that 😄",
+      field: "diet",
+      type: "choice",
+      options: ["🥗 Standard (I eat pretty much everything)", "🥩 Keto (low carb, high fat)", "🌿 Vegan (plant-based all the way)", "🐟 Vegetarian (plants + maybe dairy/eggs)", "🫙 Mediterranean (olive oil and vibes)", "🚫🌾 Gluten-Free", "🥛 Dairy-Free", "🦴 Paleo", "💉 GLP-1 (Ozempic/Wegovy/Mounjaro user)"]
+    },
+    {
+      emoji: "🤢",
+      nori: "Is there a food that makes you go absolutely NOT, not today, not ever? List anything you want Aria to NEVER suggest! 🙅",
+      label: "Foods to avoid (separate with commas)",
+      placeholder: "e.g. mushrooms, shellfish, cilantro...",
+      field: "avoid",
+      type: "text"
+    },
+    {
+      emoji: "😍",
+      nori: "Now the fun part — what foods make you do a little happy dance? 💃 Tell Aria your favorites so she can sneak them in whenever possible!",
+      label: "Favorite foods (separate with commas)",
+      placeholder: "e.g. pasta, tacos, avocado...",
+      field: "loves",
+      type: "text"
+    },
+    {
+      emoji: "👶",
+      nori: "Are you feeding any picky eaters? You know the type — the ones who would survive on chicken nuggets and air if you let them 😂",
+      field: "pickyEater",
+      type: "choice",
+      options: ["🙅 Nope, everyone eats everything!", "😬 One picky eater in the house", "😅 Multiple picky eaters (send help)", "🤦 I AM the picky eater 😂"]
+    },
+    {
+      emoji: "🎵",
+      nori: "Last one — and this one is just for fun! 🎉 If your fridge could play a theme song when you opened it, what genre would it be? 🎵",
+      field: "fridgeVibes",
+      type: "choice",
+      options: ["🎸 Rock (I open it with INTENTION)", "🎹 Jazz (spontaneous fridge discoveries)", "🎵 Pop (whatever's trending in the pantry)", "🎤 Hype music (I'm about to COOK)", "🎶 Lo-fi (just a chill snack, no drama)", "🎺 Classical (I meal prep on Sundays like an adult)"]
+    },
+    {
+      emoji: "🎉",
+      nori: "YESSS!! You did it!! 🎉 I now know everything I need to make NeuroMeal feel like it was built just for you! Aria is READY. Your meals are about to get SO much smarter! 🧠🔥",
+      type: "complete"
+    }
+  ];
+
+  const current = steps[step];
+  const isFirst = step === 0;
+  const isLast = step === steps.length - 1;
+  const progress = Math.round((step / (steps.length - 1)) * 100);
+
+  _app.innerHTML = `
+  <div style="min-height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+    <div style="max-width:440px;width:100%">
+      ${step > 0 && !isLast ? `
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:10px;font-weight:700;color:var(--gray);letter-spacing:1px">PROFILE SETUP</div>
+          <div style="font-size:10px;font-weight:700;color:var(--cyan)">${progress}%</div>
+        </div>
+        <div style="height:4px;background:var(--card2);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${progress}%;background:linear-gradient(135deg,var(--cyan),var(--pink));border-radius:4px;transition:width .3s ease"></div>
+        </div>
+      </div>` : ""}
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:24px;margin-bottom:16px">
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:20px">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🧠</div>
+          <div style="background:var(--card2);border-radius:18px 18px 18px 4px;padding:14px 16px;flex:1">
+            <div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:4px">NORI SAYS</div>
+            <div style="font-size:13px;line-height:1.6;color:var(--white)">${current.nori}</div>
+          </div>
+        </div>
+
+        ${current.type === 'welcome' ? `
+        <div style="text-align:center;padding:10px 0">
+          <div style="font-size:56px;margin-bottom:12px">🧠✨</div>
+          <div style="font-family:var(--fd);font-size:22px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">Welcome to NeuroMeal!</div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.6">Built for every brain. Powered by AI. Designed to make feeding your family feel less overwhelming and way more fun! 🔥</div>
+        </div>` : ""}
+
+        ${current.type === 'text' ? `
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:8px">${current.label}</div>
+          <input id="ob-input" value="${UI.onboardData?.[current.field]||""}" placeholder="${current.placeholder}" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
+        </div>` : ""}
+
+        ${current.type === 'number' ? `
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:8px">${current.label}</div>
+          <input id="ob-input" type="number" value="${UI.onboardData?.[current.field]||""}" placeholder="${current.placeholder}" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
+        </div>` : ""}
+
+        ${current.type === 'double' ? `
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">${current.labels[0]}</div>
+            <input id="ob-input-height" value="${UI.onboardData?.height||""}" placeholder="e.g. 5ft 4in" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">${current.labels[1]}</div>
+            <input id="ob-input-weight" value="${UI.onboardData?.weight||""}" placeholder="e.g. 165 lbs" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
+          </div>
+        </div>` : ""}
+
+        ${current.type === 'choice' ? `
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${current.options.map((opt,i) => `
+          <button onclick="selectOnboardChoice('${current.field}','${opt.replace(/'/g, "\'")}',this)" style="padding:12px 16px;border-radius:12px;border:2px solid ${UI.onboardData?.[current.field]===opt?'var(--cyan)':'var(--border)'};background:${UI.onboardData?.[current.field]===opt?'rgba(105,201,208,.1)':'transparent'};cursor:pointer;text-align:left;font-size:13px;font-weight:600;color:var(--white);font-family:var(--fb);transition:all .2s">${opt}</button>`).join('')}
+        </div>` : ""}
+
+        ${current.type === 'complete' ? `
+        <div style="text-align:center;padding:10px 0">
+          <div style="font-size:56px;margin-bottom:12px">🎉🧠🔥</div>
+          <div style="font-family:var(--fd);font-size:20px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">You're all set!</div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:16px">Aria now knows your preferences, goals, and that your fridge definitely needs a hype playlist. 😂</div>
+          <div style="background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.2);border-radius:14px;padding:14px;text-align:left">
+            <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">YOUR PROFILE SUMMARY</div>
+            <div style="font-size:12px;color:var(--gray);line-height:1.8">
+              👤 ${UI.onboardData?.name||currentUser?.displayName||"You"}<br/>
+              🎯 Goal: ${UI.onboardData?.goal||"General health"}<br/>
+              🍽️ Diet: ${UI.onboardData?.diet||"Standard"}<br/>
+              ⚡ Activity: ${UI.onboardData?.activity||"Lightly active"}<br/>
+              🎵 Fridge vibes: ${UI.onboardData?.fridgeVibes||"Mystery genre 🎵"}
+            </div>
+          </div>
+        </div>` : ""}
+      </div>
+
+      <div style="display:flex;gap:10px">
+        ${step > 0 && !isFirst ? `<button onclick="obBack()" style="flex:1;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;color:var(--gray);font-weight:700;font-size:14px;cursor:pointer;font-family:var(--fb)">← Back</button>` : ""}
+        ${isLast ? `
+        <button onclick="completeOnboarding()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">Let's Go! 🚀</button>` : `
+        <button onclick="obNext()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${isFirst?'Start My Profile! 🧠':'Next →'}</button>`}
+      </div>
+
+      ${step > 0 && !isLast ? `
+      <button onclick="skipOnboarding()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:11px;font-family:var(--fb)">Skip for now (I'll set up my profile later)</button>` : ""}
+    </div>
+  </div>`;
+}
+
+function selectOnboardChoice(field, value, btn) {
+  if (!UI.onboardData) UI.onboardData = {};
+  UI.onboardData[field] = value;
+  // Update button styles without re-render for smooth feel
+  const parent = btn.parentElement;
+  parent.querySelectorAll('button').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'transparent';
+  });
+  btn.style.borderColor = 'var(--cyan)';
+  btn.style.background = 'rgba(105,201,208,.1)';
+}
+
+function obNext() {
+  if (!UI.onboardData) UI.onboardData = {};
+  const step = UI.onboardStep || 0;
+  // Save any text input values
+  const input = document.getElementById('ob-input');
+  if (input) {
+    const steps = ['','name','age','sex','heights','activity','goal','diet','avoid','loves','pickyEater','fridgeVibes'];
+    const fieldMap = {1:'name',2:'age',8:'avoid',9:'loves'};
+    if (fieldMap[step]) UI.onboardData[fieldMap[step]] = input.value;
+  }
+  const hInput = document.getElementById('ob-input-height');
+  const wInput = document.getElementById('ob-input-weight');
+  if (hInput) UI.onboardData.height = hInput.value;
+  if (wInput) UI.onboardData.weight = wInput.value;
+  UI.onboardStep = step + 1;
+  renderOnboarding();
+}
+
+function obBack() {
+  UI.onboardStep = Math.max(0, (UI.onboardStep || 0) - 1);
+  renderOnboarding();
+}
+
+async function completeOnboarding() {
+  if (!currentUser || !userDoc) return;
+  const data = UI.onboardData || {};
+  // Map diet choice to app diet type
+  const dietMap = {
+    '🥗 Standard (I eat pretty much everything)': 'Standard',
+    '🥩 Keto (low carb, high fat)': 'Keto',
+    '🌿 Vegan (plant-based all the way)': 'Vegan',
+    '🐟 Vegetarian (plants + maybe dairy/eggs)': 'Vegetarian',
+    '🫙 Mediterranean (olive oil and vibes)': 'Mediterranean',
+    '🚫🌾 Gluten-Free': 'Gluten-Free',
+    '🥛 Dairy-Free': 'Dairy-Free',
+    '🦴 Paleo': 'Paleo',
+    '💉 GLP-1 (Ozempic/Wegovy/Mounjaro user)': 'GLP-1',
+  };
+  const profile = {
+    name: data.name || currentUser.displayName || 'User',
+    age: data.age || '',
+    sex: data.sex || '',
+    height: data.height || '',
+    weight: data.weight || '',
+    activity: data.activity || '',
+    goal: data.goal || '',
+    diet: dietMap[data.diet] || 'Standard',
+    avoid: data.avoid || '',
+    loves: data.loves || '',
+    pickyEater: data.pickyEater || '',
+    fridgeVibes: data.fridgeVibes || '',
+  };
+  await saveUserDoc({ profileComplete: true, profile, name: profile.name });
+  UI.onboardStep = 0;
+  UI.onboardData = {};
+  addXP(50);
+  showToast('Profile complete! +50 XP 🎉', 'success');
+  renderApp();
+}
+
+async function skipOnboarding() {
+  await saveUserDoc({ profileComplete: true, profile: {} });
+  UI.onboardStep = 0;
+  UI.onboardData = {};
+  renderApp();
 }
 
 function renderFamilySetup() {
@@ -1044,7 +1328,7 @@ function renderSpinner() {
   <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px">🎯 Nutrition Challenge Spinner</div>
   <div style="width:140px;height:140px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:0 0 30px rgba(105,201,208,.3);transition:transform .3s ease" id="spinner-wheel">${result?result.emoji:"🎯"}</div>
   ${result?`<div style="background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${result.text}</div></div>`:"<div style='font-size:13px;color:var(--gray);margin-bottom:16px'>Spin to get your nutrition challenge!</div>"}
-  <button onclick="spinWheel()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${result?"🔄 Spin Again!":"🎯 Spin!"}</button>
+  <button onclick="window.spinWheel()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${result?"🔄 Spin Again!":"🎯 Spin!"}</button>
   </div>`;
 }
 
@@ -1075,16 +1359,16 @@ function renderMemory() {
   return `<div class="card" style="padding:16px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div style="font-size:12px;font-weight:700;color:var(--gray)">Tap pairs to match! Matches: ${Math.floor((UI.memMatched||[]).length/2)}</div>
-    <button onclick="initMemory()" style="font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--gray);cursor:pointer;font-family:var(--fb)">Reset</button>
+    <button onclick="window.initMemory()" style="font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--gray);cursor:pointer;font-family:var(--fb)">Reset</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
     ${cards.map((card,i)=>{
       const isMatched = (UI.memMatched||[]).includes(i);
       const isFlipped = (UI.memFlipped||[]).includes(i);
-      return `<button onclick="tapMemCard(${i})" style="height:64px;border-radius:12px;border:2px solid ${isMatched?"var(--green)":isFlipped?"var(--cyan)":"var(--border)"};background:${isMatched?"rgba(74,222,128,.1)":isFlipped?"rgba(105,201,208,.1)":"var(--card2)"};cursor:pointer;font-size:${isMatched||isFlipped?"28px":"22px"};transition:all .2s ease">${isMatched||isFlipped?card.emoji:"❓"}</button>`;
+      return `<button onclick="window.tapMemCard(${i})" style="height:64px;border-radius:12px;border:2px solid ${isMatched?"var(--green)":isFlipped?"var(--cyan)":"var(--border)"};background:${isMatched?"rgba(74,222,128,.1)":isFlipped?"rgba(105,201,208,.1)":"var(--card2)"};cursor:pointer;font-size:${isMatched||isFlipped?"28px":"22px"};transition:all .2s ease">${isMatched||isFlipped?card.emoji:"❓"}</button>`;
     }).join("")}
   </div>
-  ${(UI.memMatched||[]).length===cards.length&&cards.length>0?`<div style="text-align:center;margin-top:14px"><div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">🎉 You matched everything!</div><button onclick="initMemory()" class="btn btnp">Play Again</button></div>`:""}
+  ${(UI.memMatched||[]).length===cards.length&&cards.length>0?`<div style="text-align:center;margin-top:14px"><div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">🎉 You matched everything!</div><button onclick="window.initMemory()" class="btn btnp">Play Again</button></div>`:""}
   </div>`;
 }
 
@@ -1376,37 +1660,7 @@ function nextTrivia() {
   renderMain();
 }
 
-function initMatch() {
-  const items = [
-    {emoji:"🥦",pair:"broccoli"},{emoji:"🥦",pair:"broccoli"},
-    {emoji:"🍎",pair:"apple"},{emoji:"🍎",pair:"apple"},
-    {emoji:"🧀",pair:"cheese"},{emoji:"🧀",pair:"cheese"},
-    {emoji:"🥕",pair:"carrot"},{emoji:"🥕",pair:"carrot"},
-  ];
-  UI.matchCards = items.sort(() => Math.random() - 0.5);
-  UI.matchFlipped = [];
-  UI.matchMatched = [];
-  UI.matchScore = 0;
-}
-
-function flipCard(idx) {
-  if (UI.matchMatched.includes(idx) || UI.matchFlipped.includes(idx)) return;
-  if (UI.matchFlipped.length >= 2) { UI.matchFlipped = []; renderMain(); return; }
-  UI.matchFlipped = [...UI.matchFlipped, idx];
-  renderMain();
-  if (UI.matchFlipped.length === 2) {
-    const [a,b] = UI.matchFlipped;
-    if (UI.matchCards[a].pair === UI.matchCards[b].pair) {
-      UI.matchMatched = [...UI.matchMatched, a, b];
-      UI.matchFlipped = [];
-      UI.matchScore++;
-      if (UI.matchMatched.length === UI.matchCards.length) { addXP(20); showToast("+20 XP! All matched! 🎉", "success"); }
-      renderMain();
-    } else {
-      setTimeout(() => { UI.matchFlipped = []; renderMain(); }, 900);
-    }
-  }
-}
+// Memory and Spinner games replace old match game
 
 function setWellness(key, val) {
   UI.todayWellness[key] = val;
@@ -1466,6 +1720,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ── Make functions globally accessible (required for module scripts) ──
+window.flipCard = flipCard;
+window.selectOnboardChoice = selectOnboardChoice;
+window.obNext = obNext;
+window.obBack = obBack;
+window.completeOnboarding = completeOnboarding;
+window.skipOnboarding = skipOnboarding;
 window.toggleVideoForm = toggleVideoForm;
 window.saveVideo = saveVideo;
 window.signInWithGoogle = signInWithGoogle;
@@ -1615,6 +1875,7 @@ body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:10
 @keyframes glow{0%,100%{filter:drop-shadow(0 0 8px rgba(105,201,208,.6))}50%{filter:drop-shadow(0 0 20px rgba(238,29,82,.6))}}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(105,201,208,.4)}50%{box-shadow:0 0 0 8px rgba(105,201,208,0)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 </style>
 </body>

@@ -562,7 +562,7 @@ function exportData() {
 // ── Render ─────────────────────────────────────────────────
 function renderApp() {
   const _app = document.getElementById("app"); if(!_app) return;
-  // Onboarding is triggered manually via Edit My Profile button
+
   _app.innerHTML = `
   <div class="shell">
     <div class="topbar" id="topbar"></div>
@@ -578,196 +578,87 @@ function renderApp() {
 
 function renderOnboarding() {
   const _app = document.getElementById("app"); if(!_app) return;
-  const step = UI.onboardStep || 0;
-  const steps = [
-    {
-      emoji: "🧠",
-      nori: "Well HELLO there, superstar!! I'm Nori — your NeuroMeal brain guide! I'm about to ask you a few questions so I can make this app feel like it was built JUST for you. Ready to make some magic? ✨",
-      type: "welcome"
-    },
-    {
-      emoji: "👋",
-      nori: "First things first — what do we call you? Not just 'hey you' 😄",
-      label: "Your name",
-      placeholder: "What's your name?",
-      field: "name",
-      type: "text"
-    },
-    {
-      emoji: "🌍",
-      nori: "How many trips around the sun have you taken? No judgment — Aria just wants to make sure your meal portions are on point! 🌞",
-      label: "Your age",
-      placeholder: "Your age",
-      field: "age",
-      type: "number"
-    },
-    {
-      emoji: "⚧️",
-      nori: "Which best describes you? This helps Aria nail your nutrition targets! 💪",
-      field: "sex",
-      type: "choice",
-      options: ["Female 👩", "Male 👨", "Non-binary 🌈", "Prefer not to say 🤐"]
-    },
-    {
-      emoji: "📏",
-      nori: "Height and weight time! Don't worry — Aria keeps your secrets. This is just so your nutrition goals are actually realistic for YOUR body! 🤫",
-      fields: ["height", "weight"],
-      labels: ["Height (e.g. 5ft 4in or 163cm)", "Weight (lbs or kg)"],
-      type: "double"
-    },
-    {
-      emoji: "⚡",
-      nori: "On a typical day, how active are you? Be honest — Aria can handle the truth! 😄",
-      field: "activity",
-      type: "choice",
-      options: ["🛋️ Mostly sitting (desk job, Netflix champion)", "🚶 Lightly active (walks, light errands)", "💃 Moderately active (regular workouts)", "🏃 Very active (daily intense exercise)", "🔥 Super active (athlete or physical job)"]
-    },
-    {
-      emoji: "🎯",
-      nori: "What's your main goal right now? Aria will keep this in mind with EVERY suggestion she makes!",
-      field: "goal",
-      type: "choice",
-      options: ["⚖️ Lose weight", "💪 Build muscle", "🔋 More energy", "🧠 Brain-friendly eating (AuDHD/ADHD)", "❤️ General health", "💊 Managing a health condition", "🌱 Just eat better overall"]
-    },
-    {
-      emoji: "🍽️",
-      nori: "Does your eating follow any particular style? Pick the one that fits best — or close enough! Aria is flexible like that 😄",
-      field: "diet",
-      type: "choice",
-      options: ["🥗 Standard (I eat pretty much everything)", "🥩 Keto (low carb, high fat)", "🌿 Vegan (plant-based all the way)", "🐟 Vegetarian (plants + maybe dairy/eggs)", "🫙 Mediterranean (olive oil and vibes)", "🚫🌾 Gluten-Free", "🥛 Dairy-Free", "🦴 Paleo", "💉 GLP-1 (Ozempic/Wegovy/Mounjaro user)"]
-    },
-    {
-      emoji: "🤢",
-      nori: "Is there a food that makes you go absolutely NOT, not today, not ever? List anything you want Aria to NEVER suggest! 🙅",
-      label: "Foods to avoid (separate with commas)",
-      placeholder: "e.g. mushrooms, shellfish, cilantro...",
-      field: "avoid",
-      type: "text"
-    },
-    {
-      emoji: "😍",
-      nori: "Now the fun part — what foods make you do a little happy dance? 💃 Tell Aria your favorites so she can sneak them in whenever possible!",
-      label: "Favorite foods (separate with commas)",
-      placeholder: "e.g. pasta, tacos, avocado...",
-      field: "loves",
-      type: "text"
-    },
-    {
-      emoji: "👶",
-      nori: "Are you feeding any picky eaters? You know the type — the ones who would survive on chicken nuggets and air if you let them 😂",
-      field: "pickyEater",
-      type: "choice",
-      options: ["🙅 Nope, everyone eats everything!", "😬 One picky eater in the house", "😅 Multiple picky eaters (send help)", "🤦 I AM the picky eater 😂"]
-    },
-    {
-      emoji: "🎵",
-      nori: "Last one — and this one is just for fun! 🎉 If your fridge could play a theme song when you opened it, what genre would it be? 🎵",
-      field: "fridgeVibes",
-      type: "choice",
-      options: ["🎸 Rock (I open it with INTENTION)", "🎹 Jazz (spontaneous fridge discoveries)", "🎵 Pop (whatever's trending in the pantry)", "🎤 Hype music (I'm about to COOK)", "🎶 Lo-fi (just a chill snack, no drama)", "🎺 Classical (I meal prep on Sundays like an adult)"]
-    },
-    {
-      emoji: "🎉",
-      nori: "YESSS!! You did it!! 🎉 I now know everything I need to make NeuroMeal feel like it was built just for you! Aria is READY. Your meals are about to get SO much smarter! 🧠🔥",
-      type: "complete"
-    }
-  ];
-
-  const current = steps[step];
-  const isFirst = step === 0;
-  const isLast = step === steps.length - 1;
-  const progress = Math.round((step / (steps.length - 1)) * 100);
-
   _app.innerHTML = `
   <div style="min-height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
     <div style="max-width:440px;width:100%">
-      ${step > 0 && !isLast ? `
-      <div style="margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <div style="font-size:10px;font-weight:700;color:var(--gray);letter-spacing:1px">PROFILE SETUP</div>
-          <div style="font-size:10px;font-weight:700;color:var(--cyan)">${progress}%</div>
-        </div>
-        <div style="height:4px;background:var(--card2);border-radius:4px;overflow:hidden">
-          <div style="height:100%;width:${progress}%;background:linear-gradient(135deg,var(--cyan),var(--pink));border-radius:4px;transition:width .3s ease"></div>
-        </div>
-      </div>` : ""}
-
       <div style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:24px;margin-bottom:16px">
         <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:20px">
           <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🧠</div>
           <div style="background:var(--card2);border-radius:18px 18px 18px 4px;padding:14px 16px;flex:1">
             <div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:4px">NORI SAYS</div>
-            <div style="font-size:13px;line-height:1.6;color:var(--white)">${current.nori}</div>
+            <div style="font-size:13px;line-height:1.6;color:var(--white)">Hey superstar! Let's set up your profile so Aria can personalize everything for you! Fill in as much or as little as you want. 🧠✨</div>
           </div>
         </div>
-
-        ${current.type === 'welcome' ? `
-        <div style="text-align:center;padding:10px 0">
-          <div style="font-size:56px;margin-bottom:12px">🧠✨</div>
-          <div style="font-family:var(--fd);font-size:22px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">Welcome to NeuroMeal!</div>
-          <div style="font-size:13px;color:var(--gray);line-height:1.6">Built for every brain. Powered by AI. Designed to make feeding your family feel less overwhelming and way more fun! 🔥</div>
-        </div>` : ""}
-
-        ${current.type === 'text' ? `
-        <div>
-          <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:8px">${current.label}</div>
-          <input id="ob-input" value="${UI.onboardData?.[current.field]||""}" placeholder="${current.placeholder}" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
-        </div>` : ""}
-
-        ${current.type === 'number' ? `
-        <div>
-          <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:8px">${current.label}</div>
-          <input id="ob-input" type="number" value="${UI.onboardData?.[current.field]||""}" placeholder="${current.placeholder}" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
-        </div>` : ""}
-
-        ${current.type === 'double' ? `
         <div style="display:flex;flex-direction:column;gap:10px">
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">${current.labels[0]}</div>
-            <input id="ob-input-height" value="${UI.onboardData?.height||""}" placeholder="e.g. 5ft 4in" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
+            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">YOUR NAME</div>
+            <input id="ob-name" placeholder="What do we call you?" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
           </div>
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">${current.labels[1]}</div>
-            <input id="ob-input-weight" value="${UI.onboardData?.weight||""}" placeholder="e.g. 165 lbs" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
+            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">AGE</div>
+            <input id="ob-age" type="number" placeholder="How many trips around the sun? 🌍" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
           </div>
-        </div>` : ""}
-
-        ${current.type === 'choice' ? `
-        <div style="display:flex;flex-direction:column;gap:8px">
-          ${current.options.map((opt,i) => `
-          <button onclick="window.selectOnboardChoice('${current.field}','${opt.replace(/'/g, "\'")}',this)" style="padding:12px 16px;border-radius:12px;border:2px solid ${UI.onboardData?.[current.field]===opt?'var(--cyan)':'var(--border)'};background:${UI.onboardData?.[current.field]===opt?'rgba(105,201,208,.1)':'transparent'};cursor:pointer;text-align:left;font-size:13px;font-weight:600;color:var(--white);font-family:var(--fb);transition:all .2s">${opt}</button>`).join('')}
-        </div>` : ""}
-
-        ${current.type === 'complete' ? `
-        <div style="text-align:center;padding:10px 0">
-          <div style="font-size:56px;margin-bottom:12px">🎉🧠🔥</div>
-          <div style="font-family:var(--fd);font-size:20px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">You're all set!</div>
-          <div style="font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:16px">Aria now knows your preferences, goals, and that your fridge definitely needs a hype playlist. 😂</div>
-          <div style="background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.2);border-radius:14px;padding:14px;text-align:left">
-            <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">YOUR PROFILE SUMMARY</div>
-            <div style="font-size:12px;color:var(--gray);line-height:1.8">
-              👤 ${UI.onboardData?.name||currentUser?.displayName||"You"}<br/>
-              🎯 Goal: ${UI.onboardData?.goal||"General health"}<br/>
-              🍽️ Diet: ${UI.onboardData?.diet||"Standard"}<br/>
-              ⚡ Activity: ${UI.onboardData?.activity||"Lightly active"}<br/>
-              🎵 Fridge vibes: ${UI.onboardData?.fridgeVibes||"Mystery genre 🎵"}
-            </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">DIET TYPE</div>
+            <select id="ob-diet" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none;box-sizing:border-box">
+              <option value="Standard">🥗 Standard (I eat pretty much everything)</option>
+              <option value="Keto">🥩 Keto (low carb, high fat)</option>
+              <option value="Vegan">🌿 Vegan (plant-based all the way)</option>
+              <option value="Vegetarian">🐟 Vegetarian</option>
+              <option value="Mediterranean">🫙 Mediterranean</option>
+              <option value="Gluten-Free">🚫🌾 Gluten-Free</option>
+              <option value="Dairy-Free">🥛 Dairy-Free</option>
+              <option value="Paleo">🦴 Paleo</option>
+              <option value="GLP-1">💉 GLP-1 (Ozempic/Wegovy/Mounjaro)</option>
+            </select>
           </div>
-        </div>` : ""}
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">MAIN GOAL</div>
+            <select id="ob-goal" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none;box-sizing:border-box">
+              <option value="General health">🌱 Just eat better overall</option>
+              <option value="Lose weight">⚖️ Lose weight</option>
+              <option value="Build muscle">💪 Build muscle</option>
+              <option value="More energy">🔋 More energy</option>
+              <option value="AuDHD/ADHD">🧠 Brain-friendly eating (AuDHD/ADHD)</option>
+              <option value="Health condition">❤️ Managing a health condition</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">FOODS TO AVOID (optional)</div>
+            <input id="ob-avoid" placeholder="e.g. mushrooms, shellfish, cilantro..." style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">FAVORITE FOODS (optional)</div>
+            <input id="ob-loves" placeholder="e.g. pasta, tacos, avocado..." style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
+          </div>
+        </div>
       </div>
-
-      <div style="display:flex;gap:10px">
-        ${step > 0 && !isFirst ? `<button onclick="window.obBack()" style="flex:1;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;color:var(--gray);font-weight:700;font-size:14px;cursor:pointer;font-family:var(--fb)">← Back</button>` : ""}
-        ${isLast ? `
-        <button onclick="window.completeOnboarding()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">Let's Go! 🚀</button>` : `
-        <button onclick="window.obNext()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${isFirst?'Start My Profile! 🧠':'Next →'}</button>`}
-      </div>
-
-      ${step > 0 && !isLast ? `
-      <button onclick="window.skipOnboarding()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:11px;font-family:var(--fb)">Skip for now (I'll set up my profile later)</button>` : ""}
+      <button id="ob-save-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:10px">Save My Profile! 🚀</button>
+      <button id="ob-skip-btn" style="width:100%;padding:10px;background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:11px;font-family:var(--fb)">Skip for now</button>
     </div>
   </div>`;
+
+  // Attach event listeners directly - no onclick needed
+  document.getElementById('ob-save-btn').addEventListener('click', async function() {
+    const name = document.getElementById('ob-name').value.trim();
+    const age = document.getElementById('ob-age').value.trim();
+    const diet = document.getElementById('ob-diet').value;
+    const goal = document.getElementById('ob-goal').value;
+    const avoid = document.getElementById('ob-avoid').value.trim();
+    const loves = document.getElementById('ob-loves').value.trim();
+    const profile = { name: name || currentUser?.displayName || 'User', age, diet, goal, avoid, loves };
+    await saveUserDoc({ profileComplete: true, profile, name: profile.name });
+    addXP(50);
+    showToast('Profile saved! +50 XP 🎉', 'success');
+    renderApp();
+  });
+
+  document.getElementById('ob-skip-btn').addEventListener('click', async function() {
+    await saveUserDoc({ profileComplete: true, profile: {} });
+    renderApp();
+  });
 }
+
 
 function selectOnboardChoice(field, value, btn) {
   if (!UI.onboardData) UI.onboardData = {};
@@ -1430,7 +1321,7 @@ function renderFamily() {
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px">${currentFamily.name}</div>
-      <button onclick="startEditProfile()" style="padding:6px 12px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit My Profile</button>
+      <button onclick="window.startEditProfile()" style="padding:6px 12px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit My Profile</button>
     </div>
     <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Invite Code: <span style="color:var(--cyan);font-weight:700;letter-spacing:2px">${currentFamily.inviteCode}</span></div>
     ${userDoc?.profile?.name ? `<div style="background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.2);border-radius:12px;padding:12px;margin-bottom:10px;font-size:12px;color:var(--gray);line-height:1.8">

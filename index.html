@@ -939,7 +939,6 @@ async function sendChatMsg() {
     createdAt: serverTimestamp(),
   };
   if (input) input.value = "";
-  // Optimistically add message to DOM immediately
   const chatMsgs = document.getElementById("chat-msgs");
   if (chatMsgs) {
     const msgEl = document.createElement("div");
@@ -1111,7 +1110,7 @@ function renderVideos() {
   const vids = currentFamily?.videos || [];
   return `<div class="fu">
   <div class="st">📹 Meal Videos</div>
-${currentUser&&currentFamily?<button onclick="window.UI.showVideoForm=!window.UI.showVideoForm;renderMain()" class="btn btnp" style="width:100%;margin-bottom:14px;font-size:13px">${window.UI.showVideoForm?‘✕ Cancel’:’+ Share a Video’}</button>:``}
+  ${currentUser&&currentFamily?`<button onclick="toggleVideoForm()" class="btn btnp" style="width:100%;margin-bottom:14px;font-size:13px">${UI.showVideoForm?'✕ Cancel':'+ Share a Video'}</button>`:""}
   ${UI.showVideoForm&&currentUser&&currentFamily?`
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="font-family:var(--fd);font-size:15px;font-weight:800;margin-bottom:12px">Share a Video</div>
@@ -1122,9 +1121,29 @@ ${currentUser&&currentFamily?<button onclick="window.UI.showVideoForm=!window.UI
     </select>
     <input id="vid-notes" placeholder="Notes (optional)" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none;margin-bottom:12px;box-sizing:border-box"/>
     <button onclick="saveVideo()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;font-family:var(--fd);cursor:pointer">Save Video</button>
-  </div>`:``}
+  </div>`:""}
   ${vids.length===0?`<div style="text-align:center;padding:40px;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">📹</div><div>No videos yet! Share meal inspo with your family.</div></div>`:vids.map(v=>`<div class="card" style="padding:14px;margin-bottom:10px"><div style="font-size:15px;font-weight:800;margin-bottom:4px">${v.title}</div><div style="font-size:11px;color:var(--gray);margin-bottom:8px">${v.platform} · ${v.meal||""}</div>${v.notes?`<div style="font-size:12px;margin-bottom:8px">${v.notes}</div>`:""}<a href="${v.url}" target="_blank" style="color:var(--cyan);font-size:12px;font-weight:700">Watch Video →</a></div>`).join("")}
   </div>`;
+}
+
+function toggleVideoForm() {
+  UI.showVideoForm = !UI.showVideoForm;
+  renderMain();
+}
+
+async function saveVideo() {
+  if (!currentUser || !currentFamily) return;
+  const title = document.getElementById("vid-title")?.value?.trim();
+  const url = document.getElementById("vid-url")?.value?.trim();
+  const platform = document.getElementById("vid-platform")?.value || "TikTok";
+  const notes = document.getElementById("vid-notes")?.value?.trim();
+  if (!title || !url) { showToast("Please add a title and URL!", "warn"); return; }
+  const vid = { title, url, platform, notes, uid: currentUser.uid, addedAt: new Date().toISOString() };
+  const videos = [...(currentFamily?.videos||[]), vid];
+  await saveFamilyDoc({ videos });
+  UI.showVideoForm = false;
+  renderMain();
+  showToast("✅ Video shared with your family!", "success");
 }
 
 // ── Veggie Tips ─────────────────────────────────────────────
@@ -1348,22 +1367,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ── Make functions globally accessible (required for module scripts) ──
-async function saveVideo() {
-  if (!currentUser || !currentFamily) return;
-  const title = document.getElementById("vid-title")?.value?.trim();
-  const url = document.getElementById("vid-url")?.value?.trim();
-  const platform = document.getElementById("vid-platform")?.value || "TikTok";
-  const notes = document.getElementById("vid-notes")?.value?.trim();
-  if (!title || !url) { showToast("Please add a title and URL!", "warn"); return; }
-  const vid = { title, url, platform, notes, uid: currentUser.uid, addedAt: new Date().toISOString() };
-  const videos = [...(currentFamily?.videos||[]), vid];
-  await saveFamilyDoc({ videos });
-  UI.showVideoForm = false;
-  UI.videoForm = {url:"",title:"",platform:"TikTok",notes:"",meal:"",tags:""};
-  renderMain();
-  showToast("✅ Video shared with your family!", "success");
-}
-
+window.toggleVideoForm = toggleVideoForm;
 window.saveVideo = saveVideo;
 window.signInWithGoogle = signInWithGoogle;
 window.handleSignOut = handleSignOut;

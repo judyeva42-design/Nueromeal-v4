@@ -1022,7 +1022,7 @@ function renderMatch() {
   if (UI.matchCards.length === 0) initMatch();
   return `<div class="card" style="padding:16px">
   <div style="font-size:12px;font-weight:700;color:var(--gray);margin-bottom:12px">Match the food pairs! Score: ${UI.matchScore}</div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${UI.matchCards.map((card,i)=>`<button onclick="flipCard(${i})" style="height:60px;border-radius:12px;border:2px solid ${UI.matchMatched.includes(i)?"var(--green)":UI.matchFlipped.includes(i)?"var(--cyan)":"var(--border)"};background:${UI.matchMatched.includes(i)?"rgba(74,222,128,.1)":UI.matchFlipped.includes(i)?"rgba(105,201,208,.1)":"var(--card2)"};cursor:pointer;font-size:24px">${UI.matchMatched.includes(i)||UI.matchFlipped.includes(i)?card.emoji:"❓"}</button>`).join("")}</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${UI.matchCards.map((card,i)=>`<button onclick="window.flipCard(${i})" style="height:60px;border-radius:12px;border:2px solid ${UI.matchMatched.includes(i)?"var(--green)":UI.matchFlipped.includes(i)?"var(--cyan)":"var(--border)"};background:${UI.matchMatched.includes(i)?"rgba(74,222,128,.1)":UI.matchFlipped.includes(i)?"rgba(105,201,208,.1)":"var(--card2)"};cursor:pointer;font-size:24px">${UI.matchMatched.includes(i)||UI.matchFlipped.includes(i)?card.emoji:"❓"}</button>`).join("")}</div>
   ${UI.matchMatched.length===UI.matchCards.length?`<div style="text-align:center;margin-top:14px"><div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">You matched everything!</div><button onclick="initMatch();renderMain()" class="btn btnp">Play Again</button></div>`:""}
   </div>`;
 }

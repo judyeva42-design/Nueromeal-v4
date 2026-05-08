@@ -164,6 +164,8 @@ let UI = {
   timerActive:false, timerSecs:0, timerTotal:0, timerInterval:null,
   triviaIdx:0, triviaAns:null, triviaScore:0,
   matchCards:[], matchFlipped:[], matchMatched:[], matchScore:0,
+  spinResult:null,
+  memCards:[], memFlipped:[], memMatched:[], memLocked:false,
   todayWellness:{energy:null,stress:null,selfCare:null,water:null},
   showChallengeForm:false,
   activeGame:"trivia",
@@ -1003,10 +1005,16 @@ function renderWellness() {
 function renderGame() {
   return `<div class="fu">
   <div class="st">🎮 Game Break</div>
-  <div style="display:flex;gap:8px;margin-bottom:16px">${["trivia","match"].map(g=>`<button onclick="window.UI.activeGame='${g}';window.renderMain()" style="flex:1;padding:10px;border-radius:12px;border:2px solid ${UI.activeGame===g?"var(--cyan)":"var(--border)"};background:${UI.activeGame===g?"rgba(105,201,208,.1)":"transparent"};cursor:pointer;font-size:13px;font-weight:700;color:${UI.activeGame===g?"var(--cyan)":"var(--gray)"};font-family:var(--fb)">${g==="trivia"?"🧠 Trivia":"🃏 Match"}</button>`).join("")}</div>
-  ${UI.activeGame==="trivia"?renderTrivia():renderMatch()}
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button onclick="setGame('trivia')" style="flex:1;padding:10px;border-radius:12px;border:2px solid ${UI.activeGame==='trivia'?'var(--cyan)':'var(--border)'};background:${UI.activeGame==='trivia'?'rgba(105,201,208,.1)':'transparent'};cursor:pointer;font-size:12px;font-weight:700;color:${UI.activeGame==='trivia'?'var(--cyan)':'var(--gray)'};font-family:var(--fb)">🧠 Trivia</button>
+    <button onclick="setGame('spinner')" style="flex:1;padding:10px;border-radius:12px;border:2px solid ${UI.activeGame==='spinner'?'var(--cyan)':'var(--border)'};background:${UI.activeGame==='spinner'?'rgba(105,201,208,.1)':'transparent'};cursor:pointer;font-size:12px;font-weight:700;color:${UI.activeGame==='spinner'?'var(--cyan)':'var(--gray)'};font-family:var(--fb)">🎯 Spinner</button>
+    <button onclick="setGame('memory')" style="flex:1;padding:10px;border-radius:12px;border:2px solid ${UI.activeGame==='memory'?'var(--cyan)':'var(--border)'};background:${UI.activeGame==='memory'?'rgba(105,201,208,.1)':'transparent'};cursor:pointer;font-size:12px;font-weight:700;color:${UI.activeGame==='memory'?'var(--cyan)':'var(--gray)'};font-family:var(--fb)">🃏 Memory</button>
+  </div>
+  ${UI.activeGame==='trivia'?renderTrivia():UI.activeGame==='spinner'?renderSpinner():renderMemory()}
   </div>`;
 }
+
+function setGame(g) { UI.activeGame = g; renderMain(); }
 
 function renderTrivia() {
   const q = TRIVIA_Q[UI.triviaIdx % TRIVIA_Q.length];
@@ -1018,13 +1026,104 @@ function renderTrivia() {
   </div>`;
 }
 
-function renderMatch() {
-  if (UI.matchCards.length === 0) initMatch();
-  return `<div class="card" style="padding:16px">
-  <div style="font-size:12px;font-weight:700;color:var(--gray);margin-bottom:12px">Match the food pairs! Score: ${UI.matchScore}</div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${UI.matchCards.map((card,i)=>`<button onclick="window.flipCard(${i})" style="height:60px;border-radius:12px;border:2px solid ${UI.matchMatched.includes(i)?"var(--green)":UI.matchFlipped.includes(i)?"var(--cyan)":"var(--border)"};background:${UI.matchMatched.includes(i)?"rgba(74,222,128,.1)":UI.matchFlipped.includes(i)?"rgba(105,201,208,.1)":"var(--card2)"};cursor:pointer;font-size:24px">${UI.matchMatched.includes(i)||UI.matchFlipped.includes(i)?card.emoji:"❓"}</button>`).join("")}</div>
-  ${UI.matchMatched.length===UI.matchCards.length?`<div style="text-align:center;margin-top:14px"><div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">You matched everything!</div><button onclick="initMatch();renderMain()" class="btn btnp">Play Again</button></div>`:""}
+function renderSpinner() {
+  const challenges = [
+    {emoji:"🥦",text:"Add a veggie to dinner tonight!"},
+    {emoji:"💧",text:"Drink 8 glasses of water today!"},
+    {emoji:"🍎",text:"Swap a snack for fresh fruit!"},
+    {emoji:"🚶",text:"10 minute walk after your next meal!"},
+    {emoji:"🥗",text:"Make a salad for lunch!"},
+    {emoji:"🧘",text:"5 minute mindful eating break!"},
+    {emoji:"🍳",text:"Cook a meal from scratch tonight!"},
+    {emoji:"🫐",text:"Add berries to your breakfast!"},
+    {emoji:"🥕",text:"Snack on veggies instead of chips!"},
+    {emoji:"🌮",text:"Try a new healthy recipe this week!"},
+  ];
+  const result = UI.spinResult;
+  return `<div class="card" style="padding:20px;text-align:center">
+  <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px">🎯 Nutrition Challenge Spinner</div>
+  <div style="width:140px;height:140px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:0 0 30px rgba(105,201,208,.3);transition:transform .3s ease" id="spinner-wheel">${result?result.emoji:"🎯"}</div>
+  ${result?`<div style="background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${result.text}</div></div>`:"<div style='font-size:13px;color:var(--gray);margin-bottom:16px'>Spin to get your nutrition challenge!</div>"}
+  <button onclick="spinWheel()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${result?"🔄 Spin Again!":"🎯 Spin!"}</button>
   </div>`;
+}
+
+function spinWheel() {
+  const challenges = [
+    {emoji:"🥦",text:"Add a veggie to dinner tonight!"},
+    {emoji:"💧",text:"Drink 8 glasses of water today!"},
+    {emoji:"🍎",text:"Swap a snack for fresh fruit!"},
+    {emoji:"🚶",text:"10 minute walk after your next meal!"},
+    {emoji:"🥗",text:"Make a salad for lunch!"},
+    {emoji:"🧘",text:"5 minute mindful eating break!"},
+    {emoji:"🍳",text:"Cook a meal from scratch tonight!"},
+    {emoji:"🫐",text:"Add berries to your breakfast!"},
+    {emoji:"🥕",text:"Snack on veggies instead of chips!"},
+    {emoji:"🌮",text:"Try a new healthy recipe this week!"},
+  ];
+  const w = document.getElementById("spinner-wheel");
+  if (w) { w.style.transform = "rotate(360deg)"; setTimeout(()=>{ w.style.transform=""; },300); }
+  UI.spinResult = challenges[Math.floor(Math.random() * challenges.length)];
+  addXP(5);
+  renderMain();
+  showToast("+5 XP! Challenge accepted! 🎯", "success");
+}
+
+function renderMemory() {
+  if (!UI.memCards || UI.memCards.length === 0) initMemory();
+  const cards = UI.memCards || [];
+  return `<div class="card" style="padding:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:12px;font-weight:700;color:var(--gray)">Tap pairs to match! Matches: ${Math.floor((UI.memMatched||[]).length/2)}</div>
+    <button onclick="initMemory()" style="font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--gray);cursor:pointer;font-family:var(--fb)">Reset</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+    ${cards.map((card,i)=>{
+      const isMatched = (UI.memMatched||[]).includes(i);
+      const isFlipped = (UI.memFlipped||[]).includes(i);
+      return `<button onclick="tapMemCard(${i})" style="height:64px;border-radius:12px;border:2px solid ${isMatched?"var(--green)":isFlipped?"var(--cyan)":"var(--border)"};background:${isMatched?"rgba(74,222,128,.1)":isFlipped?"rgba(105,201,208,.1)":"var(--card2)"};cursor:pointer;font-size:${isMatched||isFlipped?"28px":"22px"};transition:all .2s ease">${isMatched||isFlipped?card.emoji:"❓"}</button>`;
+    }).join("")}
+  </div>
+  ${(UI.memMatched||[]).length===cards.length&&cards.length>0?`<div style="text-align:center;margin-top:14px"><div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">🎉 You matched everything!</div><button onclick="initMemory()" class="btn btnp">Play Again</button></div>`:""}
+  </div>`;
+}
+
+function initMemory() {
+  const items = [
+    {emoji:"🥦",pair:"a"},{emoji:"🥦",pair:"a"},
+    {emoji:"🍎",pair:"b"},{emoji:"🍎",pair:"b"},
+    {emoji:"🧀",pair:"c"},{emoji:"🧀",pair:"c"},
+    {emoji:"🥕",pair:"d"},{emoji:"🥕",pair:"d"},
+    {emoji:"🍋",pair:"e"},{emoji:"🍋",pair:"e"},
+    {emoji:"🥑",pair:"f"},{emoji:"🥑",pair:"f"},
+  ];
+  UI.memCards = items.sort(() => Math.random() - 0.5);
+  UI.memFlipped = [];
+  UI.memMatched = [];
+  UI.memLocked = false;
+  renderMain();
+}
+
+function tapMemCard(idx) {
+  if (!UI.memCards) return;
+  if (UI.memLocked) return;
+  if ((UI.memMatched||[]).includes(idx)) return;
+  if ((UI.memFlipped||[]).includes(idx)) return;
+  if ((UI.memFlipped||[]).length >= 2) return;
+  UI.memFlipped = [...(UI.memFlipped||[]), idx];
+  renderMain();
+  if (UI.memFlipped.length === 2) {
+    const [a, b] = UI.memFlipped;
+    if (UI.memCards[a].pair === UI.memCards[b].pair) {
+      UI.memMatched = [...(UI.memMatched||[]), a, b];
+      UI.memFlipped = [];
+      if (UI.memMatched.length === UI.memCards.length) { addXP(20); showToast("+20 XP! You matched everything! 🎉", "success"); }
+      renderMain();
+    } else {
+      UI.memLocked = true;
+      setTimeout(() => { UI.memFlipped = []; UI.memLocked = false; renderMain(); }, 900);
+    }
+  }
 }
 
 // ── Family ─────────────────────────────────────────────────
@@ -1386,7 +1485,10 @@ window.toggleAllCollapse = toggleAllCollapse;
 window.answerTrivia = answerTrivia;
 window.nextTrivia = nextTrivia;
 window.initMatch = initMatch;
-window.flipCard = flipCard;
+window.setGame = setGame;
+window.spinWheel = spinWheel;
+window.initMemory = initMemory;
+window.tapMemCard = tapMemCard;
 window.setWellness = setWellness;
 window.saveWellness = saveWellness;
 window.saveWeekSnapshot = saveWeekSnapshot;

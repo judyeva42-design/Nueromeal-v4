@@ -562,11 +562,7 @@ function exportData() {
 // ── Render ─────────────────────────────────────────────────
 function renderApp() {
   const _app = document.getElementById("app"); if(!_app) return;
-  // Show onboarding for new users who haven't completed their profile
-  if (currentUser && userDoc && userDoc.profileComplete !== true) {
-    renderOnboarding();
-    return;
-  }
+  // Onboarding is triggered manually via Edit My Profile button
   _app.innerHTML = `
   <div class="shell">
     <div class="topbar" id="topbar"></div>
@@ -1433,7 +1429,7 @@ function renderFamily() {
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px">${currentFamily.name}</div>
-      <button onclick="(function(){window.UI.onboardStep=0;window.UI.onboardData={};window.userDoc&&(window.userDoc.profileComplete=false);window.renderOnboarding();})()" style="padding:6px 12px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit My Profile</button>
+      <button onclick="startEditProfile()" style="padding:6px 12px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit My Profile</button>
     </div>
     <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Invite Code: <span style="color:var(--cyan);font-weight:700;letter-spacing:2px">${currentFamily.inviteCode}</span></div>
     ${userDoc?.profile?.name ? `<div style="background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.2);border-radius:12px;padding:12px;margin-bottom:10px;font-size:12px;color:var(--gray);line-height:1.8">
@@ -1736,7 +1732,12 @@ async function resetProfile() {
 }
 window.resetProfile = resetProfile;
 window.renderOnboarding = renderOnboarding;
-window.userDoc = userDoc;
+function startEditProfile() {
+  UI.onboardStep = 0;
+  UI.onboardData = {};
+  renderOnboarding();
+}
+window.startEditProfile = startEditProfile;
 window.flipCard = flipCard;
 window.selectOnboardChoice = selectOnboardChoice;
 window.obNext = obNext;

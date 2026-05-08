@@ -1431,8 +1431,14 @@ function renderFamily() {
   return `<div class="fu">
   <div class="st">👨‍👩‍👧 Family Hub</div>
   <div class="card" style="padding:16px;margin-bottom:14px">
-    <div style="font-family:var(--fd);font-size:15px;font-weight:800;margin-bottom:12px;letter-spacing:-0.5px">${currentFamily.name}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px">${currentFamily.name}</div>
+      <button onclick="window.resetProfile()" style="padding:6px 12px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit My Profile</button>
+    </div>
     <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Invite Code: <span style="color:var(--cyan);font-weight:700;letter-spacing:2px">${currentFamily.inviteCode}</span></div>
+    ${userDoc?.profile?.name ? `<div style="background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.2);border-radius:12px;padding:12px;margin-bottom:10px;font-size:12px;color:var(--gray);line-height:1.8">
+      👤 ${userDoc.profile.name} · 🎯 ${userDoc.profile.goal||"General health"} · 🍽️ ${userDoc.profile.diet||"Standard"}
+    </div>` : ""}
     <div style="display:flex;flex-wrap:wrap;gap:10px">${(currentFamily?.members||[]).map(m=>`<div style="background:var(--card2);border:1px solid ${m.color||"var(--border)"};border-radius:14px;padding:12px;text-align:center;min-width:80px"><div style="font-size:28px;margin-bottom:4px">${m.emoji||"🧑"}</div><div style="font-size:12px;font-weight:700">${m.name}</div><div style="font-size:9px;color:var(--gray)">${m.diet||"Standard"}</div></div>`).join("")}</div>
   </div>
   </div>`;
@@ -1720,6 +1726,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ── Make functions globally accessible (required for module scripts) ──
+async function resetProfile() {
+  await saveUserDoc({ profileComplete: false, profile: {} });
+  UI.onboardStep = 0;
+  UI.onboardData = {};
+  showToast("Profile reset! Let's set it up again 🧠", "success");
+  setTimeout(() => renderApp(), 800);
+}
+window.resetProfile = resetProfile;
 window.flipCard = flipCard;
 window.selectOnboardChoice = selectOnboardChoice;
 window.obNext = obNext;

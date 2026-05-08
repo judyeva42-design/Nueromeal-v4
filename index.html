@@ -563,7 +563,7 @@ function exportData() {
 function renderApp() {
   const _app = document.getElementById("app"); if(!_app) return;
   // Show onboarding for new users who haven't completed their profile
-  if (currentUser && userDoc && !userDoc.profileComplete) {
+  if (currentUser && userDoc && userDoc.profileComplete !== true) {
     renderOnboarding();
     return;
   }
@@ -1728,10 +1728,11 @@ document.addEventListener("DOMContentLoaded", () => {
 // ── Make functions globally accessible (required for module scripts) ──
 async function resetProfile() {
   await saveUserDoc({ profileComplete: false, profile: {} });
+  userDoc = { ...userDoc, profileComplete: false, profile: {} };
   UI.onboardStep = 0;
   UI.onboardData = {};
-  showToast("Profile reset! Let's set it up again 🧠", "success");
-  setTimeout(() => renderApp(), 800);
+  showToast("Opening profile setup... 🧠", "success");
+  setTimeout(() => renderOnboarding(), 500);
 }
 window.resetProfile = resetProfile;
 window.flipCard = flipCard;

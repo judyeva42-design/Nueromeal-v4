@@ -600,7 +600,7 @@ function renderTopBar() {
     <div style="display:flex;align-items:center;gap:8px">
       <div style="font-size:9px;font-weight:800;color:var(--gray);letter-spacing:1px">FAMILY</div>
       <div style="font-size:13px;font-weight:800;color:var(--cyan)">${fam?.name||"NeuroMeal"}</div>
-      ${fam ? `<div style="font-size:10px;color:var(--gray)">· ${fam?.members?.length||fam?.memberIds?.length||1} members</div>` : ""}
+      ${fam ? `<div style="font-size:10px;color:var(--gray)">· ${(fam?.members||[]).length||1} members</div>` : ""}
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
       ${currentUser ? `
@@ -1003,7 +1003,7 @@ function renderWellness() {
 function renderGame() {
   return `<div class="fu">
   <div class="st">🎮 Game Break</div>
-  <div style="display:flex;gap:8px;margin-bottom:16px">${["trivia","match"].map(g=>`<button onclick="UI.activeGame='${g}';renderMain()" style="flex:1;padding:10px;border-radius:12px;border:2px solid ${UI.activeGame===g?"var(--cyan)":"var(--border)"};background:${UI.activeGame===g?"rgba(105,201,208,.1)":"transparent"};cursor:pointer;font-size:13px;font-weight:700;color:${UI.activeGame===g?"var(--cyan)":"var(--gray)"};font-family:var(--fb)">${g==="trivia"?"🧠 Trivia":"🃏 Match"}</button>`).join("")}</div>
+  <div style="display:flex;gap:8px;margin-bottom:16px">${["trivia","match"].map(g=>`<button onclick="window.UI.activeGame='${g}';window.renderMain()" style="flex:1;padding:10px;border-radius:12px;border:2px solid ${UI.activeGame===g?"var(--cyan)":"var(--border)"};background:${UI.activeGame===g?"rgba(105,201,208,.1)":"transparent"};cursor:pointer;font-size:13px;font-weight:700;color:${UI.activeGame===g?"var(--cyan)":"var(--gray)"};font-family:var(--fb)">${g==="trivia"?"🧠 Trivia":"🃏 Match"}</button>`).join("")}</div>
   ${UI.activeGame==="trivia"?renderTrivia():renderMatch()}
   </div>`;
 }

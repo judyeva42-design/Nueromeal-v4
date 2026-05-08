@@ -1111,7 +1111,7 @@ function renderVideos() {
   const vids = currentFamily?.videos || [];
   return `<div class="fu">
   <div class="st">📹 Meal Videos</div>
-  ${currentUser&&currentFamily?`<button onclick="UI.showVideoForm=!UI.showVideoForm;renderMain()" class="btn btnp" style="width:100%;margin-bottom:14px;font-size:13px">${UI.showVideoForm?'✕ Cancel':'+ Share a Video'}</button>`:``}
+${currentUser&&currentFamily?<button onclick="window.UI.showVideoForm=!window.UI.showVideoForm;renderMain()" class="btn btnp" style="width:100%;margin-bottom:14px;font-size:13px">${window.UI.showVideoForm?‘✕ Cancel’:’+ Share a Video’}</button>:``}
   ${UI.showVideoForm&&currentUser&&currentFamily?`
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="font-family:var(--fd);font-size:15px;font-weight:800;margin-bottom:12px">Share a Video</div>

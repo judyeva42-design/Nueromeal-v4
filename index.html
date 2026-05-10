@@ -154,7 +154,7 @@ let unsubscribers = [];
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
-  showAdd:null, showMemEdit:null, showBudgetInput:false, editingMemberIdx:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
+  showAdd:null, showMemEdit:null, showBudgetInput:false, editingMemberIdx:null, expandedMember:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
   weSelected:[], weSugs:null,
   gathFams:[], gathOcc:null, gathResult:null,
   aiChat:[],
@@ -984,6 +984,48 @@ function bindFamilyMembers() {
   });
 
   // Remove member buttons
+  // Toggle member expand
+  document.querySelectorAll('[data-toggle-member]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const idx = parseInt(this.getAttribute('data-toggle-member'));
+      UI.expandedMember = UI.expandedMember === idx ? null : idx;
+      renderMain();
+    });
+  });
+
+  // Water logging
+  document.querySelectorAll('[data-water-add]').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const idx = parseInt(this.getAttribute('data-water-add'));
+      const amt = parseInt(this.getAttribute('data-water-amt'));
+      const member = (currentFamily?.hausMembers||[])[idx];
+      if (!member) return;
+      const today = new Date().toDateString();
+      const waterLog = JSON.parse(JSON.stringify(currentFamily?.waterLog || {}));
+      if (!waterLog[today]) waterLog[today] = {};
+      waterLog[today][member.name] = (waterLog[today][member.name] || 0) + amt;
+      await saveFamilyDoc({ waterLog });
+      if (currentFamily) currentFamily.waterLog = waterLog;
+      showToast(`💧 +${amt}oz for ${member.name}!`, 'success');
+      renderMain();
+    });
+  });
+
+  // Water reset
+  document.querySelectorAll('[data-water-reset]').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const idx = parseInt(this.getAttribute('data-water-reset'));
+      const member = (currentFamily?.hausMembers||[])[idx];
+      if (!member) return;
+      const today = new Date().toDateString();
+      const waterLog = JSON.parse(JSON.stringify(currentFamily?.waterLog || {}));
+      if (waterLog[today]) waterLog[today][member.name] = 0;
+      await saveFamilyDoc({ waterLog });
+      if (currentFamily) currentFamily.waterLog = waterLog;
+      renderMain();
+    });
+  });
+
   document.querySelectorAll('[data-edit-member]').forEach(btn => {
     btn.addEventListener('click', function() {
       UI.editingMemberIdx = parseInt(this.getAttribute('data-edit-member'));
@@ -1174,6 +1216,20 @@ function renderMain() {
     const code = document.getElementById('join-code-in')?.value?.trim();
     if (code) joinFamily(code);
     else showToast('Please enter an invite code!', 'warn');
+  });
+  // Share invite button
+  const shareInviteBtn = document.getElementById('share-invite-btn');
+  if (shareInviteBtn) shareInviteBtn.addEventListener('click', async function() {
+    const code = currentFamily?.inviteCode;
+    if (!code) return;
+    const msg = "Join my family on NeuroMeal! Use invite code: " + code + " at nueromeal.netlify.app";
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Join NeuroMeal!', text: msg }); } 
+      catch(e) { navigator.clipboard?.writeText(msg); showToast('Invite copied to clipboard! 📋', 'success'); }
+    } else {
+      navigator.clipboard?.writeText(msg);
+      showToast('Invite copied! Paste it anywhere to share 📋', 'success');
+    }
   });
   const editProfileBtn = document.getElementById('edit-my-profile-btn');
   if (editProfileBtn) editProfileBtn.addEventListener('click', function() {
@@ -2011,18 +2067,57 @@ function renderFamily() {
     </div>
     <div style="font-size:11px;color:var(--gray);margin-bottom:12px">Add family members who won't create their own account — kids, partners, anyone you cook for!</div>
     
-    ${hausMembers.length > 0 ? `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
-      ${hausMembers.map((m,i) => `<div style="display:flex;align-items:center;gap:10px;background:var(--card2);border-radius:12px;padding:10px 12px">
-        <div style="font-size:28px">${m.emoji||"🧑"}</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700">${m.name}</div>
-          <div style="font-size:10px;color:var(--gray)">${m.age ? m.age + " yrs · " : ""}${m.diet||"Standard"}${m.pickyEater ? " · 🙈 Picky" : ""}${m.goal ? " · " + m.goal : ""}${m.allergies ? " · ⚠️ " + m.allergies : ""}</div>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button data-edit-member="${i}" style="padding:4px 8px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit</button>
-          <button data-remove-member="${i}" style="padding:4px 8px;background:rgba(238,29,82,.1);border:1px solid rgba(238,29,82,.3);border-radius:8px;color:var(--pink);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">× Remove</button>
-        </div>
-      </div>`).join("")}
+    ${hausMembers.length > 0 ? `<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+      ${hausMembers.map((m,i) => {
+        const waterGoal = m.waterGoalOz || (m.age ? (parseInt(m.age)<9?40:parseInt(m.age)<14?56:parseInt(m.age)<18?64:80) : 64);
+        const waterLogged = (currentFamily?.waterLog||{})[new Date().toDateString()]?.[m.name] || 0;
+        const waterPct = Math.min(100, Math.round((waterLogged/waterGoal)*100));
+        const todayMeals = Object.entries(currentFamily?.weekPlan?.[UI.selDay]||{}).filter(([,v])=>v).map(([type,meal])=>`${type}: ${meal}`).join(" · ") || "No meals planned yet";
+        const expanded = (UI.expandedMember === i);
+        return `<div style="background:var(--card2);border-radius:14px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer" data-toggle-member="${i}">
+            <div style="font-size:28px">${m.emoji||"🧑"}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:800">${m.name}</div>
+              <div style="font-size:10px;color:var(--gray)">${m.age?"Age "+m.age+" · ":""}${m.diet||"Standard"}${m.pickyEater?" · 🙈 Picky":""}${m.goal?" · "+m.goal:""}</div>
+              ${m.allergies?`<div style="font-size:10px;color:var(--pink);margin-top:2px">⚠️ Allergic to: ${m.allergies}</div>`:""}
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <div style="font-size:10px;color:${waterPct>=100?"var(--green)":"var(--cyan)"}">💧${waterLogged}/${waterGoal}oz</div>
+              <div style="font-size:12px;color:var(--gray)">${expanded?"▲":"▼"}</div>
+            </div>
+          </div>
+          ${expanded?`<div style="padding:0 14px 14px;border-top:1px solid var(--border)">
+            <div style="margin-top:12px;margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px">💧 WATER TODAY</div>
+                <div style="font-size:10px;color:var(--gray)">${waterLogged} of ${waterGoal}oz (${waterPct}%)</div>
+              </div>
+              <div style="height:8px;background:var(--card);border-radius:4px;overflow:hidden;margin-bottom:8px">
+                <div style="height:100%;width:${waterPct}%;background:${waterPct>=100?"var(--green)":"linear-gradient(135deg,var(--cyan),var(--pink))"};border-radius:4px;transition:width .3s"></div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button data-water-add="${i}" data-water-amt="8" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+8oz</button>
+                <button data-water-add="${i}" data-water-amt="16" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+16oz</button>
+                <button data-water-add="${i}" data-water-amt="32" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+32oz</button>
+                ${waterLogged>0?`<button data-water-reset="${i}" style="padding:6px 8px;background:rgba(238,29,82,.1);border:1px solid rgba(238,29,82,.3);border-radius:8px;color:var(--pink);font-size:10px;cursor:pointer;font-family:var(--fb)">Reset</button>`:""}
+              </div>
+            </div>
+            <div style="margin-bottom:10px">
+              <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:4px">📅 TODAY'S MENU (${UI.selDay})</div>
+              <div style="font-size:11px;color:var(--white);line-height:1.6">${todayMeals}</div>
+            </div>
+            ${m.goal?`<div style="margin-bottom:10px;background:rgba(105,201,208,.07);border-radius:10px;padding:10px">
+              <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:4px">🎯 GOAL</div>
+              <div style="font-size:11px;color:var(--white)">${m.goal}</div>
+            </div>`:""}
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <button data-edit-member="${i}" style="flex:1;padding:8px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit Profile</button>
+              <button data-remove-member="${i}" style="padding:8px 12px;background:rgba(238,29,82,.1);border:1px solid rgba(238,29,82,.3);border-radius:8px;color:var(--pink);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">× Remove</button>
+            </div>
+          </div>`:""}
+        </div>`;
+      }).join("")}
     </div>` : `<div style="text-align:center;padding:20px;color:var(--gray);font-size:13px">No household members added yet</div>`}
   </div>
 

@@ -1485,10 +1485,14 @@ Continue for all 7 days. Keep each meal name short (under 5 words).`;
   UI.weeklyPlanData = parsed;
   const updatedChat = [...UI.aiChat, {role:"assistant", text:reply}];
   UI.aiChat = updatedChat;
-  // Save draft plan to Firestore
+  // Save draft plan to Firestore AND update local memory
   if (Object.keys(parsed).length > 0) {
-    await saveFamilyDoc({ weekPlanDraft: parsed });
+    await saveFamilyDoc({ weekPlanDraft: parsed, ariaChat: updatedChat.slice(-20).map(m=>({role:m.role,text:m.text.substring(0,500)})) });
+    // Force update currentFamily in memory so loadDraftPlan can read it
+    if (currentFamily) currentFamily.weekPlanDraft = parsed;
     showToast("✅ Plan ready! Go to Calendar tab to load it 📅", "success");
+  } else {
+    showToast("Aria generated a plan but could not parse the meals. Try asking again!", "warn");
   }
   renderMain();
 }

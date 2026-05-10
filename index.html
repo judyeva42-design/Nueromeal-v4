@@ -7,13 +7,39 @@
 <meta name="theme-color" content="#0a0a0f"/>
 <title>NeuroMeal v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot,
-  collection, addDoc, query, where, getDocs, arrayUnion, arrayRemove,
-  serverTimestamp, deleteDoc, orderBy, limit }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+// Helper functions to map modular Firebase API to compat API
+function doc(db, ...pathParts) {
+  let ref = db;
+  for (let i = 0; i < pathParts.length; i++) {
+    if (i % 2 === 0) ref = ref.collection(pathParts[i]);
+    else ref = ref.doc(pathParts[i]);
+  }
+  return ref;
+}
+function collection(db, path) { return db.collection(path); }
+function getDoc(ref) { return ref.get(); }
+function setDoc(ref, data, opts) { return opts && opts.merge ? ref.set(data, {merge:true}) : ref.set(data); }
+function updateDoc(ref, data) { return ref.update(data); }
+function deleteDoc(ref) { return ref.delete(); }
+function addDoc(ref, data) { return ref.add(data); }
+function onSnapshot(ref, cb) { return ref.onSnapshot(cb); }
+function getDocs(q) { return q.get ? q.get() : q; }
+function arrayUnion(...items) { return firebase.firestore.FieldValue.arrayUnion(...items); }
+function arrayRemove(...items) { return firebase.firestore.FieldValue.arrayRemove(...items); }
+function serverTimestamp() { return firebase.firestore.FieldValue.serverTimestamp(); }
+function onAuthStateChanged(auth, cb) { return auth.onAuthStateChanged(cb); }
+function signOut(auth) { return auth.signOut(); }
+
+// Query builder helpers
+function query(ref, ...fns) { let q = ref; fns.forEach(fn => { q = fn(q); }); return q; }
+function where(field, op, val) { return (ref) => ref.where(field, op, val); }
+function orderBy(field, dir) { return (ref) => ref.orderBy(field, dir||'asc'); }
+function limit(n) { return (ref) => ref.limit(n); }
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyBDpERr9gjGnHQcAB6LJqtt2_v2mFOk6KQ",
@@ -24,9 +50,9 @@ const firebaseConfig = {
   appId: "1:312886497937:web:12a21ed078f7b6260ce530",
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // ── Constants ──────────────────────────────────────────────
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
@@ -1671,11 +1697,6 @@ window.renderMain = renderMain;
 window.renderWardrobe = renderWardrobe;
 window.saveAvatarChanges = saveAvatarChanges;
 window.UI = UI;
-window.flipCard = flipCard;
-window.renderApp = renderApp;
-window.renderOnboarding = renderOnboarding;
-window.startEditProfile = startEditProfile;
-window.resetProfile = resetProfile;
 
 </script>
 <div id="app"></div>

@@ -202,6 +202,61 @@ async function handleSignOut() {
   }
 }
 
+// Assign all functions to window scope before app renders
+window.flipCard = flipCard;
+window.selectOnboardChoice = selectOnboardChoice;
+window.obNext = obNext;
+window.obBack = obBack;
+window.completeOnboarding = completeOnboarding;
+window.skipOnboarding = skipOnboarding;
+window.toggleVideoForm = toggleVideoForm;
+window.saveVideo = saveVideo;
+window.signInWithGoogle = signInWithGoogle;
+window.handleSignOut = handleSignOut;
+window.showGetActiveModal = showGetActiveModal;
+window.setTab = setTab;
+window.setDay = setDay;
+window.openAdd = openAdd;
+window.addMeal = addMeal;
+window.removeMeal = removeMeal;
+window.removeFromWeek = removeFromWeek;
+window.checkStep = checkStep;
+window.markCooked = markCooked;
+window.setDiet = setDiet;
+window.toggleCard = toggleCard;
+window.toggleAllCollapse = toggleAllCollapse;
+window.answerTrivia = answerTrivia;
+window.nextTrivia = nextTrivia;
+window.initMatch = initMatch;
+window.setGame = setGame;
+window.spinWheel = spinWheel;
+window.initMemory = initMemory;
+window.tapMemCard = tapMemCard;
+window.setWellness = setWellness;
+window.saveWellness = saveWellness;
+window.saveWeekSnapshot = saveWeekSnapshot;
+window.showInviteCode = showInviteCode;
+window.quickSnack = quickSnack;
+window.sendAIMsg = sendAIMsg;
+window.sendChatMsg = sendChatMsg;
+window.createFamily = createFamily;
+window.joinFamily = joinFamily;
+window.exportData = exportData;
+window.renderMain = renderMain;
+window.renderWardrobe = renderWardrobe;
+window.saveAvatarChanges = saveAvatarChanges;
+window.UI = UI;
+window.flipCard = flipCard;
+window.renderApp = renderApp;
+window.renderOnboarding = renderOnboarding;
+window.startEditProfile = startEditProfile;
+window.resetProfile = resetProfile;
+window.selectOnboardChoice = selectOnboardChoice;
+window.obNext = obNext;
+window.obBack = obBack;
+window.completeOnboarding = completeOnboarding;
+window.skipOnboarding = skipOnboarding;
+
 // Handle auth state changes
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -1625,58 +1680,9 @@ window.renderOnboarding = renderOnboarding;
 function startEditProfile() {
   UI.onboardStep = 0;
   UI.onboardData = {};
-  const app = document.getElementById("app");
-  if (app) renderOnboarding();
+  renderOnboarding();
 }
 window.startEditProfile = startEditProfile;
-window.flipCard = flipCard;
-window.selectOnboardChoice = selectOnboardChoice;
-window.obNext = obNext;
-window.flipCard = flipCard;
-window.resetProfile = resetProfile;  
-window.startEditProfile = startEditProfile;
-window.renderOnboarding = renderOnboarding;
-window.renderApp = renderApp;
-window.obBack = obBack;
-window.completeOnboarding = completeOnboarding;
-window.skipOnboarding = skipOnboarding;
-window.toggleVideoForm = toggleVideoForm;
-window.saveVideo = saveVideo;
-window.signInWithGoogle = signInWithGoogle;
-window.handleSignOut = handleSignOut;
-window.showGetActiveModal = showGetActiveModal;
-window.setTab = setTab;
-window.setDay = setDay;
-window.openAdd = openAdd;
-window.addMeal = addMeal;
-window.removeMeal = removeMeal;
-window.removeFromWeek = removeFromWeek;
-window.checkStep = checkStep;
-window.markCooked = markCooked;
-window.setDiet = setDiet;
-window.toggleCard = toggleCard;
-window.toggleAllCollapse = toggleAllCollapse;
-window.answerTrivia = answerTrivia;
-window.nextTrivia = nextTrivia;
-window.initMatch = initMatch;
-window.setGame = setGame;
-window.spinWheel = spinWheel;
-window.initMemory = initMemory;
-window.tapMemCard = tapMemCard;
-window.setWellness = setWellness;
-window.saveWellness = saveWellness;
-window.saveWeekSnapshot = saveWeekSnapshot;
-window.showInviteCode = showInviteCode;
-window.quickSnack = quickSnack;
-window.sendAIMsg = sendAIMsg;
-window.sendChatMsg = sendChatMsg;
-window.createFamily = createFamily;
-window.joinFamily = joinFamily;
-window.exportData = exportData;
-window.renderMain = renderMain;
-window.renderWardrobe = renderWardrobe;
-window.saveAvatarChanges = saveAvatarChanges;
-window.UI = UI;
 
 </script>
 <div id="app"></div>

@@ -162,7 +162,7 @@ let UI = {
   shareCode:null, importInput:"",
   tipsSearch:"",
   timerActive:false, timerSecs:0, timerTotal:0, timerInterval:null,
-  triviaIdx:0, triviaAns:null, triviaScore:0,
+  triviaIdx:0, triviaAns:null, triviaScore:0, aiTrivia:null, aiTriviaLoading:false, aiTriviaError:false,
   matchCards:[], matchFlipped:[], matchMatched:[], matchScore:0,
   spinResult:null,
   memCards:[], memFlipped:[], memMatched:[], memLocked:false,
@@ -977,6 +977,15 @@ function renderMain() {
   bindOnboard();
   // Attach family member buttons
   bindFamilyMembers();
+  // Attach trivia AI button
+  const newTriviaBtn = document.getElementById('new-trivia-btn');
+  if (newTriviaBtn) newTriviaBtn.addEventListener('click', generateAITrivia);
+  const nextTriviaBtn = document.getElementById('next-trivia-btn');
+  if (nextTriviaBtn) nextTriviaBtn.addEventListener('click', () => {
+    UI.aiTrivia = null;
+    UI.triviaAns = null;
+    generateAITrivia();
+  });
 }
 
 // ── Dashboard ──────────────────────────────────────────────
@@ -1288,13 +1297,99 @@ function renderGame() {
 function setGame(g) { UI.activeGame = g; renderMain(); }
 
 function renderTrivia() {
-  const q = TRIVIA_Q[UI.triviaIdx % TRIVIA_Q.length];
+  // Use AI trivia if available, otherwise fall back to static
+  const q = UI.aiTrivia || TRIVIA_Q[UI.triviaIdx % TRIVIA_Q.length];
+  const isAI = !!UI.aiTrivia;
+  
+  if (UI.aiTriviaLoading) return `<div class="card" style="padding:24px;text-align:center">
+    <div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🧠</div>
+    <div style="font-size:14px;color:var(--gray)">Aria is generating a question...</div>
+  </div>`;
+
   return `<div class="card" style="padding:18px">
-  <div style="font-size:11px;font-weight:700;color:var(--gray);margin-bottom:12px">QUESTION ${(UI.triviaIdx%TRIVIA_Q.length)+1} OF ${TRIVIA_Q.length} · Score: ${UI.triviaScore}</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;color:var(--gray)">Score: ${UI.triviaScore} ${isAI?"· 🧠 AI Question":""}</div>
+    <button id="new-trivia-btn" style="padding:5px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">✨ New AI Question</button>
+  </div>
   <div style="font-family:var(--fd);font-size:17px;font-weight:800;margin-bottom:18px;line-height:1.4;letter-spacing:-0.5px">${q.q}</div>
   <div style="display:flex;flex-direction:column;gap:8px">${q.opts.map((o,i)=>`<button onclick="answerTrivia(${i})" style="padding:13px 16px;border-radius:12px;border:2px solid ${UI.triviaAns===null?"var(--border)":i===q.ans?"var(--green)":UI.triviaAns===i?"var(--pink)":"var(--border)"};background:${UI.triviaAns===null?"transparent":i===q.ans?"rgba(74,222,128,.1)":UI.triviaAns===i?"rgba(238,29,82,.1)":"transparent"};cursor:pointer;text-align:left;font-size:13px;font-weight:600;color:var(--white);font-family:var(--fb)">${o}</button>`).join("")}</div>
-  ${UI.triviaAns!==null?`<div style="margin-top:14px;padding:12px;border-radius:10px;background:rgba(105,201,208,.07);font-size:12px;line-height:1.5">${q.exp}<br/><button onclick="nextTrivia()" style="margin-top:8px;padding:10px 20px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;cursor:pointer;font-family:var(--fd);font-size:13px">Next Question</button></div>`:""}
+  ${UI.triviaAns!==null?`<div style="margin-top:14px;padding:12px;border-radius:10px;background:rgba(105,201,208,.07);font-size:12px;line-height:1.5">${q.exp}<br/><button id="next-trivia-btn" style="margin-top:8px;padding:10px 20px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;cursor:pointer;font-family:var(--fd);font-size:13px">Next Question ✨</button></div>`:""}
   </div>`;
+}
+
+
+async function generateWeeklyPlan() {
+  if (!currentUser || !currentFamily) return;
+  const profile = userDoc?.profile || {};
+  const hausMembers = currentFamily?.hausMembers || [];
+  const hausSize = hausMembers.length + 1;
+  
+  UI.aiLoading = true;
+  UI.aiChat = [...UI.aiChat, {role:"user", text:"✨ Generate a full week of meals for my family!"}];
+  renderMain();
+
+  const memberList = hausMembers.length > 0 
+    ? hausMembers.map(m=>`${m.name}${m.pickyEater?" (picky)":""}${m.diet&&m.diet!=="Standard"?", "+m.diet:""}`).join(", ")
+    : "just me";
+  
+  const prompt = `Create a 7-day family meal plan for ${hausSize} people.
+Family: ${memberList}
+Primary diet: ${profile.diet||"Standard"}
+Goal: ${profile.goal||"General health"}
+Foods to avoid: ${profile.avoid||"none"}
+
+Provide breakfast, lunch, dinner, and one snack for each day Mon-Sun.
+Keep meals simple, family-friendly, and varied.
+For picky eaters suggest simple modifications.
+Format as a clean list like:
+**Monday**
+🌅 Breakfast: [meal]
+☀️ Lunch: [meal]  
+🌙 Dinner: [meal]
+🍎 Snack: [meal]
+
+Continue for all 7 days. Keep each meal name short (under 5 words).`;
+
+  const reply = await callAI([{role:"user",content:prompt}], `You are Aria, a family meal planning AI. Create practical, simple meal plans for families. Keep meal names concise.`);
+  
+  UI.aiLoading = false;
+  UI.aiChat = [...UI.aiChat, {role:"assistant", text:reply}];
+  renderMain();
+}
+
+async function generateAITrivia() {
+  UI.aiTriviaLoading = true;
+  UI.triviaAns = null;
+  renderMain();
+  const profile = userDoc?.profile || {};
+  const diet = profile.diet || 'Standard';
+  const prompt = `Generate a fun nutrition or food trivia question. Make it relevant to ${diet} diet if possible. 
+Respond ONLY with valid JSON in this exact format, no other text:
+{"q":"question here","opts":["option A","option B","option C","option D"],"ans":0,"exp":"explanation here"}
+The "ans" field is the index (0-3) of the correct answer. Make it educational and fun!`;
+  
+  try {
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        messages: [{role:'user', content: prompt}],
+        system: 'You are a nutrition trivia expert. Always respond with valid JSON only, no markdown, no explanation outside the JSON.'
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+    const clean = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    UI.aiTrivia = parsed;
+  } catch(e) {
+    // Fall back to static question
+    UI.triviaIdx++;
+    UI.aiTrivia = null;
+    showToast('Using classic question!', 'success');
+  }
+  UI.aiTriviaLoading = false;
+  renderMain();
 }
 
 function renderSpinner() {
@@ -1524,8 +1619,12 @@ function renderAI() {
     ? [{role:"assistant", text: getAriaGreeting()}]
     : UI.aiChat;
 
+  const hausSize = (currentFamily?.hausMembers||[]).length + 1;
   return `<div class="fu" style="display:flex;flex-direction:column;height:calc(100vh-200px)">
-  <div class="st">🧠 Aria</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div class="st" style="margin-bottom:0">🧠 Aria</div>
+    <button id="aria-meal-plan-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">✨ Plan My Week</button>
+  </div>
   <div id="ai-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
     ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="margin-top:6px;padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button>`:""}    </div></div>`).join("")}
     ${UI.aiLoading?`<div style="display:flex;gap:8px;align-items:center"><div style="width:32px;height:32px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center">🤖</div><div style="padding:12px 16px;background:var(--card);border-radius:18px;font-size:13px;color:var(--gray)">Thinking...</div></div>`:""}
@@ -1618,6 +1717,10 @@ function bindAI() {
   if (srvMinus) srvMinus.addEventListener("click", () => { UI.ariaServings = Math.max(1, (UI.ariaServings||4) - 1); renderMain(); });
   const srvPlus = document.getElementById("srv-plus");
   if (srvPlus) srvPlus.addEventListener("click", () => { UI.ariaServings = Math.min(20, (UI.ariaServings||4) + 1); renderMain(); });
+
+  // Plan My Week button
+  const planBtn = document.getElementById("aria-meal-plan-btn");
+  if (planBtn) planBtn.addEventListener("click", generateWeeklyPlan);
 
   // Confirm add to calendar
   const confirmBtn = document.getElementById("aria-cal-confirm");

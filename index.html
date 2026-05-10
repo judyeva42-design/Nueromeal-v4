@@ -1518,7 +1518,47 @@ async function sendAIMsg() {
   UI.aiLoading = true;
   if (input) input.value = "";
   renderMain();
-  const reply = await callAI(UI.aiChat.map(m=>({role:m.role,content:m.text})), "You are NeuroMeal AI, a helpful meal planning assistant for AuDHD families. Be warm, practical, and encouraging. Keep responses concise.");
+  // Build rich system prompt with all family data
+  const myProfile = userDoc?.profile || {};
+  const hausMembers = currentFamily?.hausMembers || [];
+  const weekPlan = currentFamily?.weekPlan || {};
+  
+  const familyContext = hausMembers.length > 0 ? `
+HOUSEHOLD MEMBERS:
+${hausMembers.map(m => `- ${m.name}${m.age ? ", age " + m.age : ""}${m.diet && m.diet !== "Standard" ? ", diet: " + m.diet : ""}${m.avoid ? ", avoid: " + m.avoid : ""}${m.pickyEater ? " (PICKY EATER)" : ""}`).join("\n")}` : "";
+
+  const profileContext = myProfile.name ? `
+USER PROFILE:
+- Name: ${myProfile.name}
+- Age: ${myProfile.age || "not specified"}
+- Diet: ${myProfile.diet || "Standard"}
+- Goal: ${myProfile.goal || "General health"}
+- Activity: ${myProfile.activity || "not specified"}
+- Foods to avoid: ${myProfile.avoid || "none"}
+- Favorite foods: ${myProfile.loves || "not specified"}
+- Picky eater situation: ${myProfile.pickyEater || "not specified"}
+${myProfile.diet === "GLP-1" ? "- NOTE: User is on GLP-1 medication (Ozempic/Wegovy/Mounjaro) - prioritize high protein, smaller portions, low sugar meals" : ""}` : "";
+
+  const mealContext = Object.keys(weekPlan).length > 0 ? `
+THIS WEEK'S MEALS: ${Object.entries(weekPlan).map(([day, meals]) => 
+  Object.entries(meals || {}).filter(([,v])=>v).map(([type, meal]) => `${day} ${type}: ${meal}`).join(", ")
+).filter(Boolean).join("; ")}` : "";
+
+  const systemPrompt = `You are Aria, the NeuroMeal AI — a warm, encouraging meal planning assistant built specifically for AuDHD families. You are practical, never judgmental, and understand that feeding a family with different needs and limited executive function is genuinely hard.
+${profileContext}
+${familyContext}
+${mealContext}
+
+GUIDELINES:
+- Always consider ALL household members when suggesting meals
+- Flag if a suggestion contains ingredients anyone should avoid
+- For picky eaters, suggest ways to modify meals or hide vegetables
+- For GLP-1 users, prioritize high protein, smaller portions, low sugar
+- Keep responses warm, concise, and actionable
+- Use emojis sparingly but warmly
+- When asked "Who's Eating?", suggest one meal that works for everyone`;
+
+  const reply = await callAI(UI.aiChat.map(m=>({role:m.role,content:m.text})), systemPrompt);
   UI.aiLoading = false;
   UI.aiChat.push({role:"assistant",text:reply});
   renderMain();

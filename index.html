@@ -40,7 +40,6 @@ const DIET_T = {
   "Gluten-Free": {protein:130,carbs:200,fat:65,fiber:22,calories:2000,fruits:2,vegetables:3,dairy:2,grains:4},
   "Dairy-Free":  {protein:130,carbs:250,fat:60,fiber:28,calories:2000,fruits:2,vegetables:3,dairy:0,grains:6},
   "Paleo":       {protein:160,carbs:100,fat:100,fiber:20,calories:2000,fruits:2,vegetables:5,dairy:0,grains:0},
-  "GLP-1":      {protein:180,carbs:100,fat:60,fiber:25,calories:1400,fruits:2,vegetables:5,dairy:1,grains:1},
 };
 const DIET_C = {Standard:"#69C9D0",Keto:"#fb923c",Mediterranean:"#4ade80",Vegetarian:"#a78bfa",Vegan:"#34d399","Gluten-Free":"#facc15","Dairy-Free":"#60a5fa",Paleo:"#f97316"};
 const OCCASIONS = ["🎂 Birthday","🤒 Sick Day","🎉 Treat Night","🏃 Active Day","❄️ Cozy Night","🌿 Health Reset","👨‍👩‍👧 Family Night","🎃 Holiday"];
@@ -165,11 +164,8 @@ let UI = {
   timerActive:false, timerSecs:0, timerTotal:0, timerInterval:null,
   triviaIdx:0, triviaAns:null, triviaScore:0,
   matchCards:[], matchFlipped:[], matchMatched:[], matchScore:0,
-  spinnerResult:null, spinnerSpinning:false,
-  memoryCards:[], memoryFlipped:[], memoryMatched:[], memoryLocked:false,
   spinResult:null,
   memCards:[], memFlipped:[], memMatched:[], memLocked:false,
-  onboardStep:0, onboardData:{},
   todayWellness:{energy:null,stress:null,selfCare:null,water:null},
   showChallengeForm:false,
   activeGame:"trivia",
@@ -392,8 +388,6 @@ async function initUserSession(user) {
       cookedMeals: {},
       checkedSteps: {},
       familyIds: [],
-      profileComplete: false,
-      profile: {},
       createdAt: serverTimestamp(),
     };
     await setDoc(userRef, userDoc);
@@ -562,7 +556,6 @@ function exportData() {
 // ── Render ─────────────────────────────────────────────────
 function renderApp() {
   const _app = document.getElementById("app"); if(!_app) return;
-
   _app.innerHTML = `
   <div class="shell">
     <div class="topbar" id="topbar"></div>
@@ -574,168 +567,6 @@ function renderApp() {
   renderHeader();
   renderNav();
   renderMain();
-}
-
-function renderOnboarding() {
-  const _app = document.getElementById("app"); if(!_app) return;
-  _app.innerHTML = `
-  <div style="min-height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
-    <div style="max-width:440px;width:100%">
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:24px;margin-bottom:16px">
-        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:20px">
-          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🧠</div>
-          <div style="background:var(--card2);border-radius:18px 18px 18px 4px;padding:14px 16px;flex:1">
-            <div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:4px">NORI SAYS</div>
-            <div style="font-size:13px;line-height:1.6;color:var(--white)">Hey superstar! Let's set up your profile so Aria can personalize everything for you! Fill in as much or as little as you want. 🧠✨</div>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div>
-            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">YOUR NAME</div>
-            <input id="ob-name" placeholder="What do we call you?" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
-          </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">AGE</div>
-            <input id="ob-age" type="number" placeholder="How many trips around the sun? 🌍" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
-          </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">DIET TYPE</div>
-            <select id="ob-diet" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none;box-sizing:border-box">
-              <option value="Standard">🥗 Standard (I eat pretty much everything)</option>
-              <option value="Keto">🥩 Keto (low carb, high fat)</option>
-              <option value="Vegan">🌿 Vegan (plant-based all the way)</option>
-              <option value="Vegetarian">🐟 Vegetarian</option>
-              <option value="Mediterranean">🫙 Mediterranean</option>
-              <option value="Gluten-Free">🚫🌾 Gluten-Free</option>
-              <option value="Dairy-Free">🥛 Dairy-Free</option>
-              <option value="Paleo">🦴 Paleo</option>
-              <option value="GLP-1">💉 GLP-1 (Ozempic/Wegovy/Mounjaro)</option>
-            </select>
-          </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">MAIN GOAL</div>
-            <select id="ob-goal" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none;box-sizing:border-box">
-              <option value="General health">🌱 Just eat better overall</option>
-              <option value="Lose weight">⚖️ Lose weight</option>
-              <option value="Build muscle">💪 Build muscle</option>
-              <option value="More energy">🔋 More energy</option>
-              <option value="AuDHD/ADHD">🧠 Brain-friendly eating (AuDHD/ADHD)</option>
-              <option value="Health condition">❤️ Managing a health condition</option>
-            </select>
-          </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">FOODS TO AVOID (optional)</div>
-            <input id="ob-avoid" placeholder="e.g. mushrooms, shellfish, cilantro..." style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
-          </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">FAVORITE FOODS (optional)</div>
-            <input id="ob-loves" placeholder="e.g. pasta, tacos, avocado..." style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
-          </div>
-        </div>
-      </div>
-      <button id="ob-save-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:10px">Save My Profile! 🚀</button>
-      <button id="ob-skip-btn" style="width:100%;padding:10px;background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:11px;font-family:var(--fb)">Skip for now</button>
-    </div>
-  </div>`;
-
-  // Attach event listeners directly - no onclick needed
-  document.getElementById('ob-save-btn').addEventListener('click', async function() {
-    const name = document.getElementById('ob-name').value.trim();
-    const age = document.getElementById('ob-age').value.trim();
-    const diet = document.getElementById('ob-diet').value;
-    const goal = document.getElementById('ob-goal').value;
-    const avoid = document.getElementById('ob-avoid').value.trim();
-    const loves = document.getElementById('ob-loves').value.trim();
-    const profile = { name: name || currentUser?.displayName || 'User', age, diet, goal, avoid, loves };
-    await saveUserDoc({ profileComplete: true, profile, name: profile.name });
-    window.location.reload();
-  });
-
-  document.getElementById('ob-skip-btn').addEventListener('click', async function() {
-    await saveUserDoc({ profileComplete: true, profile: {} });
-    window.location.reload();
-  });
-}
-
-
-function selectOnboardChoice(field, value, btn) {
-  if (!UI.onboardData) UI.onboardData = {};
-  UI.onboardData[field] = value;
-  // Update button styles without re-render for smooth feel
-  const parent = btn.parentElement;
-  parent.querySelectorAll('button').forEach(b => {
-    b.style.borderColor = 'var(--border)';
-    b.style.background = 'transparent';
-  });
-  btn.style.borderColor = 'var(--cyan)';
-  btn.style.background = 'rgba(105,201,208,.1)';
-}
-
-function obNext() {
-  if (!UI.onboardData) UI.onboardData = {};
-  const step = UI.onboardStep || 0;
-  // Save any text input values
-  const input = document.getElementById('ob-input');
-  if (input) {
-    const steps = ['','name','age','sex','heights','activity','goal','diet','avoid','loves','pickyEater','fridgeVibes'];
-    const fieldMap = {1:'name',2:'age',8:'avoid',9:'loves'};
-    if (fieldMap[step]) UI.onboardData[fieldMap[step]] = input.value;
-  }
-  const hInput = document.getElementById('ob-input-height');
-  const wInput = document.getElementById('ob-input-weight');
-  if (hInput) UI.onboardData.height = hInput.value;
-  if (wInput) UI.onboardData.weight = wInput.value;
-  UI.onboardStep = step + 1;
-  renderOnboarding();
-}
-
-function obBack() {
-  UI.onboardStep = Math.max(0, (UI.onboardStep || 0) - 1);
-  renderOnboarding();
-}
-
-async function completeOnboarding() {
-  if (!currentUser || !userDoc) return;
-  const data = UI.onboardData || {};
-  // Map diet choice to app diet type
-  const dietMap = {
-    '🥗 Standard (I eat pretty much everything)': 'Standard',
-    '🥩 Keto (low carb, high fat)': 'Keto',
-    '🌿 Vegan (plant-based all the way)': 'Vegan',
-    '🐟 Vegetarian (plants + maybe dairy/eggs)': 'Vegetarian',
-    '🫙 Mediterranean (olive oil and vibes)': 'Mediterranean',
-    '🚫🌾 Gluten-Free': 'Gluten-Free',
-    '🥛 Dairy-Free': 'Dairy-Free',
-    '🦴 Paleo': 'Paleo',
-    '💉 GLP-1 (Ozempic/Wegovy/Mounjaro user)': 'GLP-1',
-  };
-  const profile = {
-    name: data.name || currentUser.displayName || 'User',
-    age: data.age || '',
-    sex: data.sex || '',
-    height: data.height || '',
-    weight: data.weight || '',
-    activity: data.activity || '',
-    goal: data.goal || '',
-    diet: dietMap[data.diet] || 'Standard',
-    avoid: data.avoid || '',
-    loves: data.loves || '',
-    pickyEater: data.pickyEater || '',
-    fridgeVibes: data.fridgeVibes || '',
-  };
-  await saveUserDoc({ profileComplete: true, profile, name: profile.name });
-  UI.onboardStep = 0;
-  UI.onboardData = {};
-  addXP(50);
-  showToast('Profile complete! +50 XP 🎉', 'success');
-  renderApp();
-}
-
-async function skipOnboarding() {
-  await saveUserDoc({ profileComplete: true, profile: {} });
-  UI.onboardStep = 0;
-  UI.onboardData = {};
-  renderApp();
 }
 
 function renderFamilySetup() {
@@ -925,7 +756,6 @@ function renderDash() {
 
   return `<div class="fu">
   <div style="padding:14px 16px;border-radius:16px;background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.18);font-size:13px;line-height:1.7;color:var(--white);margin-bottom:16px">${motivationMsg}</div>
-  ${!userDoc?.profile?.name ? `<button onclick="window.startEditProfile()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:14px;animation:pulse 2s ease infinite">🧠 Set Up My Profile — Help Aria Know You!</button>` : ""}
   <div class="sgrid">
     ${[{l:"MEALS PLANNED",v:ws.meals,i:"🍽️",c:"var(--cyan)"},{l:"WEEKLY COST",v:"$"+totalCost().toFixed(2),i:"💰",c:"var(--yellow)"},{l:"MEALS COOKED",v:ws.cooked,i:"✅",c:"var(--green)"},{l:"TOTAL XP",v:userDoc?.xp||0,i:"⚡",c:"var(--pink)"}].map(s=>`<div class="sc"><div class="si">${s.i}</div><div class="sv" style="color:${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join("")}
   </div>
@@ -1214,7 +1044,7 @@ function renderSpinner() {
   <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px">🎯 Nutrition Challenge Spinner</div>
   <div style="width:140px;height:140px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:0 0 30px rgba(105,201,208,.3);transition:transform .3s ease" id="spinner-wheel">${result?result.emoji:"🎯"}</div>
   ${result?`<div style="background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${result.text}</div></div>`:"<div style='font-size:13px;color:var(--gray);margin-bottom:16px'>Spin to get your nutrition challenge!</div>"}
-  <button onclick="window.spinWheel()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${result?"🔄 Spin Again!":"🎯 Spin!"}</button>
+  <button onclick="spinWheel()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${result?"🔄 Spin Again!":"🎯 Spin!"}</button>
   </div>`;
 }
 
@@ -1245,16 +1075,16 @@ function renderMemory() {
   return `<div class="card" style="padding:16px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div style="font-size:12px;font-weight:700;color:var(--gray)">Tap pairs to match! Matches: ${Math.floor((UI.memMatched||[]).length/2)}</div>
-    <button onclick="window.initMemory()" style="font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--gray);cursor:pointer;font-family:var(--fb)">Reset</button>
+    <button onclick="initMemory()" style="font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--gray);cursor:pointer;font-family:var(--fb)">Reset</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
     ${cards.map((card,i)=>{
       const isMatched = (UI.memMatched||[]).includes(i);
       const isFlipped = (UI.memFlipped||[]).includes(i);
-      return `<button onclick="window.tapMemCard(${i})" style="height:64px;border-radius:12px;border:2px solid ${isMatched?"var(--green)":isFlipped?"var(--cyan)":"var(--border)"};background:${isMatched?"rgba(74,222,128,.1)":isFlipped?"rgba(105,201,208,.1)":"var(--card2)"};cursor:pointer;font-size:${isMatched||isFlipped?"28px":"22px"};transition:all .2s ease">${isMatched||isFlipped?card.emoji:"❓"}</button>`;
+      return `<button onclick="tapMemCard(${i})" style="height:64px;border-radius:12px;border:2px solid ${isMatched?"var(--green)":isFlipped?"var(--cyan)":"var(--border)"};background:${isMatched?"rgba(74,222,128,.1)":isFlipped?"rgba(105,201,208,.1)":"var(--card2)"};cursor:pointer;font-size:${isMatched||isFlipped?"28px":"22px"};transition:all .2s ease">${isMatched||isFlipped?card.emoji:"❓"}</button>`;
     }).join("")}
   </div>
-  ${(UI.memMatched||[]).length===cards.length&&cards.length>0?`<div style="text-align:center;margin-top:14px"><div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">🎉 You matched everything!</div><button onclick="window.initMemory()" class="btn btnp">Play Again</button></div>`:""}
+  ${(UI.memMatched||[]).length===cards.length&&cards.length>0?`<div style="text-align:center;margin-top:14px"><div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">🎉 You matched everything!</div><button onclick="initMemory()" class="btn btnp">Play Again</button></div>`:""}
   </div>`;
 }
 
@@ -1317,14 +1147,8 @@ function renderFamily() {
   return `<div class="fu">
   <div class="st">👨‍👩‍👧 Family Hub</div>
   <div class="card" style="padding:16px;margin-bottom:14px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px">${currentFamily.name}</div>
-      <button onclick="window.startEditProfile()" style="padding:6px 12px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit My Profile</button>
-    </div>
+    <div style="font-family:var(--fd);font-size:15px;font-weight:800;margin-bottom:12px;letter-spacing:-0.5px">${currentFamily.name}</div>
     <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Invite Code: <span style="color:var(--cyan);font-weight:700;letter-spacing:2px">${currentFamily.inviteCode}</span></div>
-    ${userDoc?.profile?.name ? `<div style="background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.2);border-radius:12px;padding:12px;margin-bottom:10px;font-size:12px;color:var(--gray);line-height:1.8">
-      👤 ${userDoc.profile.name} · 🎯 ${userDoc.profile.goal||"General health"} · 🍽️ ${userDoc.profile.diet||"Standard"}
-    </div>` : ""}
     <div style="display:flex;flex-wrap:wrap;gap:10px">${(currentFamily?.members||[]).map(m=>`<div style="background:var(--card2);border:1px solid ${m.color||"var(--border)"};border-radius:14px;padding:12px;text-align:center;min-width:80px"><div style="font-size:28px;margin-bottom:4px">${m.emoji||"🧑"}</div><div style="font-size:12px;font-weight:700">${m.name}</div><div style="font-size:9px;color:var(--gray)">${m.diet||"Standard"}</div></div>`).join("")}</div>
   </div>
   </div>`;
@@ -1552,7 +1376,37 @@ function nextTrivia() {
   renderMain();
 }
 
-// Memory and Spinner games replace old match game
+function initMatch() {
+  const items = [
+    {emoji:"🥦",pair:"broccoli"},{emoji:"🥦",pair:"broccoli"},
+    {emoji:"🍎",pair:"apple"},{emoji:"🍎",pair:"apple"},
+    {emoji:"🧀",pair:"cheese"},{emoji:"🧀",pair:"cheese"},
+    {emoji:"🥕",pair:"carrot"},{emoji:"🥕",pair:"carrot"},
+  ];
+  UI.matchCards = items.sort(() => Math.random() - 0.5);
+  UI.matchFlipped = [];
+  UI.matchMatched = [];
+  UI.matchScore = 0;
+}
+
+function flipCard(idx) {
+  if (UI.matchMatched.includes(idx) || UI.matchFlipped.includes(idx)) return;
+  if (UI.matchFlipped.length >= 2) { UI.matchFlipped = []; renderMain(); return; }
+  UI.matchFlipped = [...UI.matchFlipped, idx];
+  renderMain();
+  if (UI.matchFlipped.length === 2) {
+    const [a,b] = UI.matchFlipped;
+    if (UI.matchCards[a].pair === UI.matchCards[b].pair) {
+      UI.matchMatched = [...UI.matchMatched, a, b];
+      UI.matchFlipped = [];
+      UI.matchScore++;
+      if (UI.matchMatched.length === UI.matchCards.length) { addXP(20); showToast("+20 XP! All matched! 🎉", "success"); }
+      renderMain();
+    } else {
+      setTimeout(() => { UI.matchFlipped = []; renderMain(); }, 900);
+    }
+  }
+}
 
 function setWellness(key, val) {
   UI.todayWellness[key] = val;
@@ -1612,28 +1466,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ── Make functions globally accessible (required for module scripts) ──
-async function resetProfile() {
-  await saveUserDoc({ profileComplete: false, profile: {} });
-  userDoc = { ...userDoc, profileComplete: false, profile: {} };
-  UI.onboardStep = 0;
-  UI.onboardData = {};
-  showToast("Opening profile setup... 🧠", "success");
-  setTimeout(() => renderOnboarding(), 500);
-}
-window.resetProfile = resetProfile;
-window.renderOnboarding = renderOnboarding;
-function startEditProfile() {
-  UI.onboardStep = 0;
-  UI.onboardData = {};
-  renderOnboarding();
-}
-window.startEditProfile = startEditProfile;
-window.flipCard = flipCard;
-window.selectOnboardChoice = selectOnboardChoice;
-window.obNext = obNext;
-window.obBack = obBack;
-window.completeOnboarding = completeOnboarding;
-window.skipOnboarding = skipOnboarding;
 window.toggleVideoForm = toggleVideoForm;
 window.saveVideo = saveVideo;
 window.signInWithGoogle = signInWithGoogle;
@@ -1783,7 +1615,6 @@ body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:10
 @keyframes glow{0%,100%{filter:drop-shadow(0 0 8px rgba(105,201,208,.6))}50%{filter:drop-shadow(0 0 20px rgba(238,29,82,.6))}}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(105,201,208,.4)}50%{box-shadow:0 0 0 8px rgba(105,201,208,0)}}
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 </style>
 </body>

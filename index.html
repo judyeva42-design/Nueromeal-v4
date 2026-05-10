@@ -164,8 +164,8 @@ let UI = {
   timerActive:false, timerSecs:0, timerTotal:0, timerInterval:null,
   triviaIdx:0, triviaAns:null, triviaScore:0, aiTrivia:null, aiTriviaLoading:false, aiTriviaError:false,
   matchCards:[], matchFlipped:[], matchMatched:[], matchScore:0,
-  spinResult:null,
-  memCards:[], memFlipped:[], memMatched:[], memLocked:false,
+  spinResult:null, spinLoading:false,
+  memCards:[], memFlipped:[], memMatched:[], memLocked:false, memLoading:false,
   todayWellness:{energy:null,stress:null,selfCare:null,water:null},
   showChallengeForm:false,
   activeGame:"trivia",
@@ -666,7 +666,7 @@ function renderNav() {
     {id:"ai",icon:"🧠",label:"Aria"},
     {id:"chat",icon:"💬",label:"Chat"},
     {id:"videos",icon:"📹",label:"Videos"},
-    {id:"tips",icon:"📖",label:"Recipes"},
+    {id:"tips",icon:"📖",label:"Saved"},
   ];
   document.getElementById("nav").innerHTML = `<div class="navi">${tabs.map(t=>`<button class="nt ${UI.tab===t.id?"active":""}" onclick="setTab('${t.id}')">${t.icon}<span class="ntl">${t.label}</span>${t.b?`<span class="nbadge">${t.b}</span>`:""}</button>`).join("")}</div>`;
 }
@@ -938,36 +938,6 @@ function bindFamilyMembers() {
     renderMain();
   });
 
-  // Go to Aria button from recipes tab
-  const ariaBtn = document.getElementById('go-to-aria-btn');
-  if (ariaBtn) ariaBtn.addEventListener('click', () => { UI.tab = 'ai'; renderMain(); });
-
-  // Delete saved recipe
-  document.querySelectorAll('[data-delete-recipe]').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      const idx = parseInt(this.getAttribute('data-delete-recipe'));
-      const savedRecipes = [...(currentFamily?.savedRecipes||[])];
-      const removed = savedRecipes.splice(idx, 1)[0];
-      await saveFamilyDoc({ savedRecipes });
-      showToast(`Removed "${removed.name}"`, 'success');
-      renderMain();
-    });
-  });
-
-  // Add saved recipe to calendar
-  document.querySelectorAll('[data-add-recipe]').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const idx = parseInt(this.getAttribute('data-add-recipe'));
-      const saved = currentFamily?.savedRecipes || [];
-      UI.ariaAddMeal = saved[idx]?.name || '';
-      UI.showAriaCalModal = true;
-      const hausSize = (currentFamily?.hausMembers||[]).length + 1;
-      UI.ariaServings = hausSize > 1 ? hausSize : 4;
-      UI.tab = 'ai';
-      renderMain();
-    });
-  });
-
   // Remove member buttons
   document.querySelectorAll('[data-remove-member]').forEach(btn => {
     btn.addEventListener('click', async function() {
@@ -1007,6 +977,47 @@ function renderMain() {
   bindOnboard();
   // Attach family member buttons
   bindFamilyMembers();
+  // Save recipe buttons in Aria
+  document.querySelectorAll('[data-save-recipe]').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const idx = parseInt(this.getAttribute('data-save-recipe'));
+      const text = decodeURIComponent(this.getAttribute('data-save-text')||'');
+      const lines = text.split('\n').map(l=>l.replace(/[*#]/g,'').trim()).filter(Boolean);
+      const name = lines.find(l=>l.length>3&&l.length<60&&!l.startsWith('-'))||'Aria Recipe';
+      const hausSize = (currentFamily?.hausMembers||[]).length + 1;
+      const recipe = { name, notes: text.substring(0,300), servings: hausSize, savedAt: new Date().toISOString() };
+      const savedRecipes = [...(currentFamily?.savedRecipes||[]), recipe];
+      await saveFamilyDoc({ savedRecipes });
+      showToast(`🔖 "${name}" saved to your cookbook!`, 'success');
+      renderMain();
+    });
+  });
+
+  // Unsave recipe buttons
+  document.querySelectorAll('[data-unsave]').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const idx = parseInt(this.getAttribute('data-unsave'));
+      const savedRecipes = [...(currentFamily?.savedRecipes||[])];
+      const removed = savedRecipes.splice(idx, 1)[0];
+      await saveFamilyDoc({ savedRecipes });
+      showToast(`"${removed.name}" removed`, 'success');
+      renderMain();
+    });
+  });
+
+  // Add saved recipe to calendar
+  document.querySelectorAll('[data-add-saved]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const idx = parseInt(this.getAttribute('data-add-saved'));
+      const saved = currentFamily?.savedRecipes || [];
+      UI.ariaAddMeal = saved[idx]?.name || '';
+      UI.showAriaCalModal = true;
+      const hausSize = (currentFamily?.hausMembers||[]).length + 1;
+      UI.ariaServings = hausSize > 1 ? hausSize : 4;
+      renderMain();
+    });
+  });
+
   // Attach trivia AI button
   const newTriviaBtn = document.getElementById('new-trivia-btn');
   if (newTriviaBtn) newTriviaBtn.addEventListener('click', generateAITrivia);
@@ -1016,6 +1027,12 @@ function renderMain() {
     UI.triviaAns = null;
     generateAITrivia();
   });
+  // Spinner button
+  const spinBtn = document.getElementById('spin-btn');
+  if (spinBtn) spinBtn.addEventListener('click', spinWheel);
+  // Memory reset button
+  const memResetBtn = document.getElementById('mem-reset-btn');
+  if (memResetBtn) memResetBtn.addEventListener('click', initMemory);
 }
 
 // ── Dashboard ──────────────────────────────────────────────
@@ -1423,55 +1440,65 @@ The "ans" field is the index (0-3) of the correct answer. Make it educational an
 }
 
 function renderSpinner() {
-  const challenges = [
-    {emoji:"🥦",text:"Add a veggie to dinner tonight!"},
-    {emoji:"💧",text:"Drink 8 glasses of water today!"},
-    {emoji:"🍎",text:"Swap a snack for fresh fruit!"},
-    {emoji:"🚶",text:"10 minute walk after your next meal!"},
-    {emoji:"🥗",text:"Make a salad for lunch!"},
-    {emoji:"🧘",text:"5 minute mindful eating break!"},
-    {emoji:"🍳",text:"Cook a meal from scratch tonight!"},
-    {emoji:"🫐",text:"Add berries to your breakfast!"},
-    {emoji:"🥕",text:"Snack on veggies instead of chips!"},
-    {emoji:"🌮",text:"Try a new healthy recipe this week!"},
-  ];
   const result = UI.spinResult;
+  if (UI.spinLoading) return `<div class="card" style="padding:24px;text-align:center">
+    <div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🎯</div>
+    <div style="font-size:14px;color:var(--gray)">Aria is generating your challenge...</div>
+  </div>`;
   return `<div class="card" style="padding:20px;text-align:center">
-  <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px">🎯 Nutrition Challenge Spinner</div>
+  <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:4px;letter-spacing:-0.5px">🎯 Nutrition Challenge Spinner</div>
+  <div style="font-size:11px;color:var(--cyan);margin-bottom:16px">✨ Powered by Aria</div>
   <div style="width:140px;height:140px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:0 0 30px rgba(105,201,208,.3);transition:transform .3s ease" id="spinner-wheel">${result?result.emoji:"🎯"}</div>
-  ${result?`<div style="background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${result.text}</div></div>`:"<div style='font-size:13px;color:var(--gray);margin-bottom:16px'>Spin to get your nutrition challenge!</div>"}
-  <button onclick="spinWheel()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${result?"🔄 Spin Again!":"🎯 Spin!"}</button>
+  ${result?`<div style="background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${result.text}</div></div>`:"<div style='font-size:13px;color:var(--gray);margin-bottom:16px'>Spin for a personalized challenge from Aria!</div>"}
+  <button id="spin-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${result?"🔄 Spin Again!":"🎯 Spin!"}</button>
   </div>`;
 }
 
-function spinWheel() {
-  const challenges = [
-    {emoji:"🥦",text:"Add a veggie to dinner tonight!"},
-    {emoji:"💧",text:"Drink 8 glasses of water today!"},
-    {emoji:"🍎",text:"Swap a snack for fresh fruit!"},
-    {emoji:"🚶",text:"10 minute walk after your next meal!"},
-    {emoji:"🥗",text:"Make a salad for lunch!"},
-    {emoji:"🧘",text:"5 minute mindful eating break!"},
-    {emoji:"🍳",text:"Cook a meal from scratch tonight!"},
-    {emoji:"🫐",text:"Add berries to your breakfast!"},
-    {emoji:"🥕",text:"Snack on veggies instead of chips!"},
-    {emoji:"🌮",text:"Try a new healthy recipe this week!"},
-  ];
+async function spinWheel() {
+  UI.spinLoading = true;
   const w = document.getElementById("spinner-wheel");
-  if (w) { w.style.transform = "rotate(360deg)"; setTimeout(()=>{ w.style.transform=""; },300); }
-  UI.spinResult = challenges[Math.floor(Math.random() * challenges.length)];
+  if (w) { w.style.transform = "rotate(720deg)"; setTimeout(()=>{ w.style.transform=""; },600); }
+  renderMain();
+  
+  const profile = userDoc?.profile || {};
+  const hausMembers = currentFamily?.hausMembers || [];
+  const alerts = getNutrAlerts(UI.selDay);
+  const gaps = alerts.map(a=>a.group).join(", ") || "general nutrition";
+  
+  const prompt = `Generate ONE personalized nutrition challenge for today.
+Family info: ${hausMembers.length > 0 ? hausMembers.map(m=>m.name).join(", ") : "just me"}
+Diet: ${profile.diet||"Standard"}
+Goal: ${profile.goal||"General health"}
+Current nutrition gaps: ${gaps}
+Respond ONLY with JSON: {"emoji":"[single emoji]","text":"[fun challenge under 10 words]"}`;
+
+  try {
+    const reply = await callAI([{role:"user",content:prompt}], "You are a nutrition coach. Respond only with valid JSON.");
+    const clean = reply.replace(/\`\`\`json|\`\`\`/g,"").trim();
+    UI.spinResult = JSON.parse(clean);
+  } catch(e) {
+    const fallbacks = [
+      {emoji:"🥦",text:"Add a veggie to dinner tonight!"},
+      {emoji:"💧",text:"Drink 8 glasses of water today!"},
+      {emoji:"🍎",text:"Swap a snack for fresh fruit!"},
+      {emoji:"🥕",text:"Snack on veggies instead of chips!"},
+    ];
+    UI.spinResult = fallbacks[Math.floor(Math.random()*fallbacks.length)];
+  }
+  UI.spinLoading = false;
   addXP(5);
   renderMain();
   showToast("+5 XP! Challenge accepted! 🎯", "success");
 }
 
 function renderMemory() {
-  if (!UI.memCards || UI.memCards.length === 0) initMemory();
+  if (!UI.memCards || UI.memCards.length === 0) { initMemory(); return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Aria is setting up your cards...</div></div>`; }
+  if (UI.memLoading) return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Aria is generating new cards...</div></div>`;
   const cards = UI.memCards || [];
   return `<div class="card" style="padding:16px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div style="font-size:12px;font-weight:700;color:var(--gray)">Tap pairs to match! Matches: ${Math.floor((UI.memMatched||[]).length/2)}</div>
-    <button onclick="initMemory()" style="font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--gray);cursor:pointer;font-family:var(--fb)">Reset</button>
+    <div style="font-size:12px;font-weight:700;color:var(--gray)">Tap pairs to match! Matches: ${Math.floor((UI.memMatched||[]).length/2)} <span style="color:var(--cyan)">✨ AI</span></div>
+    <button id="mem-reset-btn" style="font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--gray);cursor:pointer;font-family:var(--fb)">New Cards</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
     ${cards.map((card,i)=>{
@@ -1484,19 +1511,37 @@ function renderMemory() {
   </div>`;
 }
 
-function initMemory() {
-  const items = [
-    {emoji:"🥦",pair:"a"},{emoji:"🥦",pair:"a"},
-    {emoji:"🍎",pair:"b"},{emoji:"🍎",pair:"b"},
-    {emoji:"🧀",pair:"c"},{emoji:"🧀",pair:"c"},
-    {emoji:"🥕",pair:"d"},{emoji:"🥕",pair:"d"},
-    {emoji:"🍋",pair:"e"},{emoji:"🍋",pair:"e"},
-    {emoji:"🥑",pair:"f"},{emoji:"🥑",pair:"f"},
-  ];
-  UI.memCards = items.sort(() => Math.random() - 0.5);
+async function initMemory() {
+  UI.memLoading = true;
   UI.memFlipped = [];
   UI.memMatched = [];
   UI.memLocked = false;
+  renderMain();
+
+  const hausMembers = currentFamily?.hausMembers || [];
+  const pickyOnes = hausMembers.filter(m=>m.pickyEater).map(m=>m.name);
+  
+  const prompt = `Generate 6 pairs of food emoji for a memory matching game.
+${pickyOnes.length > 0 ? `Focus on foods that might help picky eaters: ${pickyOnes.join(", ")}` : "Use fun, colorful food emojis"}
+Respond ONLY with JSON array of 6 unique emojis (no repeats): ["🥦","🍎","🧀","🥕","🍋","🥑"]`;
+
+  try {
+    const reply = await callAI([{role:"user",content:prompt}], "You are a game designer. Respond only with a valid JSON array of 6 food emojis.");
+    const clean = reply.replace(/\`\`\`json|\`\`\`/g,"").trim();
+    const emojis = JSON.parse(clean);
+    if (Array.isArray(emojis) && emojis.length >= 6) {
+      const items = emojis.slice(0,6).flatMap((emoji,i) => [
+        {emoji, pair:String(i)},
+        {emoji, pair:String(i)}
+      ]);
+      UI.memCards = items.sort(() => Math.random() - 0.5);
+    } else throw new Error("Invalid");
+  } catch(e) {
+    const fallback = ["🥦","🍎","🧀","🥕","🍋","🥑"];
+    const items = fallback.flatMap((emoji,i) => [{emoji,pair:String(i)},{emoji,pair:String(i)}]);
+    UI.memCards = items.sort(() => Math.random() - 0.5);
+  }
+  UI.memLoading = false;
   renderMain();
 }
 
@@ -1656,7 +1701,7 @@ function renderAI() {
     <button id="aria-meal-plan-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">✨ Plan My Week</button>
   </div>
   <div id="ai-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
-    ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button><button data-save-recipe="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,500))}" style="padding:6px 12px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:10px;color:var(--green);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">💾 Save Recipe</button></div>`:""}    </div></div>`).join("")}
+    ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button><button data-save-recipe="${idx}" data-save-text="${encodeURIComponent(m.text.substring(0,500))}" style="padding:6px 12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:10px;color:var(--yellow);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🔖 Save Recipe</button></div>`:""}    </div></div>`).join("")}
     ${UI.aiLoading?`<div style="display:flex;gap:8px;align-items:center"><div style="width:32px;height:32px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center">🤖</div><div style="padding:12px 16px;background:var(--card);border-radius:18px;font-size:13px;color:var(--gray)">Thinking...</div></div>`:""}
   </div>
   <div style="display:flex;gap:8px;flex-shrink:0">
@@ -1751,27 +1796,6 @@ function bindAI() {
   // Plan My Week button
   const planBtn = document.getElementById("aria-meal-plan-btn");
   if (planBtn) planBtn.addEventListener("click", generateWeeklyPlan);
-
-  // Save Recipe buttons
-  document.querySelectorAll("[data-save-recipe]").forEach(btn => {
-    btn.addEventListener("click", async function() {
-      const idx = parseInt(this.getAttribute("data-save-recipe"));
-      const text = UI.aiChat[idx]?.text || decodeURIComponent(this.getAttribute("data-aria-text")||"");
-      const lines = text.split("\n").map(l=>l.replace(/[*#]/g,"").trim()).filter(Boolean);
-      const name = lines.find(l=>l.length>3&&l.length<60&&!l.startsWith("-")&&!l.toLowerCase().startsWith("why")&&!l.toLowerCase().startsWith("ingredient")) || "Aria Recipe";
-      const hausSize = (currentFamily?.hausMembers||[]).length + 1;
-      const recipe = {
-        name,
-        notes: text.substring(0, 300),
-        servings: hausSize,
-        savedAt: new Date().toLocaleDateString(),
-        savedFrom: "Aria"
-      };
-      const savedRecipes = [...(currentFamily?.savedRecipes||[]), recipe];
-      await saveFamilyDoc({ savedRecipes });
-      showToast(`💾 "${name}" saved to Recipes!`, "success");
-    });
-  });
 
   // Confirm add to calendar
   const confirmBtn = document.getElementById("aria-cal-confirm");
@@ -1905,28 +1929,28 @@ async function saveVideo() {
   showToast("✅ Video shared with your family!", "success");
 }
 
-// ── Saved Recipes ─────────────────────────────────────────────
+// ── Veggie Tips ─────────────────────────────────────────────
 function renderTips() {
   const saved = currentFamily?.savedRecipes || [];
   return `<div class="fu">
   <div class="st">📖 Saved Recipes</div>
-  <div style="font-size:12px;color:var(--gray);margin-bottom:14px">Recipes saved from Aria suggestions. Tap any recipe to add it to your calendar.</div>
   ${!currentUser ? `<div style="text-align:center;padding:40px;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">📖</div><div>Get Active to save recipes!</div></div>` :
   saved.length === 0 ? `<div style="text-align:center;padding:40px;color:var(--gray)">
-    <div style="font-size:44px;margin-bottom:12px">📖</div>
+    <div style="font-size:44px;margin-bottom:10px">📖</div>
     <div style="font-size:15px;font-weight:700;margin-bottom:8px">No saved recipes yet!</div>
-    <div style="font-size:13px;margin-bottom:16px">Ask Aria for meal suggestions and tap "💾 Save Recipe" to add them here.</div>
-    <button id="go-to-aria-btn" style="padding:12px 24px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd)">Ask Aria 🧠</button>
+    <div style="font-size:13px;line-height:1.6">Ask Aria for meal suggestions and tap <span style="color:var(--yellow);font-weight:700">🔖 Save Recipe</span> to build your family cookbook!</div>
   </div>` :
-  saved.map((r,i) => `<div class="card" style="padding:16px;margin-bottom:10px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-      <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px;flex:1">${r.name}</div>
-      <button data-delete-recipe="${i}" style="background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:16px;padding:0;flex-shrink:0">×</button>
-    </div>
-    ${r.servings ? `<div style="font-size:10px;color:var(--gray);margin-bottom:8px">👥 ${r.servings} servings · 📅 Saved ${r.savedAt||"recently"}</div>` : ""}
-    <div style="font-size:12px;line-height:1.6;color:var(--gray);margin-bottom:10px">${r.notes||""}</div>
-    <button data-add-recipe="${i}" style="padding:8px 14px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button>
-  </div>`).join("")}
+  `<div style="display:flex;flex-direction:column;gap:12px">
+    ${saved.map((r,i)=>`<div class="card" style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px;flex:1">${r.name}</div>
+        <button data-unsave="${i}" style="background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:18px;padding:0 0 0 8px;flex-shrink:0">×</button>
+      </div>
+      ${r.servings?`<div style="font-size:11px;color:var(--cyan);font-weight:700;margin-bottom:6px">👥 ${r.servings} servings</div>`:""}
+      <div style="font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:10px">${(r.notes||"").substring(0,150)}${r.notes&&r.notes.length>150?"...":""}</div>
+      <button data-add-saved="${i}" style="width:100%;padding:8px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button>
+    </div>`).join("")}
+  </div>`}
   </div>`;
 }
 

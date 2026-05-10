@@ -153,7 +153,7 @@ let unsubscribers = [];
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
-  showAdd:null, showMemEdit:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4,
+  showAdd:null, showMemEdit:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null,
   weSelected:[], weSugs:null,
   gathFams:[], gathOcc:null, gathResult:null,
   aiChat:[],
@@ -951,6 +951,15 @@ function bindFamilyMembers() {
   });
 }
 
+
+function ariaFix(group, msg) {
+  const hausMembers = currentFamily?.hausMembers || [];
+  const pickyOnes = hausMembers.filter(m=>m.pickyEater).map(m=>m.name);
+  const pickyNote = pickyOnes.length > 0 ? ` Keep in mind ${pickyOnes.join(" and ")} are picky eaters.` : "";
+  UI.ariaFixMsg = `I can see you are low on ${group.toLowerCase()} today (${msg}). Give me 3 quick and practical ways to fix this before the day is over — easy options that work for my family.${pickyNote}`;
+  setTab("ai");
+}
+
 function renderMain() {
   if (!document.getElementById("mi")) return;
   const el = document.getElementById("mi");
@@ -1086,7 +1095,7 @@ function renderDash() {
   <div class="sgrid">
     ${[{l:"MEALS PLANNED",v:ws.meals,i:"🍽️",c:"var(--cyan)"},{l:"WEEKLY COST",v:"$"+totalCost().toFixed(2),i:"💰",c:"var(--yellow)"},{l:"MEALS COOKED",v:ws.cooked,i:"✅",c:"var(--green)"},{l:"TOTAL XP",v:userDoc?.xp||0,i:"⚡",c:"var(--pink)"}].map(s=>`<div class="sc"><div class="si">${s.i}</div><div class="sv" style="color:${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join("")}
   </div>
-  ${alerts.length>0?`<div style="margin-bottom:14px">${alerts.slice(0,2).map(a=>`<div class="alertcard"><div style="font-size:18px">⚠️</div><div><div style="font-size:11px;font-weight:800;color:var(--pink);margin-bottom:2px">${a.group}</div><div style="font-size:12px">${a.msg}</div><button class="btn btng" style="font-size:10px;padding:4px 8px;margin-top:6px" onclick="setTab('ai')">🤖 AI Fix</button></div></div>`).join("")}</div>`:""}
+  ${alerts.length>0?`<div style="margin-bottom:14px">${alerts.slice(0,2).map(a=>`<div class="alertcard"><div style="font-size:18px">⚠️</div><div><div style="font-size:11px;font-weight:800;color:var(--pink);margin-bottom:2px">${a.group}</div><div style="font-size:12px">${a.msg}</div><button class="btn btng" style="font-size:10px;padding:4px 8px;margin-top:6px" onclick="ariaFix('${a.group}','${a.msg}')">🧠 AI Fix</button></div></div>`).join("")}</div>`:""}
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <div style="font-family:var(--fd);font-size:16px;font-weight:800;letter-spacing:-0.5px">📅 ${UI.selDay}</div>
@@ -1689,6 +1698,22 @@ function getAriaGreeting() {
 function renderAI() {
   if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">🧠</div><div style="font-size:15px;margin-bottom:16px">Get Active to use Aria!</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;
   
+  // Auto-send ariaFixMsg if coming from nutrition alert
+  if (UI.ariaFixMsg && UI.aiChat.length === 0) {
+    const fixMsg = UI.ariaFixMsg;
+    UI.ariaFixMsg = null;
+    setTimeout(() => {
+      UI.aiChat = [{role:"user", text: fixMsg}];
+      UI.aiLoading = true;
+      renderMain();
+      callAI([{role:"user", content: fixMsg}], `You are Aria, a warm family meal planning AI. Be practical and concise. The user needs quick nutrition fixes.`).then(reply => {
+        UI.aiLoading = false;
+        UI.aiChat = [...UI.aiChat, {role:"assistant", text: reply}];
+        renderMain();
+      });
+    }, 100);
+  }
+
   // Generate dynamic greeting if chat is empty
   const chatMessages = UI.aiChat.length === 0 
     ? [{role:"assistant", text: getAriaGreeting()}]
@@ -2184,6 +2209,7 @@ window.toggleAllCollapse = toggleAllCollapse;
 window.answerTrivia = answerTrivia;
 window.nextTrivia = nextTrivia;
 window.initMatch = initMatch;
+window.ariaFix = ariaFix;
 window.setGame = setGame;
 window.spinWheel = spinWheel;
 window.initMemory = initMemory;

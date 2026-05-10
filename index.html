@@ -148,6 +148,7 @@ const AV_SURPRISE_POOL = ["cozy","dress","overalls","headwrap_acc","hoops","glas
 let currentUser = null;
 let userDoc = null;
 let currentFamily = null;
+let ARIA_WEEK_PLAN = {}; // Global storage for Aria weekly plan
 let familyId = null;
 let unsubscribers = [];
 
@@ -1410,21 +1411,35 @@ function parseWeeklyPlan(text) {
   const mealMap = {"breakfast":"Breakfast","lunch":"Lunch","dinner":"Dinner","snack":"Snack"};
   const plan = {};
   let currentDay = null;
-  text.split("\n").map(l=>l.trim()).filter(Boolean).forEach(line => {
-    const ll = line.toLowerCase().replace(/[*#🌅☀️🌙🍎]/g,"").trim();
-    dayNames.forEach((d,i) => { if (ll.includes(d)) currentDay = days[i]; });
-    if (currentDay) {
-      Object.keys(mealMap).forEach(type => {
-        if (ll.startsWith(type+":") || ll.includes(" "+type+":")) {
-          const meal = line.split(":").slice(1).join(":").replace(/[*🌅☀️🌙🍎]/g,"").trim();
-          if (meal && meal.length > 2 && meal.length < 60) {
+
+  text.split("\n").forEach(rawLine => {
+    const line = rawLine.trim();
+    if (!line) return;
+    // Strip markdown and common chars for matching
+    const clean = line.replace(/[*#_~]/g,"").toLowerCase().trim();
+
+    // Detect day - flexible matching
+    dayNames.forEach((dayName, i) => {
+      if (clean.includes(dayName)) currentDay = days[i];
+    });
+
+    if (!currentDay) return;
+
+    // Detect meal lines
+    Object.keys(mealMap).forEach(type => {
+      if (clean.indexOf(type) !== -1 && clean.indexOf(":") !== -1) {
+        const colonIdx = line.indexOf(":");
+        if (colonIdx !== -1) {
+          const meal = line.substring(colonIdx + 1).replace(/[*_]/g,"").trim();
+          if (meal && meal.length > 2 && meal.length < 80) {
             if (!plan[currentDay]) plan[currentDay] = {};
             plan[currentDay][mealMap[type]] = meal;
           }
         }
-      });
-    }
+      }
+    });
   });
+
   return plan;
 }
 
@@ -1490,8 +1505,9 @@ Continue for all 7 days. Keep each meal name short (under 5 words).`;
   // Save draft plan to Firestore AND update local memory
   if (Object.keys(parsed).length > 0) {
     await saveFamilyDoc({ weekPlanDraft: parsed, ariaChat: updatedChat.slice(-20).map(m=>({role:m.role,text:m.text.substring(0,500)})) });
-    // Force update currentFamily in memory so loadDraftPlan can read it
+    // Store in global variable - most reliable approach
     if (currentFamily) currentFamily.weekPlanDraft = parsed;
+    ARIA_WEEK_PLAN = parsed;
     showToast("✅ Plan ready! Go to Calendar tab to load it 📅", "success");
   } else {
     showToast("Aria generated a plan but could not parse the meals. Try asking again!", "warn");
@@ -2079,39 +2095,107 @@ function renderAddModal() {
   const {day, type} = UI.showAdd;
   const meals = allMeals();
   
-  // Check if Aria has a suggestion for this specific day + meal type
-  const draft = currentFamily?.weekPlanDraft || UI.weeklyPlanData || {};
+  // Check Aria's plan for this slot
+  const draft = ARIA_WEEK_PLAN || currentFamily?.weekPlanDraft || {};
   const ariaSuggestion = draft?.[day]?.[type] || null;
-  
+
   const el = document.createElement("div");
   el.id = "add-modal";
   el.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;overflow-y:auto;animation:fadeIn .2s ease";
-  el.innerHTML = `<div style="max-width:480px;width:100%;margin:0 auto;padding:20px 16px 80px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-      <div style="font-family:var(--fd);font-size:18px;font-weight:800;letter-spacing:-0.5px">Add ${type} for ${day}</div>
-      <button onclick="document.getElementById('add-modal')?.remove();UI.showAdd=null;" style="width:34px;height:34px;border-radius:10px;background:var(--border);border:none;cursor:pointer;color:var(--white);font-size:16px">✕</button>
+  
+  el.innerHTML = `
+  <div style="max-width:480px;width:100%;margin:0 auto;padding:20px 16px 100px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-family:var(--fd);font-size:18px;font-weight:800;letter-spacing:-0.5px">🍽️ ${type} for ${day}</div>
+      <button id="close-add-modal" style="width:34px;height:34px;border-radius:10px;background:var(--border);border:none;cursor:pointer;color:var(--white);font-size:16px">✕</button>
     </div>
+
     ${ariaSuggestion ? `
-    <div style="margin-bottom:14px">
-      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">🧠 ARIA SUGGESTS</div>
-      <div onclick="addMeal('${day}','${type}','${ariaSuggestion}')" style="display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.08));border:2px solid rgba(105,201,208,.4);border-radius:14px;cursor:pointer">
+    <div style="margin-bottom:16px">
+      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">🧠 ARIA'S PLAN SUGGESTS</div>
+      <div id="aria-plan-pick" data-meal="${ariaSuggestion}" style="display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(105,201,208,.12),rgba(238,29,82,.06));border:2px solid rgba(105,201,208,.5);border-radius:14px;cursor:pointer;margin-bottom:4px">
         <span style="font-size:28px">🧠</span>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:800;color:var(--cyan)">${ariaSuggestion}</div>
-          <div style="font-size:11px;color:var(--gray)">From your Aria meal plan</div>
+          <div style="font-size:11px;color:var(--gray)">From your weekly plan</div>
         </div>
-        <span style="font-size:11px;padding:4px 8px;border-radius:8px;background:rgba(105,201,208,.2);color:var(--cyan)">Aria Pick ✨</span>
+        <span style="font-size:10px;padding:4px 8px;border-radius:8px;background:rgba(105,201,208,.2);color:var(--cyan);font-weight:800">✨ Tap to add</span>
       </div>
-      <div style="font-size:10px;font-weight:700;color:var(--gray);letter-spacing:1px;margin:14px 0 8px">OR CHOOSE YOUR OWN</div>
     </div>` : ""}
-    ${Object.entries(meals).filter(([,d])=>d.type===type).map(([name,d])=>`
-    <div onclick="addMeal('${day}','${type}','${name}')" style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;cursor:pointer">
-      <span style="font-size:28px">${d.emoji}</span>
-      <div style="flex:1"><div style="font-size:14px;font-weight:800">${name}</div><div style="font-size:11px;color:var(--gray)">${d.calories}cal · $${d.cost.toFixed(2)} · ${d.prepTime+d.cookTime}min</div></div>
-      <span style="font-size:11px;padding:4px 8px;border-radius:8px;background:${d.difficulty==="Easy"?"rgba(74,222,128,.15)":"rgba(250,204,21,.15)"};color:${d.difficulty==="Easy"?"var(--green)":"var(--yellow)"}">${d.difficulty}</span>
-    </div>`).join("")}
+
+    <div style="margin-bottom:16px">
+      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">🔍 ASK ARIA</div>
+      <div style="display:flex;gap:8px">
+        <input id="aria-cal-input" placeholder="e.g. something quick with chicken..." style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:11px 14px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none"/>
+        <button id="aria-cal-ask-btn" style="padding:11px 16px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">Ask</button>
+      </div>
+      <div id="aria-cal-result" style="margin-top:8px"></div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">⚡ QUICK PICKS</div>
+      ${Object.entries(meals).filter(([,d])=>d.type===type).map(([name,d])=>`
+      <div data-quick-meal="${name}" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer">
+        <span style="font-size:24px">${d.emoji}</span>
+        <div style="flex:1"><div style="font-size:13px;font-weight:800">${name}</div><div style="font-size:10px;color:var(--gray)">${d.calories}cal · $${d.cost.toFixed(2)} · ${d.prepTime+d.cookTime}min</div></div>
+        <span style="font-size:10px;padding:3px 7px;border-radius:8px;background:${d.difficulty==="Easy"?"rgba(74,222,128,.15)":"rgba(250,204,21,.15)"};color:${d.difficulty==="Easy"?"var(--green)":"var(--yellow)"}">${d.difficulty}</span>
+      </div>`).join("")}
+    </div>
   </div>`;
+
   document.body.appendChild(el);
+
+  // Close button
+  document.getElementById('close-add-modal').addEventListener('click', () => {
+    document.getElementById('add-modal')?.remove();
+    UI.showAdd = null;
+  });
+
+  // Aria plan suggestion tap
+  const planPick = document.getElementById('aria-plan-pick');
+  if (planPick) planPick.addEventListener('click', () => {
+    addMeal(day, type, planPick.getAttribute('data-meal'));
+  });
+
+  // Quick pick taps
+  el.querySelectorAll('[data-quick-meal]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      addMeal(day, type, btn.getAttribute('data-quick-meal'));
+    });
+  });
+
+  // Ask Aria button
+  const askBtn = document.getElementById('aria-cal-ask-btn');
+  const calInput = document.getElementById('aria-cal-input');
+  const resultEl = document.getElementById('aria-cal-result');
+
+  async function askAriaForMeal() {
+    const query = calInput?.value?.trim();
+    if (!query) return;
+    askBtn.textContent = '...';
+    askBtn.disabled = true;
+    resultEl.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:8px">Aria is thinking... 🧠</div>';
+    
+    const profile = userDoc?.profile || {};
+    const hausMembers = currentFamily?.hausMembers || [];
+    const prompt = `Suggest ONE meal name (5 words max) for ${type} on ${day} based on: "${query}". Family: ${hausMembers.map(m=>m.name).join(", ")||"just me"}. Diet: ${profile.diet||"Standard"}. Avoid: ${profile.avoid||"none"}. Reply with ONLY the meal name, nothing else.`;
+    
+    try {
+      const reply = await callAI([{role:"user",content:prompt}], "You are a meal naming assistant. Reply with only a meal name, 5 words maximum.");
+      const mealName = reply.replace(/[*#"]/g,"").trim().substring(0,50);
+      resultEl.innerHTML = `<div id="aria-suggested-meal" data-meal="${mealName}" style="display:flex;align-items:center;gap:10px;padding:12px;background:linear-gradient(135deg,rgba(105,201,208,.12),rgba(238,29,82,.06));border:2px solid rgba(105,201,208,.4);border-radius:12px;cursor:pointer;margin-top:4px"><span style="font-size:22px">🧠</span><div style="flex:1"><div style="font-size:13px;font-weight:800;color:var(--cyan)">${mealName}</div><div style="font-size:10px;color:var(--gray)">Tap to add</div></div></div>`;
+      document.getElementById('aria-suggested-meal')?.addEventListener('click', () => {
+        addMeal(day, type, mealName);
+      });
+    } catch(e) {
+      resultEl.innerHTML = '<div style="font-size:12px;color:var(--pink);padding:8px">Could not get suggestion — try again!</div>';
+    }
+    askBtn.textContent = 'Ask';
+    askBtn.disabled = false;
+  }
+
+  askBtn.addEventListener('click', askAriaForMeal);
+  calInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') askAriaForMeal(); });
 }
 
 async function addMeal(day, type, meal) {

@@ -1359,8 +1359,9 @@ async function generateShoppingList() {
   const prompt = `Create a complete shopping list for a family of ${hausSize} for these meals: ${meals.join(", ")}.
 Diet: ${profile.diet||"Standard"}. Avoid: ${profile.avoid||"none"}.
 Organize by category (Produce, Proteins, Dairy, Pantry, etc).
-Include quantities for ${hausSize} people. Keep it practical and easy to read.
-Format as a simple list with category headers.`;
+Include quantities for ${hausSize} people.
+At the very end, add a line that says: "💰 Estimated Total: $XX.XX - $XX.XX" with a realistic price range based on average US grocery prices.
+Keep it practical and easy to read.`;
 
   try {
     const reply = await callAI([{role:"user",content:prompt}], "You are a helpful shopping list assistant. Create practical, organized grocery lists.");

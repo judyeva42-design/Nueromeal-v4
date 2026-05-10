@@ -153,7 +153,7 @@ let unsubscribers = [];
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
-  showAdd:null, showMemEdit:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null,
+  showAdd:null, showMemEdit:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
   weSelected:[], weSugs:null,
   gathFams:[], gathOcc:null, gathResult:null,
   aiChat:[],
@@ -1003,6 +1003,20 @@ function renderMain() {
   bindOnboard();
   // Attach family member buttons
   bindFamilyMembers();
+  // Shopping Aria button
+  const shopAriaBtn = document.getElementById('shop-aria-btn');
+  if (shopAriaBtn) shopAriaBtn.addEventListener('click', () => {
+    const um = uniqueMeals();
+    const total = um.reduce((s, meal) => s + (allMeals()[meal]?.cost||0), 0);
+    UI.ariaFixMsg = `I am looking at my shopping list. I have ${um.length} meals planned this week totalling $${total.toFixed(2)}. Can you suggest cheaper ingredient swaps or budget-friendly alternatives without sacrificing nutrition?`;
+    UI.aiChat = [];
+    setTab("ai");
+  });
+  const shopAriaEmptyBtn = document.getElementById('shop-aria-empty-btn');
+  if (shopAriaEmptyBtn) shopAriaEmptyBtn.addEventListener('click', () => {
+    setTab("ai");
+    setTimeout(generateWeeklyPlan, 100);
+  });
   // Save recipe buttons in Aria
   document.querySelectorAll('[data-save-recipe]').forEach(btn => {
     btn.addEventListener('click', async function() {
@@ -1239,8 +1253,14 @@ function renderShop() {
   Object.values(map).forEach(v=>master.push(v));
   const total=master.reduce((s,i)=>s+i.cost,0);
   return `<div class="fu">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="st" style="margin-bottom:0">🛒 Shopping</div><div style="background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.22);border-radius:10px;padding:5px 14px;font-size:14px;font-weight:800;color:var(--yellow)">$${total.toFixed(2)}</div></div>
-  ${um.length===0?`<div style="text-align:center;padding:55px 0;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">🛒</div><div style="font-size:14px">Add meals to generate your list!</div></div>`:""}
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div class="st" style="margin-bottom:0">🛒 Shopping</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div style="background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.22);border-radius:10px;padding:5px 14px;font-size:14px;font-weight:800;color:var(--yellow)">$${total.toFixed(2)}</div>
+      <button id="shop-aria-btn" style="padding:5px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">🧠 Swap Ideas</button>
+    </div>
+  </div>
+  ${um.length===0?`<div style="text-align:center;padding:55px 0;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">🛒</div><div style="font-size:14px">Add meals to generate your list!</div><button id="shop-aria-empty-btn" style="margin-top:12px;padding:10px 20px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">✨ Let Aria Plan My Week</button></div>`:""}
   ${um.length>1?`<div style="background:linear-gradient(135deg,rgba(105,201,208,.06),rgba(238,29,82,.04));border:1px solid rgba(105,201,208,.15);border-radius:14px;padding:16px;margin-bottom:12px"><div style="font-family:var(--fd);font-size:14px;font-weight:800;color:var(--cyan);margin-bottom:10px">✨ Combined List — ${master.length} items</div>${master.map((ing,i)=>`<div class="grow" style="${i===master.length-1?"border-bottom:none":""}"><span style="font-size:12px">• ${ing.item}</span><span style="font-size:10px;color:var(--yellow)">$${ing.cost.toFixed(2)}</span></div>`).join("")}</div>`:""}
   ${um.map(meal=>{const d=allMeals()[meal];if(!d)return"";return`<div class="card" style="overflow:hidden;margin-bottom:10px"><div style="padding:12px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)"><span style="font-size:20px">${d.emoji}</span><span style="font-weight:800;font-size:14px;flex:1">${meal}</span><span style="font-size:12px;color:var(--yellow);font-weight:700">$${d.cost.toFixed(2)}</span></div><div style="padding:8px 14px 12px">${d.ingredients.map((ing,i)=>`<div class="grow" style="${i===d.ingredients.length-1?"border-bottom:none":""}"><span style="font-size:11px">• ${ing.item}</span><div style="display:flex;gap:9px"><span style="font-size:10px;color:var(--gray)">${ing.qty}</span><span style="font-size:10px;color:var(--yellow)">$${ing.cost.toFixed(2)}</span></div></div>`).join("")}</div></div>`;}).join("")}
   </div>`;
@@ -1391,6 +1411,44 @@ function renderTrivia() {
 }
 
 
+function parseWeeklyPlan(text) {
+  // Parse Aria's meal plan text into a structured weekPlan object
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const dayNames = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+  const mealTypes = {
+    "breakfast": "Breakfast",
+    "lunch": "Lunch", 
+    "dinner": "Dinner",
+    "snack": "Snack"
+  };
+  
+  const plan = {};
+  const lines = text.split("
+").map(l => l.trim()).filter(Boolean);
+  let currentDay = null;
+  
+  lines.forEach(line => {
+    const lineLower = line.toLowerCase().replace(/[*#]/g,"").trim();
+    // Check if this is a day header
+    dayNames.forEach((day, idx) => {
+      if (lineLower.includes(day)) currentDay = days[idx];
+    });
+    // Check if this is a meal line
+    if (currentDay) {
+      Object.keys(mealTypes).forEach(type => {
+        if (lineLower.includes(type + ":")) {
+          const mealName = line.split(":").slice(1).join(":").replace(/[*🌅☀️🌙🍎]/g,"").trim();
+          if (mealName && mealName.length > 2) {
+            if (!plan[currentDay]) plan[currentDay] = {};
+            plan[currentDay][mealTypes[type]] = mealName;
+          }
+        }
+      });
+    }
+  });
+  return plan;
+}
+
 async function generateWeeklyPlan() {
   if (!currentUser || !currentFamily) return;
   const profile = userDoc?.profile || {};
@@ -1398,6 +1456,7 @@ async function generateWeeklyPlan() {
   const hausSize = hausMembers.length + 1;
   
   UI.aiLoading = true;
+  UI.weeklyPlanData = null;
   UI.aiChat = [...UI.aiChat, {role:"user", text:"✨ Generate a full week of meals for my family!"}];
   renderMain();
 
@@ -1414,19 +1473,34 @@ Foods to avoid: ${profile.avoid||"none"}
 Provide breakfast, lunch, dinner, and one snack for each day Mon-Sun.
 Keep meals simple, family-friendly, and varied.
 For picky eaters suggest simple modifications.
-Format as a clean list like:
+Format EXACTLY like this:
 **Monday**
-🌅 Breakfast: [meal]
-☀️ Lunch: [meal]  
-🌙 Dinner: [meal]
-🍎 Snack: [meal]
+🌅 Breakfast: [meal name]
+☀️ Lunch: [meal name]
+🌙 Dinner: [meal name]
+🍎 Snack: [meal name]
 
-Continue for all 7 days. Keep each meal name short (under 5 words).`;
+**Tuesday**
+🌅 Breakfast: [meal name]
+...continue for all 7 days.
 
-  const reply = await callAI([{role:"user",content:prompt}], `You are Aria, a family meal planning AI. Create practical, simple meal plans for families. Keep meal names concise.`);
+Keep each meal name SHORT — under 5 words. Then add picky eater tips at the end.`;
+
+  const reply = await callAI([{role:"user",content:prompt}], `You are Aria, a family meal planning AI. Create practical, simple meal plans. Keep meal names very concise (under 5 words each).`);
   
   UI.aiLoading = false;
+  UI.weeklyPlanData = parseWeeklyPlan(reply);
   UI.aiChat = [...UI.aiChat, {role:"assistant", text:reply}];
+  renderMain();
+}
+
+async function addAllToCalendar() {
+  if (!UI.weeklyPlanData || !currentFamily) return;
+  const weekPlan = { ...(currentFamily?.weekPlan||{}), ...UI.weeklyPlanData };
+  await saveFamilyDoc({ weekPlan });
+  UI.weeklyPlanData = null;
+  addXP(25);
+  showToast("✅ Full week added to your calendar! +25 XP 🎉", "success");
   renderMain();
 }
 
@@ -1743,7 +1817,7 @@ function renderAI() {
     <button id="aria-meal-plan-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">✨ Plan My Week</button>
   </div>
   <div id="ai-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
-    ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button><button data-save-recipe="${idx}" data-save-text="${encodeURIComponent(m.text.substring(0,500))}" style="padding:6px 12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:10px;color:var(--yellow);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🔖 Save Recipe</button></div>`:""}    </div></div>`).join("")}
+    ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button><button data-save-recipe="${idx}" data-save-text="${encodeURIComponent(m.text.substring(0,500))}" style="padding:6px 12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:10px;color:var(--yellow);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🔖 Save Recipe</button>${idx===chatMessages.length-1&&UI.weeklyPlanData&&Object.keys(UI.weeklyPlanData).length>0?`<button id="add-all-cal-btn" style="padding:6px 12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-size:11px;font-weight:900;cursor:pointer;font-family:var(--fd)">🗓️ Add All to Calendar!</button>`:""}    </div>`:""}    </div></div>`).join("")}
     ${UI.aiLoading?`<div style="display:flex;gap:8px;align-items:center"><div style="width:32px;height:32px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center">🤖</div><div style="padding:12px 16px;background:var(--card);border-radius:18px;font-size:13px;color:var(--gray)">Thinking...</div></div>`:""}
   </div>
   <div style="display:flex;gap:8px;flex-shrink:0">
@@ -1838,6 +1912,9 @@ function bindAI() {
   // Plan My Week button
   const planBtn = document.getElementById("aria-meal-plan-btn");
   if (planBtn) planBtn.addEventListener("click", generateWeeklyPlan);
+  // Add All to Calendar button
+  const addAllBtn = document.getElementById("add-all-cal-btn");
+  if (addAllBtn) addAllBtn.addEventListener("click", addAllToCalendar);
 
   // Confirm add to calendar
   const confirmBtn = document.getElementById("aria-cal-confirm");
@@ -2227,6 +2304,7 @@ window.answerTrivia = answerTrivia;
 window.nextTrivia = nextTrivia;
 window.initMatch = initMatch;
 window.ariaFix = ariaFix;
+window.addAllToCalendar = addAllToCalendar;
 window.getFunnyBtn = getFunnyBtn;
 window.setGame = setGame;
 window.spinWheel = spinWheel;

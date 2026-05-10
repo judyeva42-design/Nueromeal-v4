@@ -664,7 +664,7 @@ function renderNav() {
     {id:"wellness",icon:"💙",label:"Wellness"},
     {id:"game",icon:"🎮",label:"Game"},
     {id:"family",icon:"👨‍👩‍👧",label:"Family"},
-    {id:"ai",icon:"🧠",label:"Aria"},
+    {id:"ai",icon:"👨‍🍳",label:"Chef-ly"},
     {id:"chat",icon:"💬",label:"Chat"},
     {id:"videos",icon:"📹",label:"Videos"},
     {id:"tips",icon:"📖",label:"Cookbook"},
@@ -699,19 +699,19 @@ function showNoriTip(msg) {
 
 // ── Onboarding ─────────────────────────────────────────────
 const ONBOARD_STEPS = [
-  { type:'welcome', emoji:'🧠✨', nori:"Well HELLO there, superstar!! I'm Nori — your NeuroMeal brain guide! I'm about to ask you a few questions so Aria can make this app feel like it was built JUST for you. Ready to make some magic? ✨" },
+  { type:'welcome', emoji:'🧠✨', nori:"Well HELLO there, superstar!! I'm Nori — your NeuroMeal brain guide! I'm about to ask you a few questions so Chef-ly can make this app feel like it was built JUST for you. Ready to make some magic? ✨" },
   { type:'text', field:'name', nori:"First things first — what do we call you? Not just 'hey you' 😄", label:'YOUR NAME', placeholder:"What's your name?" },
-  { type:'number', field:'age', nori:"How many trips around the sun have you taken? 🌍 Aria just wants to make sure your meal portions are on point!", label:'YOUR AGE', placeholder:'Enter your age' },
-  { type:'choice', field:'sex', nori:"Which best describes you? This helps Aria nail your nutrition targets! 💪", label:'', options:['Female 👩','Male 👨','Non-binary 🌈','Prefer not to say 🤐'] },
-  { type:'double', nori:"Height and weight time! Aria keeps your secrets 🤫 This is just so your nutrition goals are realistic for YOUR body!", labels:['Height (e.g. 5ft 4in)','Weight (e.g. 165 lbs)'] },
-  { type:'choice', field:'activity', nori:"On a typical day, how active are you? Be honest — Aria can handle the truth! 😄", label:'', options:['🛋️ Mostly sitting (desk job, Netflix champion)','🚶 Lightly active (walks, light errands)','💃 Moderately active (regular workouts)','🏃 Very active (daily intense exercise)','🔥 Super active (athlete or physical job)'] },
-  { type:'choice', field:'goal', nori:"What is your main goal right now? Aria will keep this in mind with EVERY suggestion!", label:'', options:['⚖️ Lose weight','💪 Build muscle','🔋 More energy','🧠 Brain-friendly eating (AuDHD/ADHD)','❤️ General health','💊 Managing a health condition','🌱 Just eat better overall'] },
+  { type:'number', field:'age', nori:"How many trips around the sun have you taken? 🌍 Chef-ly just wants to make sure your meal portions are on point!", label:'YOUR AGE', placeholder:'Enter your age' },
+  { type:'choice', field:'sex', nori:"Which best describes you? This helps Chef-ly nail your nutrition targets! 💪", label:'', options:['Female 👩','Male 👨','Non-binary 🌈','Prefer not to say 🤐'] },
+  { type:'double', nori:"Height and weight time! Chef-ly keeps your secrets 🤫 This is just so your nutrition goals are realistic for YOUR body!", labels:['Height (e.g. 5ft 4in)','Weight (e.g. 165 lbs)'] },
+  { type:'choice', field:'activity', nori:"On a typical day, how active are you? Be honest — Chef-ly can handle the truth! 😄", label:'', options:['🛋️ Mostly sitting (desk job, Netflix champion)','🚶 Lightly active (walks, light errands)','💃 Moderately active (regular workouts)','🏃 Very active (daily intense exercise)','🔥 Super active (athlete or physical job)'] },
+  { type:'choice', field:'goal', nori:"What is your main goal right now? Chef-ly will keep this in mind with EVERY suggestion!", label:'', options:['⚖️ Lose weight','💪 Build muscle','🔋 More energy','🧠 Brain-friendly eating (AuDHD/ADHD)','❤️ General health','💊 Managing a health condition','🌱 Just eat better overall'] },
   { type:'choice', field:'diet', nori:"Does your eating follow any particular style? Pick the one that fits best!", label:'', options:['🥗 Standard (I eat pretty much everything)','🥩 Keto (low carb, high fat)','🌿 Vegan (plant-based all the way)','🐟 Vegetarian','🫙 Mediterranean','🚫🌾 Gluten-Free','🥛 Dairy-Free','🦴 Paleo','💉 GLP-1 (Ozempic/Wegovy/Mounjaro)'] },
-  { type:'text', field:'avoid', nori:"Is there a food that makes you go absolutely NOT, not today, not ever? 🙅 List anything you want Aria to NEVER suggest!", label:'FOODS TO AVOID (optional)', placeholder:'e.g. mushrooms, shellfish, cilantro...' },
-  { type:'text', field:'loves', nori:"Now the fun part — what foods make you do a little happy dance? 💃 Tell Aria your favorites!", label:'FAVORITE FOODS (optional)', placeholder:'e.g. pasta, tacos, avocado...' },
+  { type:'text', field:'avoid', nori:"Is there a food that makes you go absolutely NOT, not today, not ever? 🙅 List anything you want Chef-ly to NEVER suggest!", label:'FOODS TO AVOID (optional)', placeholder:'e.g. mushrooms, shellfish, cilantro...' },
+  { type:'text', field:'loves', nori:"Now the fun part — what foods make you do a little happy dance? 💃 Tell Chef-ly your favorites!", label:'FAVORITE FOODS (optional)', placeholder:'e.g. pasta, tacos, avocado...' },
   { type:'choice', field:'pickyEater', nori:"Are you feeding any picky eaters? You know the type — chicken nuggets and air 😂", label:'', options:['🙅 Nope, everyone eats everything!','😬 One picky eater in the house','😅 Multiple picky eaters (send help)','🤦 I AM the picky eater 😂'] },
   { type:'choice', field:'fridgeVibes', nori:"Last one — just for fun! 🎉 If your fridge could play a theme song when you opened it, what genre would it be? 🎵", label:'', options:['🎸 Rock (I open it with INTENTION)','🎹 Jazz (spontaneous fridge discoveries)','🎵 Pop (whatever is trending in the pantry)','🎤 Hype music (I am about to COOK)','🎶 Lo-fi (just a chill snack, no drama)','🎺 Classical (I meal prep on Sundays like an adult)'] },
-  { type:'complete', emoji:'🎉🧠🔥', nori:"YESSS!! You did it!! 🎉 Aria now knows everything she needs to make NeuroMeal feel like it was built just for you! Your meals are about to get SO much smarter!" },
+  { type:'complete', emoji:'🎉🧠🔥', nori:"YESSS!! You did it!! 🎉 Chef-ly now knows everything needed to make NeuroMeal feel like it was built just for you! Your meals are about to get SO much smarter!" },
 ];
 
 function renderOnboard() {
@@ -1014,13 +1014,13 @@ function renderMain() {
   bindOnboard();
   // Attach family member buttons
   bindFamilyMembers();
-  // Save recipe buttons in Aria
+  // Save recipe buttons in Chef-ly tab
   document.querySelectorAll('[data-save-recipe]').forEach(btn => {
     btn.addEventListener('click', async function() {
       const idx = parseInt(this.getAttribute('data-save-recipe'));
       const text = decodeURIComponent(this.getAttribute('data-save-text')||'');
       const lines = text.split('\n').map(l=>l.replace(/[*#]/g,'').trim()).filter(Boolean);
-      const name = lines.find(l=>l.length>3&&l.length<60&&!l.startsWith('-'))||'Aria Recipe';
+      const name = lines.find(l=>l.length>3&&l.length<60&&!l.startsWith('-'))||'Chef-ly Recipe';
       const hausSize = (currentFamily?.hausMembers||[]).length + 1;
       const recipe = { name, notes: text.substring(0,300), servings: hausSize, savedAt: new Date().toISOString() };
       const savedRecipes = [...(currentFamily?.savedRecipes||[]), recipe];
@@ -1119,7 +1119,7 @@ function renderDash() {
 
   return `<div class="fu">
   <div style="padding:14px 16px;border-radius:16px;background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.18);font-size:13px;line-height:1.7;color:var(--white);margin-bottom:16px">${motivationMsg}</div>
-  ${!userDoc?.profile?.name ? `<button id="profile-setup-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:14px;animation:pulse 2s ease infinite">🧠 Set Up My Profile — Help Aria Know You!</button>` : ""}
+  ${!userDoc?.profile?.name ? `<button id="profile-setup-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:14px;animation:pulse 2s ease infinite">🧠 Set Up My Profile — Help Chef-ly Know You!</button>` : ""}
   <div class="sgrid">
     ${[{l:"MEALS PLANNED",v:ws.meals,i:"🍽️",c:"var(--cyan)"},{l:"WEEKLY COST",v:"$"+totalCost().toFixed(2),i:"💰",c:"var(--yellow)"},{l:"MEALS COOKED",v:ws.cooked,i:"✅",c:"var(--green)"},{l:"TOTAL XP",v:userDoc?.xp||0,i:"⚡",c:"var(--pink)"}].map(s=>`<div class="sc"><div class="si">${s.i}</div><div class="sv" style="color:${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join("")}
   </div>
@@ -1144,7 +1144,7 @@ function renderCal() {
   if (!currentFamily) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:36px;margin-bottom:12px">📅</div><div style="font-size:15px;margin-bottom:8px">Set up your family first!</div>${!currentUser?`<button onclick="signInWithGoogle()" class="btn btnp">Get Active</button>`:""}</div>`;
   const hasDraft = (currentFamily?.weekPlanDraft && Object.keys(currentFamily?.weekPlanDraft||{}).length > 0) || (UI.weeklyPlanData && Object.keys(UI.weeklyPlanData||{}).length > 0);
   return `<div class="fu">
-  ${hasDraft ? '<div style="background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.1));border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:800;color:var(--cyan)">🧠 Aria has a plan ready!</div><div style="font-size:11px;color:var(--gray);margin-top:2px">Tap to load your full week of meals</div></div><button id=\"load-draft-btn\" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:12px;cursor:pointer;font-family:var(--fd)">Load It!</button></div>' : ""}
+  ${hasDraft ? '<div style="background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.1));border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:800;color:var(--cyan)">👨‍🍳 Chef-ly has a plan ready!</div><div style="font-size:11px;color:var(--gray);margin-top:2px">Tap to load your full week of meals</div></div><button id=\"load-draft-btn\" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:12px;cursor:pointer;font-family:var(--fd)">Load It!</button></div>' : ""}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
     <div class="st" style="margin-bottom:0">📅 Weekly Calendar</div>
     <button onclick="setTab('ai')" class="btn btnp" style="font-size:11px">🤖 AI Suggest</button>
@@ -1154,7 +1154,7 @@ function renderCal() {
       const dc=MT.reduce((s,t)=>s+(allMeals()[F().weekPlan?.[day]?.[t]]?.cost||0),0);
       return `<div class="cday">
         <div class="cdh ${UI.selDay===day?"today":""}" onclick="setDay('${day}')">${day}</div>
-        ${MT.map(type=>{const meal=F().weekPlan?.[day]?.[type],d=meal?allMeals()[meal]:null;return`<div class="cslot"><div class="csl">${type.substring(0,4)}</div>${d?`<div class="cchip" onclick="setTab('meals')"><div class="ce">${d.emoji}</div><div class="cn">${meal}</div><div class="cc">$${d.cost.toFixed(2)}</div></div><button onclick="${currentUser?`removeMeal('${day}','${type}')`:"showGetActiveModal()"}" style="background:transparent;border:none;cursor:pointer;color:var(--gray2);font-size:8px;margin-top:1px">✕</button>`:`<button class="cadd" onclick="${currentUser?`openAdd('${day}','${type}')`:"showGetActiveModal()"}">+</button>`}</div>`;}).join("")}
+        $T.map(type=>{const meal=F().weekPlan?.[day]?.[type];const d=meal?allMeals()[meal]:null;return`<div class="cslot"><div class="csl">${type.substring(0,4)}</div>${meal?`<div class="cchip"><div class="ce">${d?d.emoji:"🍽️"}</div><div class="cn" style="font-size:10px">${meal}</div></div><button onclick="${currentUser?`removeMeal('${day}','${type}')`:'showGetActiveModal()'}" style="background:transparent;border:none;cursor:pointer;color:var(--gray2);font-size:8px;margin-top:1px">✕</button>`:`<button class="cadd" onclick="${currentUser?`openAdd('${day}','${type}')`:'showGetActiveModal()'}">+</button>`}</div>`;}).join("")}
         <div class="cdc">$${dc.toFixed(2)}</div>
       </div>`;
     }).join("")}
@@ -1246,11 +1246,9 @@ function renderNutr() {
 // ── Shopping ───────────────────────────────────────────────
 function renderShop() {
   if (!currentFamily) return `<div style="padding:40px;text-align:center;color:var(--gray)">${!currentUser?`<button onclick="signInWithGoogle()" class="btn btnp">Get Active</button>`:"Set up your family first!"}</div>`;
-  const um=uniqueMeals(),master=[];
-  const map={};
-  um.forEach(meal=>{(allMeals()[meal]?.ingredients||[]).forEach(ing=>{if(map[ing.item])map[ing.item].cost+=ing.cost;else map[ing.item]={...ing};});});
-  Object.values(map).forEach(v=>master.push(v));
-  const total=master.reduce((s,i)=>s+i.cost,0);
+  const um=uniqueMeals();
+  const total=0;
+  const master=[];
   return `<div class="fu">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="st" style="margin-bottom:0">🛒 Shopping</div><div style="background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.22);border-radius:10px;padding:5px 14px;font-size:14px;font-weight:800;color:var(--yellow)">$${total.toFixed(2)}</div></div>
   ${um.length===0?`<div style="text-align:center;padding:55px 0;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">🛒</div><div style="font-size:14px">Add meals to generate your list!</div></div>`:""}
@@ -1389,7 +1387,7 @@ function renderTrivia() {
   
   if (UI.aiTriviaLoading) return `<div class="card" style="padding:24px;text-align:center">
     <div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🧠</div>
-    <div style="font-size:14px;color:var(--gray)">Aria is generating a question...</div>
+    <div style="font-size:14px;color:var(--gray)">Chef-ly is generating a question...</div>
   </div>`;
 
   return `<div class="card" style="padding:18px">
@@ -1495,7 +1493,7 @@ Format as a clean list like:
 
 Continue for all 7 days. Keep each meal name short (under 5 words).`;
 
-  const reply = await callAI([{role:"user",content:prompt}], `You are Aria, a family meal planning AI. Create practical, simple meal plans for families. Keep meal names concise.`);
+  const reply = await callAI([{role:"user",content:prompt}], `You are Chef-ly, a family meal planning AI. Create practical, simple meal plans for families. Keep meal names concise.`);
   
   UI.aiLoading = false;
   const parsed = parseWeeklyPlan(reply);
@@ -1510,7 +1508,7 @@ Continue for all 7 days. Keep each meal name short (under 5 words).`;
     ARIA_WEEK_PLAN = parsed;
     showToast("✅ Plan ready! Go to Calendar tab to load it 📅", "success");
   } else {
-    showToast("Aria generated a plan but could not parse the meals. Try asking again!", "warn");
+    showToast("Chef-ly generated a plan but could not parse the meals. Try asking again!", "warn");
   }
   renderMain();
 }
@@ -1554,13 +1552,13 @@ function renderSpinner() {
   const result = UI.spinResult;
   if (UI.spinLoading) return `<div class="card" style="padding:24px;text-align:center">
     <div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🎯</div>
-    <div style="font-size:14px;color:var(--gray)">Aria is generating your challenge...</div>
+    <div style="font-size:14px;color:var(--gray)">Chef-ly is generating your challenge...</div>
   </div>`;
   return `<div class="card" style="padding:20px;text-align:center">
   <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:4px;letter-spacing:-0.5px">🎯 Nutrition Challenge Spinner</div>
-  <div style="font-size:11px;color:var(--cyan);margin-bottom:16px">✨ Powered by Aria</div>
+  <div style="font-size:11px;color:var(--cyan);margin-bottom:16px">👨‍🍳 Powered by Chef-ly</div>
   <div style="width:140px;height:140px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:0 0 30px rgba(105,201,208,.3);transition:transform .3s ease" id="spinner-wheel">${result?result.emoji:"🎯"}</div>
-  ${result?`<div style="background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${result.text}</div></div>`:"<div style='font-size:13px;color:var(--gray);margin-bottom:16px'>Spin for a personalized challenge from Aria!</div>"}
+  ${result?`<div style="background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${result.text}</div></div>`:"<div style='font-size:13px;color:var(--gray);margin-bottom:16px'>Spin for a personalized challenge from Chef-ly!</div>"}
   <button id="spin-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${result?"🔄 Spin Again!":"🎯 Spin!"}</button>
   </div>`;
 }
@@ -1603,8 +1601,8 @@ Respond ONLY with JSON: {"emoji":"[single emoji]","text":"[fun challenge under 1
 }
 
 function renderMemory() {
-  if (!UI.memCards || UI.memCards.length === 0) { initMemory(); return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Aria is setting up your cards...</div></div>`; }
-  if (UI.memLoading) return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Aria is generating new cards...</div></div>`;
+  if (!UI.memCards || UI.memCards.length === 0) { initMemory(); return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Chef-ly is setting up your cards...</div></div>`; }
+  if (UI.memLoading) return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Chef-ly is generating new cards...</div></div>`;
   const cards = UI.memCards || [];
   return `<div class="card" style="padding:16px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -1777,7 +1775,7 @@ function getAriaGreeting() {
   const pickyOnes = hausMembers.filter(m => m.pickyEater).map(m => m.name);
   const memberNames = hausMembers.map(m => m.name);
 
-  let greeting = `Hey${firstName ? ' ' + firstName : ''}! 👋 I'm Aria — your NeuroMeal AI.
+  let greeting = `Hey${firstName ? ' ' + firstName : ''}! 👋 I'm Chef-ly — your NeuroMeal AI! 👨‍🍳.
 
 `;
 
@@ -1798,7 +1796,7 @@ function getAriaGreeting() {
 }
 
 function renderAI() {
-  if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">🧠</div><div style="font-size:15px;margin-bottom:16px">Get Active to use Aria!</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;
+  if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">🧠</div><div style="font-size:15px;margin-bottom:16px">Get Active to use Chef-ly!</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;
   
   // Auto-send ariaFixMsg if coming from nutrition alert
   if (UI.ariaFixMsg) {
@@ -1808,7 +1806,7 @@ function renderAI() {
     UI.aiLoading = true;
     setTimeout(() => {
       renderMain();
-      callAI([{role:"user", content: fixMsg}], `You are Aria, a warm encouraging family meal planning AI. The user needs quick, practical nutrition fixes. Be fun, concise, and give specific food suggestions.`).then(reply => {
+      callAI([{role:"user", content: fixMsg}], `You are Chef-ly, a warm encouraging family meal planning AI. The user needs quick, practical nutrition fixes. Be fun, concise, and give specific food suggestions.`).then(reply => {
         UI.aiLoading = false;
         UI.aiChat = [{role:"user", text: fixMsg}, {role:"assistant", text: reply}];
         renderMain();
@@ -1824,8 +1822,8 @@ function renderAI() {
   const hausSize = (currentFamily?.hausMembers||[]).length + 1;
   return `<div class="fu" style="display:flex;flex-direction:column;height:calc(100vh-200px)">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div class="st" style="margin-bottom:0">🧠 Aria</div>
-    <button id="aria-meal-plan-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">✨ Plan My Week</button>
+    <div class="st" style="margin-bottom:0">👨‍🍳 Chef-ly</div>
+    <button id="aria-meal-plan-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">✨ Chef-ly Plans My Week</button>
   </div>
   <div id="ai-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
     ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button>${!m.text.includes("7-Day")?`<button data-save-recipe="${idx}" data-save-text="${encodeURIComponent(m.text.substring(0,500))}" style="padding:6px 12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:10px;color:var(--yellow);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🔖 Save to Cookbook</button>`:""}    </div>`:""}    </div></div>`).join("")}
@@ -1839,7 +1837,7 @@ function renderAI() {
   <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:500;display:flex;align-items:flex-end;justify-content:center">
     <div style="background:var(--card);border-radius:24px 24px 0 0;padding:24px;width:100%;max-width:600px">
       <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px">📅 Add to Calendar</div>
-      <div style="font-size:12px;color:var(--gray);margin-bottom:14px">Adding Aria's suggestion to your weekly plan</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:14px">Adding Chef-ly's suggestion to your weekly plan</div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:8px">WHICH DAY?</div>
@@ -1930,7 +1928,7 @@ function bindAI() {
     const day = UI.ariaCalDay || "Mon";
     const type = UI.ariaCalType || "Dinner";
     const servings = UI.ariaServings || 4;
-    // Extract meal name from Aria's response - take first line that looks like a meal
+    // Extract meal name from Chef-ly's response - take first line that looks like a meal
     const text = UI.ariaAddMeal || "";
     const lines = text.split("\n").map(l => l.replace(/[*#]/g,"").trim()).filter(Boolean);
     const mealName = lines.find(l => l.length > 3 && l.length < 60 && !l.startsWith("-") && !l.toLowerCase().startsWith("why") && !l.toLowerCase().startsWith("quick")) || "Aria Suggestion";
@@ -1982,7 +1980,7 @@ THIS WEEK'S MEALS: ${Object.entries(weekPlan).map(([day, meals]) =>
   Object.entries(meals || {}).filter(([,v])=>v).map(([type, meal]) => `${day} ${type}: ${meal}`).join(", ")
 ).filter(Boolean).join("; ")}` : "";
 
-  const systemPrompt = `You are Aria, the NeuroMeal AI — a warm, encouraging meal planning assistant built specifically for AuDHD families. You are practical, never judgmental, and understand that feeding a family with different needs and limited executive function is genuinely hard.
+  const systemPrompt = `You are Chef-ly, the NeuroMeal AI — a warm, encouraging meal planning assistant built specifically for AuDHD families. You are practical, never judgmental, and understand that feeding a family with different needs and limited executive function is genuinely hard.
 ${profileContext}
 ${familyContext}
 ${mealContext}
@@ -2093,112 +2091,122 @@ function renderAddModal() {
   const existing = document.getElementById("add-modal");
   if (existing) existing.remove();
   const {day, type} = UI.showAdd;
-  const meals = allMeals();
-  
-  // Check Aria's plan for this slot
+
+  // Check Aria weekly plan for this slot
   const draft = ARIA_WEEK_PLAN || currentFamily?.weekPlanDraft || {};
   const ariaSuggestion = draft?.[day]?.[type] || null;
 
   const el = document.createElement("div");
   el.id = "add-modal";
-  el.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;overflow-y:auto;animation:fadeIn .2s ease";
-  
+  el.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:500;overflow-y:auto";
+
   el.innerHTML = `
   <div style="max-width:480px;width:100%;margin:0 auto;padding:20px 16px 100px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="font-family:var(--fd);font-size:18px;font-weight:800;letter-spacing:-0.5px">🍽️ ${type} for ${day}</div>
-      <button id="close-add-modal" style="width:34px;height:34px;border-radius:10px;background:var(--border);border:none;cursor:pointer;color:var(--white);font-size:16px">✕</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-family:var(--fd);font-size:18px;font-weight:800;letter-spacing:-0.5px">🍽️ ${type} · ${day}</div>
+      <button id="close-add-modal" style="width:34px;height:34px;border-radius:10px;background:var(--border);border:none;cursor:pointer;color:var(--white);font-size:18px;font-weight:700">✕</button>
     </div>
 
-    ${ariaSuggestion ? `
-    <div style="margin-bottom:16px">
-      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">🧠 ARIA'S PLAN SUGGESTS</div>
-      <div id="aria-plan-pick" data-meal="${ariaSuggestion}" style="display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(105,201,208,.12),rgba(238,29,82,.06));border:2px solid rgba(105,201,208,.5);border-radius:14px;cursor:pointer;margin-bottom:4px">
+    ${ariaSuggestion ? `<div style="margin-bottom:18px">
+      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">🧠 FROM CHEF-LY'S PLAN</div>
+      <div id="aria-plan-suggestion" style="display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.08));border:2px solid var(--cyan);border-radius:14px;cursor:pointer">
         <span style="font-size:28px">🧠</span>
-        <div style="flex:1">
-          <div style="font-size:14px;font-weight:800;color:var(--cyan)">${ariaSuggestion}</div>
-          <div style="font-size:11px;color:var(--gray)">From your weekly plan</div>
-        </div>
-        <span style="font-size:10px;padding:4px 8px;border-radius:8px;background:rgba(105,201,208,.2);color:var(--cyan);font-weight:800">✨ Tap to add</span>
+        <div style="flex:1"><div style="font-size:15px;font-weight:800;color:var(--cyan)">${ariaSuggestion}</div><div style="font-size:11px;color:var(--gray)">Tap to add</div></div>
       </div>
     </div>` : ""}
 
-    <div style="margin-bottom:16px">
-      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">🔍 ASK ARIA</div>
-      <div style="display:flex;gap:8px">
-        <input id="aria-cal-input" placeholder="e.g. something quick with chicken..." style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:11px 14px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none"/>
-        <button id="aria-cal-ask-btn" style="padding:11px 16px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">Ask</button>
+    <div style="margin-bottom:18px">
+      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">🔍 ASK CHEF-LY FOR IDEAS</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="aria-ask-input" placeholder="e.g. quick chicken dinner, easy kids breakfast..." style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none"/>
+        <button id="aria-ask-btn" style="padding:12px 16px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">Ask</button>
       </div>
-      <div id="aria-cal-result" style="margin-top:8px"></div>
+      <div id="aria-ask-results"></div>
     </div>
 
     <div>
-      <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">⚡ QUICK PICKS</div>
-      ${Object.entries(meals).filter(([,d])=>d.type===type).map(([name,d])=>`
-      <div data-quick-meal="${name}" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer">
-        <span style="font-size:24px">${d.emoji}</span>
-        <div style="flex:1"><div style="font-size:13px;font-weight:800">${name}</div><div style="font-size:10px;color:var(--gray)">${d.calories}cal · $${d.cost.toFixed(2)} · ${d.prepTime+d.cookTime}min</div></div>
-        <span style="font-size:10px;padding:3px 7px;border-radius:8px;background:${d.difficulty==="Easy"?"rgba(74,222,128,.15)":"rgba(250,204,21,.15)"};color:${d.difficulty==="Easy"?"var(--green)":"var(--yellow)"}">${d.difficulty}</span>
-      </div>`).join("")}
+      <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">✏️ OR TYPE YOUR OWN</div>
+      <div style="display:flex;gap:8px">
+        <input id="custom-meal-input" placeholder="Type any meal name..." style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none"/>
+        <button id="custom-meal-btn" style="padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--white);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--fb)">Add</button>
+      </div>
     </div>
   </div>`;
 
   document.body.appendChild(el);
 
-  // Close button
-  document.getElementById('close-add-modal').addEventListener('click', () => {
-    document.getElementById('add-modal')?.remove();
-    UI.showAdd = null;
+  // Close
+  document.getElementById("close-add-modal").addEventListener("click", () => {
+    el.remove(); UI.showAdd = null;
   });
 
-  // Aria plan suggestion tap
-  const planPick = document.getElementById('aria-plan-pick');
-  if (planPick) planPick.addEventListener('click', () => {
-    addMeal(day, type, planPick.getAttribute('data-meal'));
+  // Aria plan suggestion
+  const planSug = document.getElementById("aria-plan-suggestion");
+  if (planSug) {
+    planSug.addEventListener("click", () => addMeal(day, type, ariaSuggestion));
+  }
+
+  // Custom meal input
+  document.getElementById("custom-meal-btn").addEventListener("click", () => {
+    const val = document.getElementById("custom-meal-input")?.value?.trim();
+    if (val) addMeal(day, type, val);
+  });
+  document.getElementById("custom-meal-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const val = e.target.value?.trim();
+      if (val) addMeal(day, type, val);
+    }
   });
 
-  // Quick pick taps
-  el.querySelectorAll('[data-quick-meal]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      addMeal(day, type, btn.getAttribute('data-quick-meal'));
-    });
-  });
+  // Ask Aria
+  const askBtn = document.getElementById("aria-ask-btn");
+  const askInput = document.getElementById("aria-ask-input");
+  const resultsEl = document.getElementById("aria-ask-results");
 
-  // Ask Aria button
-  const askBtn = document.getElementById('aria-cal-ask-btn');
-  const calInput = document.getElementById('aria-cal-input');
-  const resultEl = document.getElementById('aria-cal-result');
-
-  async function askAriaForMeal() {
-    const query = calInput?.value?.trim();
+  async function askAria() {
+    const query = askInput?.value?.trim();
     if (!query) return;
     askBtn.textContent = "...";
     askBtn.disabled = true;
-    resultEl.innerHTML = "<div style=\"font-size:12px;color:var(--gray);padding:8px\">Aria is thinking... 🧠</div>";
-    
+    resultsEl.innerHTML = "<div style=\"padding:10px;font-size:12px;color:var(--gray)\">Chef-ly is thinking... 👨‍🍳</div>";
+
     const profile = userDoc?.profile || {};
     const hausMembers = currentFamily?.hausMembers || [];
-    const prompt = `Suggest ONE meal name (5 words max) for ${type} on ${day} based on: "${query}". Family: ${hausMembers.map(m=>m.name).join(", ")||"just me"}. Diet: ${profile.diet||"Standard"}. Avoid: ${profile.avoid||"none"}. Reply with ONLY the meal name, nothing else.`;
-    
+    const pickyOnes = hausMembers.filter(m => m.pickyEater).map(m => m.name);
+
+    const prompt = `Give me 4 meal options for ${type} on ${day}. Request: "${query}".
+Family diet: ${profile.diet || "Standard"}. 
+Foods to avoid: ${profile.avoid || "none"}.
+${pickyOnes.length > 0 ? "Picky eaters: " + pickyOnes.join(", ") + " — keep options simple." : ""}
+Reply with ONLY a JSON array of 4 meal names, max 5 words each. Example: ["Grilled Chicken Salad","Pasta Primavera","Beef Tacos","Veggie Stir Fry"]`;
+
     try {
-      const reply = await callAI([{role:"user",content:prompt}], "You are a meal naming assistant. Reply with only a meal name, 5 words maximum.");
-      const mealName = reply.replace(/[*#"]/g,"").trim().substring(0,50);
-      // Store meal name in closure for reliable access
-      const suggestedMeal = mealName;
-      resultEl.innerHTML = "<div id=\"aria-suggested-meal\" style=\"display:flex;align-items:center;gap:10px;padding:12px;background:linear-gradient(135deg,rgba(105,201,208,.12),rgba(238,29,82,.06));border:2px solid rgba(105,201,208,.4);border-radius:12px;cursor:pointer;margin-top:4px\"><span style=\"font-size:22px\">🧠</span><div style=\"flex:1\"><div style=\"font-size:13px;font-weight:800;color:var(--cyan)\">" + suggestedMeal + "</div><div style=\"font-size:10px;color:var(--gray)\">Tap to add to calendar</div></div></div>";
-      document.getElementById("aria-suggested-meal")?.addEventListener("click", () => {
-        addMeal(day, type, suggestedMeal);
-      });
+      const reply = await callAI([{role:"user",content:prompt}], "You are a meal suggestion assistant. Reply only with a JSON array of 4 meal name strings.");
+      const clean = reply.replace(/```json|```/g,"").trim();
+      const options = JSON.parse(clean);
+      if (Array.isArray(options) && options.length > 0) {
+        resultsEl.innerHTML = "";
+        options.forEach(meal => {
+          const cleanMeal = meal.replace(/[<>"]/g, "").trim();
+          const div = document.createElement("div");
+          div.style.cssText = "display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer";
+          div.innerHTML = "<span style=\"font-size:20px\">🧠</span><div style=\"flex:1;font-size:13px;font-weight:700\">" + cleanMeal + "</div><span style=\"font-size:10px;color:var(--cyan);font-weight:700\">+ Add</span>";
+          div.addEventListener("click", () => addMeal(day, type, cleanMeal));
+          resultsEl.appendChild(div);
+        });
+      }
     } catch(e) {
-      resultEl.innerHTML = '<div style="font-size:12px;color:var(--pink);padding:8px">Could not get suggestion — try again!</div>';
+      resultsEl.innerHTML = "<div style=\"padding:10px;font-size:12px;color:var(--pink)\">Chef-ly could not get a suggestions — try again!</div>";
     }
-    askBtn.textContent = 'Ask';
+    askBtn.textContent = "Ask";
     askBtn.disabled = false;
   }
 
-  askBtn.addEventListener('click', askAriaForMeal);
-  calInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') askAriaForMeal(); });
+  askBtn.addEventListener("click", askAria);
+  askInput.addEventListener("keydown", (e) => { if (e.key === "Enter") askAria(); });
 }
+
+
 
 async function addMeal(day, type, meal) {
   if (!currentUser) { showGetActiveModal(); return; }

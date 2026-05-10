@@ -1026,7 +1026,7 @@ function renderDash() {
 
   return `<div class="fu">
   <div style="padding:14px 16px;border-radius:16px;background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.18);font-size:13px;line-height:1.7;color:var(--white);margin-bottom:16px">${motivationMsg}</div>
-  <button id="profile-setup-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:14px;animation:pulse 2s ease infinite">🧠 Set Up My Profile — Help Aria Know You!</button>
+  ${!userDoc?.profile?.name ? `<button id="profile-setup-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:14px;animation:pulse 2s ease infinite">🧠 Set Up My Profile — Help Aria Know You!</button>` : ""}
   <div class="sgrid">
     ${[{l:"MEALS PLANNED",v:ws.meals,i:"🍽️",c:"var(--cyan)"},{l:"WEEKLY COST",v:"$"+totalCost().toFixed(2),i:"💰",c:"var(--yellow)"},{l:"MEALS COOKED",v:ws.cooked,i:"✅",c:"var(--green)"},{l:"TOTAL XP",v:userDoc?.xp||0,i:"⚡",c:"var(--pink)"}].map(s=>`<div class="sc"><div class="si">${s.i}</div><div class="sv" style="color:${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join("")}
   </div>
@@ -1527,7 +1527,7 @@ function renderAI() {
   return `<div class="fu" style="display:flex;flex-direction:column;height:calc(100vh-200px)">
   <div class="st">🧠 Aria</div>
   <div id="ai-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
-    ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<button data-aria-add="${idx}" style="margin-top:6px;padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button>`:""}    </div></div>`).join("")}
+    ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="margin-top:6px;padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button>`:""}    </div></div>`).join("")}
     ${UI.aiLoading?`<div style="display:flex;gap:8px;align-items:center"><div style="width:32px;height:32px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center">🤖</div><div style="padding:12px 16px;background:var(--card);border-radius:18px;font-size:13px;color:var(--gray)">Thinking...</div></div>`:""}
   </div>
   <div style="display:flex;gap:8px;flex-shrink:0">
@@ -1583,12 +1583,10 @@ function bindAI() {
   document.querySelectorAll("[data-aria-add]").forEach(btn => {
     btn.addEventListener("click", function() {
       const idx = parseInt(this.getAttribute("data-aria-add"));
-      const msgs = UI.aiChat.length === 0 ? [{role:"assistant",text:getAriaGreeting()}] : UI.aiChat;
-      UI.ariaAddMeal = msgs[idx]?.text || "";
+      UI.ariaAddMeal = UI.aiChat[idx]?.text || decodeURIComponent(this.getAttribute("data-aria-text")||"");
       UI.showAriaCalModal = true;
-      // Default servings to household size
       const hausSize = (currentFamily?.hausMembers||[]).length + 1;
-      UI.ariaServings = hausSize || 4;
+      UI.ariaServings = hausSize > 1 ? hausSize : 4;
       renderMain();
     });
   });

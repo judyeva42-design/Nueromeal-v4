@@ -153,7 +153,7 @@ let unsubscribers = [];
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
-  showAdd:null, showMemEdit:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null,
+  showAdd:null, showMemEdit:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
   weSelected:[], weSugs:null,
   gathFams:[], gathOcc:null, gathResult:null,
   aiChat:[],
@@ -992,6 +992,9 @@ function renderMain() {
   if (UI.tab==="chat") bindChat();
   if (UI.showAdd) renderAddModal();
   if (UI.showMemEdit!==null) renderMemModal();
+  // Load draft plan button
+  const loadDraftBtn = document.getElementById('load-draft-btn');
+  if (loadDraftBtn) loadDraftBtn.addEventListener('click', loadDraftPlan);
   // Attach profile button listener
   const pb = document.getElementById('profile-setup-btn');
   if (pb) pb.addEventListener('click', function() {
@@ -1131,7 +1134,9 @@ function renderDash() {
 // ── Calendar ───────────────────────────────────────────────
 function renderCal() {
   if (!currentFamily) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:36px;margin-bottom:12px">📅</div><div style="font-size:15px;margin-bottom:8px">Set up your family first!</div>${!currentUser?`<button onclick="signInWithGoogle()" class="btn btnp">Get Active</button>`:""}</div>`;
+  const hasDraft = (currentFamily?.weekPlanDraft && Object.keys(currentFamily?.weekPlanDraft||{}).length > 0) || (UI.weeklyPlanData && Object.keys(UI.weeklyPlanData||{}).length > 0);
   return `<div class="fu">
+  ${hasDraft ? '<div style="background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.1));border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:800;color:var(--cyan)">🧠 Aria has a plan ready!</div><div style="font-size:11px;color:var(--gray);margin-top:2px">Tap to load your full week of meals</div></div><button id=\"load-draft-btn\" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:12px;cursor:pointer;font-family:var(--fd)">Load It!</button></div>' : ""}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
     <div class="st" style="margin-bottom:0">📅 Weekly Calendar</div>
     <button onclick="setTab('ai')" class="btn btnp" style="font-size:11px">🤖 AI Suggest</button>
@@ -1391,6 +1396,47 @@ function renderTrivia() {
 }
 
 
+
+function parseWeeklyPlan(text) {
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const dayNames = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+  const mealMap = {"breakfast":"Breakfast","lunch":"Lunch","dinner":"Dinner","snack":"Snack"};
+  const plan = {};
+  let currentDay = null;
+  text.split("\n").map(l=>l.trim()).filter(Boolean).forEach(line => {
+    const ll = line.toLowerCase().replace(/[*#🌅☀️🌙🍎]/g,"").trim();
+    dayNames.forEach((d,i) => { if (ll.includes(d)) currentDay = days[i]; });
+    if (currentDay) {
+      Object.keys(mealMap).forEach(type => {
+        if (ll.startsWith(type+":") || ll.includes(" "+type+":")) {
+          const meal = line.split(":").slice(1).join(":").replace(/[*🌅☀️🌙🍎]/g,"").trim();
+          if (meal && meal.length > 2 && meal.length < 60) {
+            if (!plan[currentDay]) plan[currentDay] = {};
+            plan[currentDay][mealMap[type]] = meal;
+          }
+        }
+      });
+    }
+  });
+  return plan;
+}
+
+async function loadDraftPlan() {
+  if (!currentFamily) return;
+  const draft = currentFamily?.weekPlanDraft || UI.weeklyPlanData || {};
+  if (Object.keys(draft).length === 0) {
+    showToast("No draft plan found — ask Aria to Plan My Week first!", "warn");
+    return;
+  }
+  const count = Object.values(draft).reduce((s,d)=>s+Object.keys(d).length, 0);
+  const weekPlan = { ...(currentFamily?.weekPlan||{}), ...draft };
+  await saveFamilyDoc({ weekPlan, weekPlanDraft: null });
+  UI.weeklyPlanData = null;
+  addXP(25);
+  showToast("✅ " + count + " meals loaded into your calendar! +25 XP 🎉", "success");
+  renderMain();
+}
+
 async function generateWeeklyPlan() {
   if (!currentUser || !currentFamily) return;
   const profile = userDoc?.profile || {};
@@ -1426,7 +1472,20 @@ Continue for all 7 days. Keep each meal name short (under 5 words).`;
   const reply = await callAI([{role:"user",content:prompt}], `You are Aria, a family meal planning AI. Create practical, simple meal plans for families. Keep meal names concise.`);
   
   UI.aiLoading = false;
-  UI.aiChat = [...UI.aiChat, {role:"assistant", text:reply}];
+  const parsed = parseWeeklyPlan(reply);
+  UI.weeklyPlanData = parsed;
+  const updatedChat = [...UI.aiChat, {role:"assistant", text:reply}];
+  UI.aiChat = updatedChat;
+  // Save draft plan AND persist chat to Firestore
+  const saveData = {};
+  if (Object.keys(parsed).length > 0) {
+    saveData.weekPlanDraft = parsed;
+  }
+  saveData.ariaChat = updatedChat.slice(-20).map(m=>({role:m.role, text:m.text.substring(0,500)}));
+  await saveFamilyDoc(saveData);
+  if (Object.keys(parsed).length > 0) {
+    showToast("✅ Plan ready! Go to Calendar tab to load it 📅", "success");
+  }
   renderMain();
 }
 
@@ -1731,7 +1790,10 @@ function renderAI() {
     }, 50);
   }
 
-  // Generate dynamic greeting if chat is empty
+  // Load persisted chat from Firestore if UI chat is empty
+  if (UI.aiChat.length === 0 && currentFamily?.ariaChat?.length > 0) {
+    UI.aiChat = currentFamily.ariaChat;
+  }
   const chatMessages = UI.aiChat.length === 0 
     ? [{role:"assistant", text: getAriaGreeting()}]
     : UI.aiChat;

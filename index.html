@@ -707,6 +707,11 @@ function renderMain() {
   if (UI.tab==="chat") bindChat();
   if (UI.showAdd) renderAddModal();
   if (UI.showMemEdit!==null) renderMemModal();
+  // Attach profile button listener
+  const pb = document.getElementById('profile-setup-btn');
+  if (pb) pb.addEventListener('click', function() {
+    showToast('Profile setup coming soon! 🧠', 'success');
+  });
 }
 
 // ── Dashboard ──────────────────────────────────────────────
@@ -756,6 +761,7 @@ function renderDash() {
 
   return `<div class="fu">
   <div style="padding:14px 16px;border-radius:16px;background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.18);font-size:13px;line-height:1.7;color:var(--white);margin-bottom:16px">${motivationMsg}</div>
+  <button id="profile-setup-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:14px;animation:pulse 2s ease infinite">🧠 Set Up My Profile — Help Aria Know You!</button>
   <div class="sgrid">
     ${[{l:"MEALS PLANNED",v:ws.meals,i:"🍽️",c:"var(--cyan)"},{l:"WEEKLY COST",v:"$"+totalCost().toFixed(2),i:"💰",c:"var(--yellow)"},{l:"MEALS COOKED",v:ws.cooked,i:"✅",c:"var(--green)"},{l:"TOTAL XP",v:userDoc?.xp||0,i:"⚡",c:"var(--pink)"}].map(s=>`<div class="sc"><div class="si">${s.i}</div><div class="sv" style="color:${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join("")}
   </div>

@@ -648,14 +648,12 @@ function renderOnboarding() {
     const loves = document.getElementById('ob-loves').value.trim();
     const profile = { name: name || currentUser?.displayName || 'User', age, diet, goal, avoid, loves };
     await saveUserDoc({ profileComplete: true, profile, name: profile.name });
-    addXP(50);
-    showToast('Profile saved! +50 XP 🎉', 'success');
-    renderApp();
+    window.location.reload();
   });
 
   document.getElementById('ob-skip-btn').addEventListener('click', async function() {
     await saveUserDoc({ profileComplete: true, profile: {} });
-    renderApp();
+    window.location.reload();
   });
 }
 

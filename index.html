@@ -1003,6 +1003,26 @@ function renderMain() {
     UI.showAdd = null;
     loadDraftPlan();
   });
+  // Shopping buttons
+  const shopGenBtn = document.getElementById('shop-generate-btn');
+  if (shopGenBtn) shopGenBtn.addEventListener('click', generateShoppingList);
+  const shopClearBtn = document.getElementById('shop-clear-btn');
+  if (shopClearBtn) shopClearBtn.addEventListener('click', async function() {
+    await saveFamilyDoc({ shoppingList: [] });
+    if (currentFamily) currentFamily.shoppingList = [];
+    renderMain();
+  });
+  // Shopping item checkboxes
+  document.querySelectorAll('[id^="shop-item-"]').forEach((cb,i) => {
+    cb.addEventListener('change', async function() {
+      const list = [...(currentFamily?.shoppingList||[])];
+      if (list[i]) { list[i].checked = this.checked; }
+      await saveFamilyDoc({ shoppingList: list });
+      if (currentFamily) currentFamily.shoppingList = list;
+      renderMain();
+    });
+  });
+  // Shopping buttons
   // Calendar buttons
   document.querySelectorAll('[data-selday]').forEach(btn => {
     btn.addEventListener('click', function() { UI.selDay = this.getAttribute('data-selday'); renderMain(); });
@@ -1316,18 +1336,90 @@ function renderNutr() {
 }
 
 // ── Shopping ───────────────────────────────────────────────
+
+async function generateShoppingList() {
+  if (!currentFamily) return;
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const types = ["Breakfast","Lunch","Dinner","Snack"];
+  const plan = currentFamily?.weekPlan || {};
+  const meals = [];
+  days.forEach(d => types.forEach(t => { const m = plan[d]?.[t]; if(m) meals.push(m); }));
+  
+  if (meals.length === 0) { showToast("Add meals to your calendar first!", "warn"); return; }
+
+  const loadEl = document.getElementById('shop-loading');
+  const genBtn = document.getElementById('shop-generate-btn');
+  if (loadEl) loadEl.style.display = 'block';
+  if (genBtn) { genBtn.textContent = '...'; genBtn.disabled = true; }
+
+  const profile = userDoc?.profile || {};
+  const hausMembers = currentFamily?.hausMembers || [];
+  const hausSize = hausMembers.length + 1;
+
+  const prompt = `Create a complete shopping list for a family of ${hausSize} for these meals: ${meals.join(", ")}.
+Diet: ${profile.diet||"Standard"}. Avoid: ${profile.avoid||"none"}.
+Organize by category (Produce, Proteins, Dairy, Pantry, etc).
+Include quantities for ${hausSize} people. Keep it practical and easy to read.
+Format as a simple list with category headers.`;
+
+  try {
+    const reply = await callAI([{role:"user",content:prompt}], "You are a helpful shopping list assistant. Create practical, organized grocery lists.");
+    await saveFamilyDoc({ shoppingList: reply });
+    if (currentFamily) currentFamily.shoppingList = reply;
+    showToast("✅ Shopping list ready!", "success");
+  } catch(e) {
+    showToast("Could not generate list — try again!", "warn");
+  }
+  renderMain();
+}
+
 function renderShop() {
   if (!currentFamily) return `<div style="padding:40px;text-align:center;color:var(--gray)">${!currentUser?`<button onclick="signInWithGoogle()" class="btn btnp">Get Active</button>`:"Set up your family first!"}</div>`;
-  const um=uniqueMeals(),master=[];
-  const map={};
-  um.forEach(meal=>{(allMeals()[meal]?.ingredients||[]).forEach(ing=>{if(map[ing.item])map[ing.item].cost+=ing.cost;else map[ing.item]={...ing};});});
-  Object.values(map).forEach(v=>master.push(v));
-  const total=master.reduce((s,i)=>s+i.cost,0);
+  
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const types = ["Breakfast","Lunch","Dinner","Snack"];
+  const plan = currentFamily?.weekPlan || {};
+  const allPlannedMeals = [];
+  days.forEach(d => types.forEach(t => { const m = plan[d]?.[t]; if(m) allPlannedMeals.push({day:d,type:t,meal:m}); }));
+  const savedList = currentFamily?.shoppingList || null;
+
   return `<div class="fu">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="st" style="margin-bottom:0">🛒 Shopping</div><div style="background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.22);border-radius:10px;padding:5px 14px;font-size:14px;font-weight:800;color:var(--yellow)">$${total.toFixed(2)}</div></div>
-  ${um.length===0?`<div style="text-align:center;padding:55px 0;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">🛒</div><div style="font-size:14px">Add meals to generate your list!</div></div>`:""}
-  ${um.length>1?`<div style="background:linear-gradient(135deg,rgba(105,201,208,.06),rgba(238,29,82,.04));border:1px solid rgba(105,201,208,.15);border-radius:14px;padding:16px;margin-bottom:12px"><div style="font-family:var(--fd);font-size:14px;font-weight:800;color:var(--cyan);margin-bottom:10px">✨ Combined List — ${master.length} items</div>${master.map((ing,i)=>`<div class="grow" style="${i===master.length-1?"border-bottom:none":""}"><span style="font-size:12px">• ${ing.item}</span><span style="font-size:10px;color:var(--yellow)">$${ing.cost.toFixed(2)}</span></div>`).join("")}</div>`:""}
-  ${um.map(meal=>{const d=allMeals()[meal];if(!d)return"";return`<div class="card" style="overflow:hidden;margin-bottom:10px"><div style="padding:12px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)"><span style="font-size:20px">${d.emoji}</span><span style="font-weight:800;font-size:14px;flex:1">${meal}</span><span style="font-size:12px;color:var(--yellow);font-weight:700">$${d.cost.toFixed(2)}</span></div><div style="padding:8px 14px 12px">${d.ingredients.map((ing,i)=>`<div class="grow" style="${i===d.ingredients.length-1?"border-bottom:none":""}"><span style="font-size:11px">• ${ing.item}</span><div style="display:flex;gap:9px"><span style="font-size:10px;color:var(--gray)">${ing.qty}</span><span style="font-size:10px;color:var(--yellow)">$${ing.cost.toFixed(2)}</span></div></div>`).join("")}</div></div>`;}).join("")}
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div class="st" style="margin-bottom:0">🛒 Shopping</div>
+    <button id="shop-generate-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">🥗 Generate List</button>
+  </div>
+
+  ${allPlannedMeals.length === 0 ? `<div style="text-align:center;padding:40px;color:var(--gray)">
+    <div style="font-size:44px;margin-bottom:12px">🛒</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:8px">No meals planned yet!</div>
+    <div style="font-size:13px;margin-bottom:16px">Add meals to your calendar first, then Preppi will generate your shopping list.</div>
+  </div>` : `
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px">
+    <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:10px">📅 THIS WEEK'S MEALS (${allPlannedMeals.length})</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${allPlannedMeals.map(({day,type,meal}) => `<div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:10px;color:var(--gray);width:50px;flex-shrink:0">${day} ${type.substring(0,4)}</span>
+        <span style="font-size:12px;font-weight:600">${meal}</span>
+      </div>`).join("")}
+    </div>
+  </div>
+
+  ${savedList ? `
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px">🛒 SHOPPING LIST</div>
+      <button id="shop-clear-btn" style="padding:4px 8px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--gray);font-size:10px;cursor:pointer;font-family:var(--fb)">Clear</button>
+    </div>
+    <div id="shop-list-content" style="font-size:13px;color:var(--white);line-height:1.9;white-space:pre-wrap">${savedList}</div>
+  </div>` : `
+  <div style="text-align:center;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:14px">
+    <div style="font-size:13px;color:var(--gray);margin-bottom:12px">Tap "Generate List" and Preppi will create a complete shopping list based on all your planned meals!</div>
+  </div>`}
+  
+  <div id="shop-loading" style="display:none;text-align:center;padding:20px;color:var(--gray)">
+    <div style="font-size:13px">🥗 Preppi is building your list...</div>
+  </div>
+  `}
   </div>`;
 }
 

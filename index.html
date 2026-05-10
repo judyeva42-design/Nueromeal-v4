@@ -996,6 +996,24 @@ function renderMain() {
   if (UI.tab==="chat") bindChat();
   if (UI.showAdd) renderAddModal();
   if (UI.showMemEdit!==null) renderMemModal();
+  // Calendar slot buttons via event delegation
+  const calEl = document.getElementById('cal-grid');
+  if (calEl) {
+    calEl.addEventListener('click', function(e) {
+      const addBtn = e.target.closest('[data-add-day]');
+      const removeBtn = e.target.closest('[data-remove-day]');
+      if (addBtn && currentUser) {
+        openAdd(addBtn.getAttribute('data-add-day'), addBtn.getAttribute('data-add-type'));
+      } else if (addBtn) {
+        showGetActiveModal();
+      }
+      if (removeBtn && currentUser) {
+        removeMeal(removeBtn.getAttribute('data-remove-day'), removeBtn.getAttribute('data-remove-type'));
+      } else if (removeBtn) {
+        showGetActiveModal();
+      }
+    });
+  }
   // Load draft plan button
   const loadDraftBtn = document.getElementById('load-draft-btn');
   if (loadDraftBtn) loadDraftBtn.addEventListener('click', () => {
@@ -1149,12 +1167,12 @@ function renderCal() {
     <div class="st" style="margin-bottom:0">📅 Weekly Calendar</div>
     <button onclick="setTab('ai')" class="btn btnp" style="font-size:11px">🤖 AI Suggest</button>
   </div>
-  <div class="cgrid">
+  <div class="cgrid" id="cal-grid">
     ${DAYS.map(day=>{
       const dc=MT.reduce((s,t)=>s+(allMeals()[F().weekPlan?.[day]?.[t]]?.cost||0),0);
       return `<div class="cday">
         <div class="cdh ${UI.selDay===day?"today":""}" onclick="setDay('${day}')">${day}</div>
-        $T.map(type=>{const meal=F().weekPlan?.[day]?.[type];const d=meal?allMeals()[meal]:null;return`<div class="cslot"><div class="csl">${type.substring(0,4)}</div>${meal?`<div class="cchip"><div class="ce">${d?d.emoji:"🍽️"}</div><div class="cn" style="font-size:10px">${meal}</div></div><button onclick="${currentUser?`removeMeal('${day}','${type}')`:'showGetActiveModal()'}" style="background:transparent;border:none;cursor:pointer;color:var(--gray2);font-size:8px;margin-top:1px">✕</button>`:`<button class="cadd" onclick="${currentUser?`openAdd('${day}','${type}')`:'showGetActiveModal()'}">+</button>`}</div>`;}).join("")}
+        MT.map(type=>{const meal=F().weekPlan?.[day]?.[type];const ms=meal?meal.substring(0,12)+(meal.length>12?"...":""):"";return "<div style=\"display:flex;flex-direction:column;align-items:center;padding:2px\"><div style=\"font-size:8px;color:var(--gray);margin-bottom:2px\">" + type.substring(0,4) + "</div>" + (meal?"<div style=\"background:var(--card2);border-radius:8px;padding:4px 6px;font-size:9px;font-weight:700;text-align:center;width:100%;word-break:break-word\">" + ms + "</div><button data-remove-day=\""+day+"\" data-remove-type=\""+type+"\" style=\"background:transparent;border:none;cursor:pointer;color:var(--gray2);font-size:8px;margin-top:1px\">✕</button>":"<button data-add-day=\""+day+"\" data-add-type=\""+type+"\" style=\"width:24px;height:24px;border-radius:6px;background:var(--card2);border:1px dashed var(--border);cursor:pointer;color:var(--gray);font-size:14px\">+</button>") + "</div>";}).join("")}
         <div class="cdc">$${dc.toFixed(2)}</div>
       </div>`;
     }).join("")}
@@ -1249,13 +1267,33 @@ function renderShop() {
   const um=uniqueMeals();
   const total=0;
   const master=[];
+  const mealNames = um; // All planned meal names as strings
   return `<div class="fu">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="st" style="margin-bottom:0">🛒 Shopping</div><div style="background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.22);border-radius:10px;padding:5px 14px;font-size:14px;font-weight:800;color:var(--yellow)">$${total.toFixed(2)}</div></div>
-  ${um.length===0?`<div style="text-align:center;padding:55px 0;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">🛒</div><div style="font-size:14px">Add meals to generate your list!</div></div>`:""}
-  ${um.length>1?`<div style="background:linear-gradient(135deg,rgba(105,201,208,.06),rgba(238,29,82,.04));border:1px solid rgba(105,201,208,.15);border-radius:14px;padding:16px;margin-bottom:12px"><div style="font-family:var(--fd);font-size:14px;font-weight:800;color:var(--cyan);margin-bottom:10px">✨ Combined List — ${master.length} items</div>${master.map((ing,i)=>`<div class="grow" style="${i===master.length-1?"border-bottom:none":""}"><span style="font-size:12px">• ${ing.item}</span><span style="font-size:10px;color:var(--yellow)">$${ing.cost.toFixed(2)}</span></div>`).join("")}</div>`:""}
-  ${um.map(meal=>{const d=allMeals()[meal];if(!d)return"";return`<div class="card" style="overflow:hidden;margin-bottom:10px"><div style="padding:12px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)"><span style="font-size:20px">${d.emoji}</span><span style="font-weight:800;font-size:14px;flex:1">${meal}</span><span style="font-size:12px;color:var(--yellow);font-weight:700">$${d.cost.toFixed(2)}</span></div><div style="padding:8px 14px 12px">${d.ingredients.map((ing,i)=>`<div class="grow" style="${i===d.ingredients.length-1?"border-bottom:none":""}"><span style="font-size:11px">• ${ing.item}</span><div style="display:flex;gap:9px"><span style="font-size:10px;color:var(--gray)">${ing.qty}</span><span style="font-size:10px;color:var(--yellow)">$${ing.cost.toFixed(2)}</span></div></div>`).join("")}</div></div>`;}).join("")}
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div class="st" style="margin-bottom:0">🛒 Shopping</div>
+    <button id="shop-aria-btn" style="padding:5px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">👨‍🍳 Chef-ly Ideas</button>
+  </div>
+  ${mealNames.length === 0 ? `<div style="text-align:center;padding:55px 0;color:var(--gray)">
+    <div style="font-size:44px;margin-bottom:10px">🛒</div>
+    <div style="font-size:14px;margin-bottom:16px">Add meals to your calendar to generate your list!</div>
+    <button id="shop-plan-btn" style="padding:10px 20px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">👨‍🍳 Let Chef-ly Plan My Week</button>
+  </div>` : `
+  <div style="background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.2);border-radius:14px;padding:16px;margin-bottom:14px">
+    <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:12px">THIS WEEK'S MEALS (${mealNames.length})</div>
+    ${mealNames.map(meal => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span style="font-size:16px">🍽️</span>
+      <span style="font-size:13px;font-weight:600">${meal}</span>
+    </div>`).join("")}
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px">
+    <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:10px">🛒 SHOPPING LIST</div>
+    <div style="font-size:13px;color:var(--gray);line-height:1.8">Ask Chef-ly to generate a shopping list based on your planned meals!</div>
+    <button id="shop-generate-btn" style="width:100%;margin-top:12px;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">👨‍🍳 Generate Shopping List</button>
+    <div id="shop-list-result" style="margin-top:12px"></div>
+  </div>`}
   </div>`;
 }
+
 
 // ── Chat Room ──────────────────────────────────────────────
 function renderChat() {

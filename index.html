@@ -664,7 +664,7 @@ function renderNav() {
     {id:"wellness",icon:"💙",label:"Wellness"},
     {id:"game",icon:"🎮",label:"Game"},
     {id:"family",icon:"👨‍👩‍👧",label:"Family"},
-    {id:"ai",icon:"👨‍🍳",label:"Chiefly"},
+    {id:"ai",icon:"🥗",label:"Preppi"},
     {id:"chat",icon:"💬",label:"Chat"},
     {id:"videos",icon:"📹",label:"Videos"},
     {id:"tips",icon:"📖",label:"Cookbook"},
@@ -699,19 +699,19 @@ function showNoriTip(msg) {
 
 // ── Onboarding ─────────────────────────────────────────────
 const ONBOARD_STEPS = [
-  { type:'welcome', emoji:'🧠✨', nori:"Well HELLO there, superstar!! I'm Nori — your NeuroMeal brain guide! I'm about to ask you a few questions so Chiefly can make this app feel like it was built JUST for you. Ready to make some magic? ✨" },
+  { type:'welcome', emoji:'🧠✨', nori:"Well HELLO there, superstar!! I'm Nori — your NeuroMeal brain guide! I'm about to ask you a few questions so Preppi can make this app feel like it was built JUST for you. Ready to make some magic? ✨" },
   { type:'text', field:'name', nori:"First things first — what do we call you? Not just 'hey you' 😄", label:'YOUR NAME', placeholder:"What's your name?" },
-  { type:'number', field:'age', nori:"How many trips around the sun have you taken? 🌍 Chiefly just wants to make sure your meal portions are on point!", label:'YOUR AGE', placeholder:'Enter your age' },
-  { type:'choice', field:'sex', nori:"Which best describes you? This helps Chiefly nail your nutrition targets! 💪", label:'', options:['Female 👩','Male 👨','Non-binary 🌈','Prefer not to say 🤐'] },
-  { type:'double', nori:"Height and weight time! Chiefly keeps your secrets 🤫 This is just so your nutrition goals are realistic for YOUR body!", labels:['Height (e.g. 5ft 4in)','Weight (e.g. 165 lbs)'] },
-  { type:'choice', field:'activity', nori:"On a typical day, how active are you? Be honest — Chiefly can handle the truth! 😄", label:'', options:['🛋️ Mostly sitting (desk job, Netflix champion)','🚶 Lightly active (walks, light errands)','💃 Moderately active (regular workouts)','🏃 Very active (daily intense exercise)','🔥 Super active (athlete or physical job)'] },
-  { type:'choice', field:'goal', nori:"What is your main goal right now? Chiefly will keep this in mind with EVERY suggestion!", label:'', options:['⚖️ Lose weight','💪 Build muscle','🔋 More energy','🧠 Brain-friendly eating (AuDHD/ADHD)','❤️ General health','💊 Managing a health condition','🌱 Just eat better overall'] },
+  { type:'number', field:'age', nori:"How many trips around the sun have you taken? 🌍 Preppi just wants to make sure your meal portions are on point!", label:'YOUR AGE', placeholder:'Enter your age' },
+  { type:'choice', field:'sex', nori:"Which best describes you? This helps Preppi nail your nutrition targets! 💪", label:'', options:['Female 👩','Male 👨','Non-binary 🌈','Prefer not to say 🤐'] },
+  { type:'double', nori:"Height and weight time! Preppi keeps your secrets 🤫 This is just so your nutrition goals are realistic for YOUR body!", labels:['Height (e.g. 5ft 4in)','Weight (e.g. 165 lbs)'] },
+  { type:'choice', field:'activity', nori:"On a typical day, how active are you? Be honest — Preppi can handle the truth! 😄", label:'', options:['🛋️ Mostly sitting (desk job, Netflix champion)','🚶 Lightly active (walks, light errands)','💃 Moderately active (regular workouts)','🏃 Very active (daily intense exercise)','🔥 Super active (athlete or physical job)'] },
+  { type:'choice', field:'goal', nori:"What is your main goal right now? Preppi will keep this in mind with EVERY suggestion!", label:'', options:['⚖️ Lose weight','💪 Build muscle','🔋 More energy','🧠 Brain-friendly eating (AuDHD/ADHD)','❤️ General health','💊 Managing a health condition','🌱 Just eat better overall'] },
   { type:'choice', field:'diet', nori:"Does your eating follow any particular style? Pick the one that fits best!", label:'', options:['🥗 Standard (I eat pretty much everything)','🥩 Keto (low carb, high fat)','🌿 Vegan (plant-based all the way)','🐟 Vegetarian','🫙 Mediterranean','🚫🌾 Gluten-Free','🥛 Dairy-Free','🦴 Paleo','💉 GLP-1 (Ozempic/Wegovy/Mounjaro)'] },
-  { type:'text', field:'avoid', nori:"Is there a food that makes you go absolutely NOT, not today, not ever? 🙅 List anything you want Chiefly to NEVER suggest!", label:'FOODS TO AVOID (optional)', placeholder:'e.g. mushrooms, shellfish, cilantro...' },
-  { type:'text', field:'loves', nori:"Now the fun part — what foods make you do a little happy dance? 💃 Tell Chiefly your favorites!", label:'FAVORITE FOODS (optional)', placeholder:'e.g. pasta, tacos, avocado...' },
+  { type:'text', field:'avoid', nori:"Is there a food that makes you go absolutely NOT, not today, not ever? 🙅 List anything you want Preppi to NEVER suggest!", label:'FOODS TO AVOID (optional)', placeholder:'e.g. mushrooms, shellfish, cilantro...' },
+  { type:'text', field:'loves', nori:"Now the fun part — what foods make you do a little happy dance? 💃 Tell Preppi your favorites!", label:'FAVORITE FOODS (optional)', placeholder:'e.g. pasta, tacos, avocado...' },
   { type:'choice', field:'pickyEater', nori:"Are you feeding any picky eaters? You know the type — chicken nuggets and air 😂", label:'', options:['🙅 Nope, everyone eats everything!','😬 One picky eater in the house','😅 Multiple picky eaters (send help)','🤦 I AM the picky eater 😂'] },
   { type:'choice', field:'fridgeVibes', nori:"Last one — just for fun! 🎉 If your fridge could play a theme song when you opened it, what genre would it be? 🎵", label:'', options:['🎸 Rock (I open it with INTENTION)','🎹 Jazz (spontaneous fridge discoveries)','🎵 Pop (whatever is trending in the pantry)','🎤 Hype music (I am about to COOK)','🎶 Lo-fi (just a chill snack, no drama)','🎺 Classical (I meal prep on Sundays like an adult)'] },
-  { type:'complete', emoji:'🎉🧠🔥', nori:"YESSS!! You did it!! 🎉 Chiefly now knows everything needed to make NeuroMeal feel like it was built just for you! Your meals are about to get SO much smarter!" },
+  { type:'complete', emoji:'🎉🧠🔥', nori:"YESSS!! You did it!! 🎉 Preppi now knows everything needed to make NeuroMeal feel like it was built just for you! Your meals are about to get SO much smarter!" },
 ];
 
 function renderOnboard() {
@@ -996,24 +996,19 @@ function renderMain() {
   if (UI.tab==="chat") bindChat();
   if (UI.showAdd) renderAddModal();
   if (UI.showMemEdit!==null) renderMemModal();
-  // Calendar slot buttons via event delegation
-  const calEl = document.getElementById('cal-grid');
-  if (calEl) {
-    calEl.addEventListener('click', function(e) {
-      const addBtn = e.target.closest('[data-add-day]');
-      const removeBtn = e.target.closest('[data-remove-day]');
-      if (addBtn && currentUser) {
-        openAdd(addBtn.getAttribute('data-add-day'), addBtn.getAttribute('data-add-type'));
-      } else if (addBtn) {
-        showGetActiveModal();
-      }
-      if (removeBtn && currentUser) {
-        removeMeal(removeBtn.getAttribute('data-remove-day'), removeBtn.getAttribute('data-remove-type'));
-      } else if (removeBtn) {
-        showGetActiveModal();
-      }
+  // Calendar slot buttons via event delegation - use document level to catch all
+  document.querySelectorAll('[data-add-day]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (currentUser) openAdd(this.getAttribute('data-add-day'), this.getAttribute('data-add-type'));
+      else showGetActiveModal();
     });
-  }
+  });
+  document.querySelectorAll('[data-remove-day]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (currentUser) removeMeal(this.getAttribute('data-remove-day'), this.getAttribute('data-remove-type'));
+      else showGetActiveModal();
+    });
+  });
   // Load draft plan button
   const loadDraftBtn = document.getElementById('load-draft-btn');
   if (loadDraftBtn) loadDraftBtn.addEventListener('click', () => {
@@ -1032,13 +1027,13 @@ function renderMain() {
   bindOnboard();
   // Attach family member buttons
   bindFamilyMembers();
-  // Save recipe buttons in Chiefly tab
+  // Save recipe buttons in Preppi tab
   document.querySelectorAll('[data-save-recipe]').forEach(btn => {
     btn.addEventListener('click', async function() {
       const idx = parseInt(this.getAttribute('data-save-recipe'));
       const text = decodeURIComponent(this.getAttribute('data-save-text')||'');
       const lines = text.split('\n').map(l=>l.replace(/[*#]/g,'').trim()).filter(Boolean);
-      const name = lines.find(l=>l.length>3&&l.length<60&&!l.startsWith('-'))||'Chiefly Recipe';
+      const name = lines.find(l=>l.length>3&&l.length<60&&!l.startsWith('-'))||'Preppi Recipe';
       const hausSize = (currentFamily?.hausMembers||[]).length + 1;
       const recipe = { name, notes: text.substring(0,300), servings: hausSize, savedAt: new Date().toISOString() };
       const savedRecipes = [...(currentFamily?.savedRecipes||[]), recipe];
@@ -1137,7 +1132,7 @@ function renderDash() {
 
   return `<div class="fu">
   <div style="padding:14px 16px;border-radius:16px;background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.18);font-size:13px;line-height:1.7;color:var(--white);margin-bottom:16px">${motivationMsg}</div>
-  ${!userDoc?.profile?.name ? `<button id="profile-setup-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:14px;animation:pulse 2s ease infinite">🧠 Set Up My Profile — Help Chiefly Know You!</button>` : ""}
+  ${!userDoc?.profile?.name ? `<button id="profile-setup-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:14px;animation:pulse 2s ease infinite">🧠 Set Up My Profile — Help Preppi Know You!</button>` : ""}
   <div class="sgrid">
     ${[{l:"MEALS PLANNED",v:ws.meals,i:"🍽️",c:"var(--cyan)"},{l:"WEEKLY COST",v:"$"+totalCost().toFixed(2),i:"💰",c:"var(--yellow)"},{l:"MEALS COOKED",v:ws.cooked,i:"✅",c:"var(--green)"},{l:"TOTAL XP",v:userDoc?.xp||0,i:"⚡",c:"var(--pink)"}].map(s=>`<div class="sc"><div class="si">${s.i}</div><div class="sv" style="color:${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join("")}
   </div>
@@ -1180,7 +1175,7 @@ function renderCal() {
   if (!currentFamily) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:36px;margin-bottom:12px">📅</div><div style="font-size:15px;margin-bottom:8px">Set up your family first!</div>${!currentUser?`<button onclick="signInWithGoogle()" class="btn btnp">Get Active</button>`:""}</div>`;
   const hasDraft = (currentFamily?.weekPlanDraft && Object.keys(currentFamily?.weekPlanDraft||{}).length > 0) || (UI.weeklyPlanData && Object.keys(UI.weeklyPlanData||{}).length > 0);
   return `<div class="fu">
-  ${hasDraft ? '<div style="background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.1));border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:800;color:var(--cyan)">👨‍🍳 Chiefly has a plan ready!</div><div style="font-size:11px;color:var(--gray);margin-top:2px">Tap to load your full week of meals</div></div><button id=\"load-draft-btn\" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:12px;cursor:pointer;font-family:var(--fd)">Load It!</button></div>' : ""}
+  ${hasDraft ? '<div style="background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.1));border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:800;color:var(--cyan)">🥗 Preppi has a plan ready!</div><div style="font-size:11px;color:var(--gray);margin-top:2px">Tap to load your full week of meals</div></div><button id=\"load-draft-btn\" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:12px;cursor:pointer;font-family:var(--fd)">Load It!</button></div>' : ""}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
     <div class="st" style="margin-bottom:0">📅 Weekly Calendar</div>
     <button onclick="setTab('ai')" class="btn btnp" style="font-size:11px">🤖 AI Suggest</button>
@@ -1289,12 +1284,12 @@ function renderShop() {
   return `<div class="fu">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
     <div class="st" style="margin-bottom:0">🛒 Shopping</div>
-    <button id="shop-aria-btn" style="padding:5px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">👨‍🍳 Chiefly Ideas</button>
+    <button id="shop-aria-btn" style="padding:5px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">🥗 Preppi Ideas</button>
   </div>
   ${mealNames.length === 0 ? `<div style="text-align:center;padding:55px 0;color:var(--gray)">
     <div style="font-size:44px;margin-bottom:10px">🛒</div>
     <div style="font-size:14px;margin-bottom:16px">Add meals to your calendar to generate your list!</div>
-    <button id="shop-plan-btn" style="padding:10px 20px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">👨‍🍳 Let Chiefly Plan My Week</button>
+    <button id="shop-plan-btn" style="padding:10px 20px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">👨‍🍳 Let Preppi Plan My Week</button>
   </div>` : `
   <div style="background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.2);border-radius:14px;padding:16px;margin-bottom:14px">
     <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:12px">THIS WEEK'S MEALS (${mealNames.length})</div>
@@ -1305,7 +1300,7 @@ function renderShop() {
   </div>
   <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px">
     <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:10px">🛒 SHOPPING LIST</div>
-    <div style="font-size:13px;color:var(--gray);line-height:1.8">Ask Chiefly to generate a shopping list based on your planned meals!</div>
+    <div style="font-size:13px;color:var(--gray);line-height:1.8">Ask Preppi to generate a shopping list based on your planned meals!</div>
     <button id="shop-generate-btn" style="width:100%;margin-top:12px;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">👨‍🍳 Generate Shopping List</button>
     <div id="shop-list-result" style="margin-top:12px"></div>
   </div>`}
@@ -1443,7 +1438,7 @@ function renderTrivia() {
   
   if (UI.aiTriviaLoading) return `<div class="card" style="padding:24px;text-align:center">
     <div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🧠</div>
-    <div style="font-size:14px;color:var(--gray)">Chiefly is generating a question...</div>
+    <div style="font-size:14px;color:var(--gray)">Preppi is generating a question...</div>
   </div>`;
 
   return `<div class="card" style="padding:18px">
@@ -1549,7 +1544,7 @@ Format as a clean list like:
 
 Continue for all 7 days. Keep each meal name short (under 5 words).`;
 
-  const reply = await callAI([{role:"user",content:prompt}], `You are Chiefly, a family meal planning AI. Create practical, simple meal plans for families. Keep meal names concise.`);
+  const reply = await callAI([{role:"user",content:prompt}], `You are Preppi, a family meal planning AI. Create practical, simple meal plans for families. Keep meal names concise.`);
   
   UI.aiLoading = false;
   const parsed = parseWeeklyPlan(reply);
@@ -1564,7 +1559,7 @@ Continue for all 7 days. Keep each meal name short (under 5 words).`;
     ARIA_WEEK_PLAN = parsed;
     showToast("✅ Plan ready! Go to Calendar tab to load it 📅", "success");
   } else {
-    showToast("Chiefly generated a plan but could not parse the meals. Try asking again!", "warn");
+    showToast("Preppi generated a plan but could not parse the meals. Try asking again!", "warn");
   }
   renderMain();
 }
@@ -1608,13 +1603,13 @@ function renderSpinner() {
   const result = UI.spinResult;
   if (UI.spinLoading) return `<div class="card" style="padding:24px;text-align:center">
     <div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🎯</div>
-    <div style="font-size:14px;color:var(--gray)">Chiefly is generating your challenge...</div>
+    <div style="font-size:14px;color:var(--gray)">Preppi is generating your challenge...</div>
   </div>`;
   return `<div class="card" style="padding:20px;text-align:center">
   <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:4px;letter-spacing:-0.5px">🎯 Nutrition Challenge Spinner</div>
-  <div style="font-size:11px;color:var(--cyan);margin-bottom:16px">👨‍🍳 Powered by Chiefly</div>
+  <div style="font-size:11px;color:var(--cyan);margin-bottom:16px">👨‍🍳 Powered by Preppi</div>
   <div style="width:140px;height:140px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:0 0 30px rgba(105,201,208,.3);transition:transform .3s ease" id="spinner-wheel">${result?result.emoji:"🎯"}</div>
-  ${result?`<div style="background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${result.text}</div></div>`:"<div style='font-size:13px;color:var(--gray);margin-bottom:16px'>Spin for a personalized challenge from Chiefly!</div>"}
+  ${result?`<div style="background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${result.text}</div></div>`:"<div style='font-size:13px;color:var(--gray);margin-bottom:16px'>Spin for a personalized challenge from Preppi!</div>"}
   <button id="spin-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${result?"🔄 Spin Again!":"🎯 Spin!"}</button>
   </div>`;
 }
@@ -1657,8 +1652,8 @@ Respond ONLY with JSON: {"emoji":"[single emoji]","text":"[fun challenge under 1
 }
 
 function renderMemory() {
-  if (!UI.memCards || UI.memCards.length === 0) { initMemory(); return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Chiefly is setting up your cards...</div></div>`; }
-  if (UI.memLoading) return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Chiefly is generating new cards...</div></div>`;
+  if (!UI.memCards || UI.memCards.length === 0) { initMemory(); return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Preppi is setting up your cards...</div></div>`; }
+  if (UI.memLoading) return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Preppi is generating new cards...</div></div>`;
   const cards = UI.memCards || [];
   return `<div class="card" style="padding:16px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -1831,7 +1826,7 @@ function getAriaGreeting() {
   const pickyOnes = hausMembers.filter(m => m.pickyEater).map(m => m.name);
   const memberNames = hausMembers.map(m => m.name);
 
-  let greeting = `Hey${firstName ? ' ' + firstName : ''}! 👋 I'm Chiefly — your NeuroMeal AI! 👨‍🍳.
+  let greeting = `Hey${firstName ? ' ' + firstName : ''}! 👋 I'm Preppi — your NeuroMeal AI! 👨‍🍳.
 
 `;
 
@@ -1852,7 +1847,7 @@ function getAriaGreeting() {
 }
 
 function renderAI() {
-  if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">🧠</div><div style="font-size:15px;margin-bottom:16px">Get Active to use Chiefly!</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;
+  if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">🧠</div><div style="font-size:15px;margin-bottom:16px">Get Active to use Preppi!</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;
   
   // Auto-send ariaFixMsg if coming from nutrition alert
   if (UI.ariaFixMsg) {
@@ -1862,7 +1857,7 @@ function renderAI() {
     UI.aiLoading = true;
     setTimeout(() => {
       renderMain();
-      callAI([{role:"user", content: fixMsg}], `You are Chiefly, a warm encouraging family meal planning AI. The user needs quick, practical nutrition fixes. Be fun, concise, and give specific food suggestions.`).then(reply => {
+      callAI([{role:"user", content: fixMsg}], `You are Preppi, a warm encouraging family meal planning AI. The user needs quick, practical nutrition fixes. Be fun, concise, and give specific food suggestions.`).then(reply => {
         UI.aiLoading = false;
         UI.aiChat = [{role:"user", text: fixMsg}, {role:"assistant", text: reply}];
         renderMain();
@@ -1878,8 +1873,8 @@ function renderAI() {
   const hausSize = (currentFamily?.hausMembers||[]).length + 1;
   return `<div class="fu" style="display:flex;flex-direction:column;height:calc(100vh-200px)">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div class="st" style="margin-bottom:0">👨‍🍳 Chiefly</div>
-    <button id="aria-meal-plan-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">✨ Chiefly Plans My Week</button>
+    <div class="st" style="margin-bottom:0">🥗 Preppi</div>
+    <button id="aria-meal-plan-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">✨ Preppi Plans My Week</button>
   </div>
   <div id="ai-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
     ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button>${!m.text.includes("7-Day")?`<button data-save-recipe="${idx}" data-save-text="${encodeURIComponent(m.text.substring(0,500))}" style="padding:6px 12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:10px;color:var(--yellow);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🔖 Save to Cookbook</button>`:""}    </div>`:""}    </div></div>`).join("")}
@@ -1893,7 +1888,7 @@ function renderAI() {
   <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:500;display:flex;align-items:flex-end;justify-content:center">
     <div style="background:var(--card);border-radius:24px 24px 0 0;padding:24px;width:100%;max-width:600px">
       <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px">📅 Add to Calendar</div>
-      <div style="font-size:12px;color:var(--gray);margin-bottom:14px">Adding Chiefly's suggestion to your weekly plan</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:14px">Adding Preppi's suggestion to your weekly plan</div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:8px">WHICH DAY?</div>
@@ -1984,7 +1979,7 @@ function bindAI() {
     const day = UI.ariaCalDay || "Mon";
     const type = UI.ariaCalType || "Dinner";
     const servings = UI.ariaServings || 4;
-    // Extract meal name from Chiefly's response - take first line that looks like a meal
+    // Extract meal name from Preppi's response - take first line that looks like a meal
     const text = UI.ariaAddMeal || "";
     const lines = text.split("\n").map(l => l.replace(/[*#]/g,"").trim()).filter(Boolean);
     const mealName = lines.find(l => l.length > 3 && l.length < 60 && !l.startsWith("-") && !l.toLowerCase().startsWith("why") && !l.toLowerCase().startsWith("quick")) || "Aria Suggestion";
@@ -2036,7 +2031,7 @@ THIS WEEK'S MEALS: ${Object.entries(weekPlan).map(([day, meals]) =>
   Object.entries(meals || {}).filter(([,v])=>v).map(([type, meal]) => `${day} ${type}: ${meal}`).join(", ")
 ).filter(Boolean).join("; ")}` : "";
 
-  const systemPrompt = `You are Chiefly, the NeuroMeal AI — a warm, encouraging meal planning assistant built specifically for AuDHD families. You are practical, never judgmental, and understand that feeding a family with different needs and limited executive function is genuinely hard.
+  const systemPrompt = `You are Preppi, the NeuroMeal AI — a warm, encouraging meal planning assistant built specifically for AuDHD families. You are practical, never judgmental, and understand that feeding a family with different needs and limited executive function is genuinely hard.
 ${profileContext}
 ${familyContext}
 ${mealContext}
@@ -2224,7 +2219,7 @@ function renderAddModal() {
     if (!query) return;
     askBtn.textContent = "...";
     askBtn.disabled = true;
-    resultsEl.innerHTML = "<div style=\"padding:10px;font-size:12px;color:var(--gray)\">Chiefly is thinking... 👨‍🍳</div>";
+    resultsEl.innerHTML = "<div style=\"padding:10px;font-size:12px;color:var(--gray)\">Preppi is thinking... 👨‍🍳</div>";
 
     const profile = userDoc?.profile || {};
     const hausMembers = currentFamily?.hausMembers || [];
@@ -2252,7 +2247,7 @@ Reply with ONLY a JSON array of 4 meal names, max 5 words each. Example: ["Grill
         });
       }
     } catch(e) {
-      resultsEl.innerHTML = "<div style=\"padding:10px;font-size:12px;color:var(--pink)\">Chiefly could not get a suggestions — try again!</div>";
+      resultsEl.innerHTML = "<div style=\"padding:10px;font-size:12px;color:var(--pink)\">Preppi could not get a suggestions — try again!</div>";
     }
     askBtn.textContent = "Ask";
     askBtn.disabled = false;

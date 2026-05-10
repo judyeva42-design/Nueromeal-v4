@@ -7,39 +7,13 @@
 <meta name="theme-color" content="#0a0a0f"/>
 <title>NeuroMeal v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script>
-// Helper functions to map modular Firebase API to compat API
-function doc(db, ...pathParts) {
-  let ref = db;
-  for (let i = 0; i < pathParts.length; i++) {
-    if (i % 2 === 0) ref = ref.collection(pathParts[i]);
-    else ref = ref.doc(pathParts[i]);
-  }
-  return ref;
-}
-function collection(db, path) { return db.collection(path); }
-function getDoc(ref) { return ref.get(); }
-function setDoc(ref, data, opts) { return opts && opts.merge ? ref.set(data, {merge:true}) : ref.set(data); }
-function updateDoc(ref, data) { return ref.update(data); }
-function deleteDoc(ref) { return ref.delete(); }
-function addDoc(ref, data) { return ref.add(data); }
-function onSnapshot(ref, cb) { return ref.onSnapshot(cb); }
-function getDocs(q) { return q.get ? q.get() : q; }
-function arrayUnion(...items) { return firebase.firestore.FieldValue.arrayUnion(...items); }
-function arrayRemove(...items) { return firebase.firestore.FieldValue.arrayRemove(...items); }
-function serverTimestamp() { return firebase.firestore.FieldValue.serverTimestamp(); }
-function onAuthStateChanged(auth, cb) { return auth.onAuthStateChanged(cb); }
-function signOut(auth) { return auth.signOut(); }
-
-// Query builder helpers
-function query(ref, ...fns) { let q = ref; fns.forEach(fn => { q = fn(q); }); return q; }
-function where(field, op, val) { return (ref) => ref.where(field, op, val); }
-function orderBy(field, dir) { return (ref) => ref.orderBy(field, dir||'asc'); }
-function limit(n) { return (ref) => ref.limit(n); }
-
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot,
+  collection, addDoc, query, where, getDocs, arrayUnion, arrayRemove,
+  serverTimestamp, deleteDoc, orderBy, limit }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBDpERr9gjGnHQcAB6LJqtt2_v2mFOk6KQ",
@@ -50,9 +24,9 @@ const firebaseConfig = {
   appId: "1:312886497937:web:12a21ed078f7b6260ce530",
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 // ── Constants ──────────────────────────────────────────────
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
@@ -951,7 +925,7 @@ function renderDash() {
 
   return `<div class="fu">
   <div style="padding:14px 16px;border-radius:16px;background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.18);font-size:13px;line-height:1.7;color:var(--white);margin-bottom:16px">${motivationMsg}</div>
-  ${!userDoc?.profile?.name ? `<button onclick="startEditProfile()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:14px;animation:pulse 2s ease infinite">🧠 Set Up My Profile — Help Aria Know You!</button>` : ""}
+  ${!userDoc?.profile?.name ? `<button onclick="window.startEditProfile()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px;margin-bottom:14px;animation:pulse 2s ease infinite">🧠 Set Up My Profile — Help Aria Know You!</button>` : ""}
   <div class="sgrid">
     ${[{l:"MEALS PLANNED",v:ws.meals,i:"🍽️",c:"var(--cyan)"},{l:"WEEKLY COST",v:"$"+totalCost().toFixed(2),i:"💰",c:"var(--yellow)"},{l:"MEALS COOKED",v:ws.cooked,i:"✅",c:"var(--green)"},{l:"TOTAL XP",v:userDoc?.xp||0,i:"⚡",c:"var(--pink)"}].map(s=>`<div class="sc"><div class="si">${s.i}</div><div class="sv" style="color:${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join("")}
   </div>

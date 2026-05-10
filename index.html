@@ -153,7 +153,7 @@ let unsubscribers = [];
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
-  showAdd:null, showMemEdit:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
+  showAdd:null, showMemEdit:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null,
   weSelected:[], weSugs:null,
   gathFams:[], gathOcc:null, gathResult:null,
   aiChat:[],
@@ -1391,49 +1391,6 @@ function renderTrivia() {
 }
 
 
-
-function parseWeeklyPlan(text) {
-  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  const dayNames = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
-  const mealMap = {"breakfast":"Breakfast","lunch":"Lunch","dinner":"Dinner","snack":"Snack"};
-  const plan = {};
-  let currentDay = null;
-  text.split("\n").map(l=>l.trim()).filter(Boolean).forEach(line => {
-    const ll = line.toLowerCase().replace(/[*#🌅☀️🌙🍎]/g,"").trim();
-    dayNames.forEach((d,i) => { if (ll.includes(d)) currentDay = days[i]; });
-    if (currentDay) {
-      Object.keys(mealMap).forEach(type => {
-        if (ll.startsWith(type+":") || ll.includes(" "+type+":")) {
-          const meal = line.split(":").slice(1).join(":").replace(/[*🌅☀️🌙🍎]/g,"").trim();
-          if (meal && meal.length > 2 && meal.length < 60) {
-            if (!plan[currentDay]) plan[currentDay] = {};
-            plan[currentDay][mealMap[type]] = meal;
-          }
-        }
-      });
-    }
-  });
-  return plan;
-}
-
-async function addAllToCalendar() {
-  if (!currentFamily) return;
-  // Use UI state or fall back to Firestore draft
-  const planData = UI.weeklyPlanData || currentFamily?.weekPlanDraft || {};
-  if (Object.keys(planData).length === 0) {
-    showToast("No meal plan found — tap Plan My Week first!", "warn");
-    return;
-  }
-  const count = Object.values(planData).reduce((s,d)=>s+Object.keys(d).length,0);
-  const weekPlan = { ...(currentFamily?.weekPlan||{}), ...planData };
-  await saveFamilyDoc({ weekPlan, weekPlanDraft: null });
-  UI.weeklyPlanData = null;
-  addXP(25);
-  showToast("✅ " + count + " meals added to your calendar! +25 XP 🎉", "success");
-  setTab("calendar");
-  renderMain();
-}
-
 async function generateWeeklyPlan() {
   if (!currentUser || !currentFamily) return;
   const profile = userDoc?.profile || {};
@@ -1469,12 +1426,6 @@ Continue for all 7 days. Keep each meal name short (under 5 words).`;
   const reply = await callAI([{role:"user",content:prompt}], `You are Aria, a family meal planning AI. Create practical, simple meal plans for families. Keep meal names concise.`);
   
   UI.aiLoading = false;
-  const parsed = parseWeeklyPlan(reply);
-  UI.weeklyPlanData = parsed;
-  // Save draft to Firestore so it survives re-renders
-  if (Object.keys(parsed).length > 0) {
-    await saveFamilyDoc({ weekPlanDraft: parsed });
-  }
   UI.aiChat = [...UI.aiChat, {role:"assistant", text:reply}];
   renderMain();
 }
@@ -1795,7 +1746,6 @@ function renderAI() {
     ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button><button data-save-recipe="${idx}" data-save-text="${encodeURIComponent(m.text.substring(0,500))}" style="padding:6px 12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:10px;color:var(--yellow);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🔖 Save Recipe</button></div>`:""}    </div></div>`).join("")}
     ${UI.aiLoading?`<div style="display:flex;gap:8px;align-items:center"><div style="width:32px;height:32px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center">🤖</div><div style="padding:12px 16px;background:var(--card);border-radius:18px;font-size:13px;color:var(--gray)">Thinking...</div></div>`:""}
   </div>
-  ${((UI.weeklyPlanData&&Object.keys(UI.weeklyPlanData).length>3)||(currentFamily?.weekPlanDraft&&Object.keys(currentFamily?.weekPlanDraft||{}).length>3))?`<button id="add-all-cal-btn" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd);margin-bottom:8px">🗓️ Add Full Week to Calendar! +25 XP</button>`:""}
   <div style="display:flex;gap:8px;flex-shrink:0">
     <input id="ai-input" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:22px;padding:12px 16px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none" placeholder="Ask me anything about meals..." onkeydown="if(event.key==='Enter')sendAIMsg()"/>
     <button id="ai-send-btn" style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;cursor:pointer;font-size:22px;flex-shrink:0">↑</button>
@@ -1840,14 +1790,6 @@ function renderAI() {
 function bindAI() {
   const el = document.getElementById("ai-msgs");
   if (el) el.scrollTop = el.scrollHeight;
-
-  // Plan My Week button
-  const planBtn = document.getElementById("aria-meal-plan-btn");
-  if (planBtn) planBtn.addEventListener("click", generateWeeklyPlan);
-
-  // Add Full Week to Calendar button
-  const addAllBtn = document.getElementById("add-all-cal-btn");
-  if (addAllBtn) addAllBtn.addEventListener("click", addAllToCalendar);
 
   // Send button
   const sendBtn = document.getElementById("ai-send-btn");
@@ -2285,7 +2227,6 @@ window.answerTrivia = answerTrivia;
 window.nextTrivia = nextTrivia;
 window.initMatch = initMatch;
 window.ariaFix = ariaFix;
-window.addAllToCalendar = addAllToCalendar;
 window.getFunnyBtn = getFunnyBtn;
 window.setGame = setGame;
 window.spinWheel = spinWheel;

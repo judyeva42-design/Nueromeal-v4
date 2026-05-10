@@ -148,7 +148,7 @@ const AV_SURPRISE_POOL = ["cozy","dress","overalls","headwrap_acc","hoops","glas
 let currentUser = null;
 let userDoc = null;
 let currentFamily = null;
-let ARIA_WEEK_PLAN = {}; // Global storage for Aria weekly plan
+let PREPPI_WEEK_PLAN = {}; // Global storage for Aria weekly plan
 let familyId = null;
 let unsubscribers = [];
 
@@ -664,7 +664,7 @@ function renderNav() {
     {id:"wellness",icon:"💙",label:"Wellness"},
     {id:"game",icon:"🎮",label:"Game"},
     {id:"family",icon:"👨‍👩‍👧",label:"Family"},
-    {id:"ai",icon:"🥗",label:"Preppi"},
+    {id:"ai",icon:"🧠",label:"Preppi"},
     {id:"chat",icon:"💬",label:"Chat"},
     {id:"videos",icon:"📹",label:"Videos"},
     {id:"tips",icon:"📖",label:"Cookbook"},
@@ -711,7 +711,7 @@ const ONBOARD_STEPS = [
   { type:'text', field:'loves', nori:"Now the fun part — what foods make you do a little happy dance? 💃 Tell Preppi your favorites!", label:'FAVORITE FOODS (optional)', placeholder:'e.g. pasta, tacos, avocado...' },
   { type:'choice', field:'pickyEater', nori:"Are you feeding any picky eaters? You know the type — chicken nuggets and air 😂", label:'', options:['🙅 Nope, everyone eats everything!','😬 One picky eater in the house','😅 Multiple picky eaters (send help)','🤦 I AM the picky eater 😂'] },
   { type:'choice', field:'fridgeVibes', nori:"Last one — just for fun! 🎉 If your fridge could play a theme song when you opened it, what genre would it be? 🎵", label:'', options:['🎸 Rock (I open it with INTENTION)','🎹 Jazz (spontaneous fridge discoveries)','🎵 Pop (whatever is trending in the pantry)','🎤 Hype music (I am about to COOK)','🎶 Lo-fi (just a chill snack, no drama)','🎺 Classical (I meal prep on Sundays like an adult)'] },
-  { type:'complete', emoji:'🎉🧠🔥', nori:"YESSS!! You did it!! 🎉 Preppi now knows everything needed to make NeuroMeal feel like it was built just for you! Your meals are about to get SO much smarter!" },
+  { type:'complete', emoji:'🎉🧠🔥', nori:"YESSS!! You did it!! 🎉 Preppi now knows everything she needs to make NeuroMeal feel like it was built just for you! Your meals are about to get SO much smarter!" },
 ];
 
 function renderOnboard() {
@@ -996,7 +996,17 @@ function renderMain() {
   if (UI.tab==="chat") bindChat();
   if (UI.showAdd) renderAddModal();
   if (UI.showMemEdit!==null) renderMemModal();
-  // Calendar slot buttons via event delegation - use document level to catch all
+  // Load draft plan button
+  const loadDraftBtn = document.getElementById('load-draft-btn');
+  if (loadDraftBtn) loadDraftBtn.addEventListener('click', () => {
+    UI.showAriaCalModal = false;
+    UI.showAdd = null;
+    loadDraftPlan();
+  });
+  // Calendar buttons
+  document.querySelectorAll('[data-selday]').forEach(btn => {
+    btn.addEventListener('click', function() { UI.selDay = this.getAttribute('data-selday'); renderMain(); });
+  });
   document.querySelectorAll('[data-add-day]').forEach(btn => {
     btn.addEventListener('click', function() {
       if (currentUser) openAdd(this.getAttribute('data-add-day'), this.getAttribute('data-add-type'));
@@ -1009,13 +1019,21 @@ function renderMain() {
       else showGetActiveModal();
     });
   });
-  // Load draft plan button
-  const loadDraftBtn = document.getElementById('load-draft-btn');
-  if (loadDraftBtn) loadDraftBtn.addEventListener('click', () => {
-    UI.showAriaCalModal = false;
-    UI.showAdd = null;
-    loadDraftPlan();
+  document.querySelectorAll('[data-use-sug-day]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (currentUser) addMeal(this.getAttribute('data-use-sug-day'), this.getAttribute('data-use-sug-type'), this.getAttribute('data-use-sug-meal'));
+      else showGetActiveModal();
+    });
   });
+  const clearCalBtn = document.getElementById('clear-cal-btn');
+  if (clearCalBtn) clearCalBtn.addEventListener('click', async function() {
+    await saveFamilyDoc({ weekPlan: {}, weekPlanDraft: null });
+    if (currentFamily) { currentFamily.weekPlan = {}; currentFamily.weekPlanDraft = null; }
+    PREPPI_WEEK_PLAN = {};
+    showToast('Calendar cleared! Fresh start 🗓️', 'success');
+    renderMain();
+  });
+  // Load draft button
   // Attach profile button listener
   const pb = document.getElementById('profile-setup-btn');
   if (pb) pb.addEventListener('click', function() {
@@ -1027,7 +1045,7 @@ function renderMain() {
   bindOnboard();
   // Attach family member buttons
   bindFamilyMembers();
-  // Save recipe buttons in Preppi tab
+  // Save recipe buttons in Aria
   document.querySelectorAll('[data-save-recipe]').forEach(btn => {
     btn.addEventListener('click', async function() {
       const idx = parseInt(this.getAttribute('data-save-recipe'));
@@ -1153,7 +1171,6 @@ function renderDash() {
 }
 
 // ── Calendar ───────────────────────────────────────────────
-
 function calSlotHTML(day, type) {
   const meal = F().weekPlan?.[day]?.[type];
   if (meal) {
@@ -1172,27 +1189,49 @@ function calSlotHTML(day, type) {
 }
 
 function renderCal() {
-  if (!currentFamily) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:36px;margin-bottom:12px">📅</div><div style="font-size:15px;margin-bottom:8px">Set up your family first!</div>${!currentUser?`<button onclick="signInWithGoogle()" class="btn btnp">Get Active</button>`:""}</div>`;
-  const hasDraft = (currentFamily?.weekPlanDraft && Object.keys(currentFamily?.weekPlanDraft||{}).length > 0) || (UI.weeklyPlanData && Object.keys(UI.weeklyPlanData||{}).length > 0);
+  if (!currentFamily) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:36px;margin-bottom:12px">📅</div><div>Set up your family first!</div></div>`;
+  
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const types = ["Breakfast","Lunch","Dinner","Snack"];
+  const plan = currentFamily?.weekPlan || {};
+  const draft = PREPPI_WEEK_PLAN || currentFamily?.weekPlanDraft || {};
+  const hasDraft = Object.keys(draft).length > 0;
+  const day = UI.selDay || "Mon";
+
   return `<div class="fu">
-  ${hasDraft ? '<div style="background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.1));border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:800;color:var(--cyan)">🥗 Preppi has a plan ready!</div><div style="font-size:11px;color:var(--gray);margin-top:2px">Tap to load your full week of meals</div></div><button id=\"load-draft-btn\" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:12px;cursor:pointer;font-family:var(--fd)">Load It!</button></div>' : ""}
+  ${hasDraft ? `<div id="draft-banner" style="background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.1));border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+    <div><div style="font-size:13px;font-weight:800;color:var(--cyan)">🥗 Preppi has a plan ready!</div>
+    <div style="font-size:11px;color:var(--gray);margin-top:2px">Tap to fill your entire week</div></div>
+    <button id="load-draft-btn" style="padding:8px 16px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:12px;cursor:pointer;font-family:var(--fd)">Load Week!</button>
+  </div>` : ""}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div class="st" style="margin-bottom:0">📅 Weekly Calendar</div>
-    <button onclick="setTab('ai')" class="btn btnp" style="font-size:11px">🤖 AI Suggest</button>
+    <div class="st" style="margin-bottom:0">📅 Calendar</div>
+    <button id="clear-cal-btn" style="padding:5px 10px;background:rgba(238,29,82,.1);border:1px solid rgba(238,29,82,.3);border-radius:8px;color:var(--pink);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">Clear Week</button>
   </div>
-  <div class="cgrid" id="cal-grid">
-    ${DAYS.map(day=>{
-      const dc=MT.reduce((s,t)=>s+(allMeals()[F().weekPlan?.[day]?.[t]]?.cost||0),0);
-      return `<div class="cday">
-        <div class="cdh ${UI.selDay===day?"today":""}" onclick="setDay('${day}')">${day}</div>
-        ${MT.map(type=>calSlotHTML(day,type)).join("")}
-        <div class="cdc">$${dc.toFixed(2)}</div>
+  <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px">
+    ${days.map(d => `<button data-selday="${d}" style="padding:6px 12px;border-radius:10px;border:2px solid ${UI.selDay===d?"var(--cyan)":"var(--border)"};background:${UI.selDay===d?"rgba(105,201,208,.15)":"transparent"};color:${UI.selDay===d?"var(--cyan)":"var(--gray)"};font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap;flex-shrink:0">${d}</button>`).join("")}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    ${types.map(type => {
+      const meal = plan[day]?.[type] || null;
+      const sug = draft[day]?.[type] || null;
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+        <div style="width:60px;font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;flex-shrink:0">${type.substring(0,5).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          ${meal ? `<div style="font-size:13px;font-weight:700;color:var(--white);word-break:break-word">${meal}</div>` 
+                 : sug ? `<div style="font-size:12px;color:var(--cyan)">🥗 ${sug}</div><div style="font-size:10px;color:var(--gray)">Preppi suggests</div>`
+                       : `<div style="font-size:12px;color:var(--gray)">Nothing planned</div>`}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          ${sug && !meal ? `<button data-use-sug-day="${day}" data-use-sug-type="${type}" data-use-sug-meal="${sug.replace(/"/g,'')}" style="padding:5px 8px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">Use</button>` : ""}
+          ${meal ? `<button data-remove-day="${day}" data-remove-type="${type}" style="padding:5px 8px;background:rgba(238,29,82,.1);border:1px solid rgba(238,29,82,.3);border-radius:8px;color:var(--pink);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">Remove</button>` : ""}
+          <button data-add-day="${day}" data-add-type="${type}" style="padding:5px 8px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">${meal ? "Change" : "+ Add"}</button>
+        </div>
       </div>`;
     }).join("")}
-  </div></div>`;
+  </div>
+  </div>`;
 }
-
-// ── Meals ──────────────────────────────────────────────────
 function renderMeals() {
   const um = currentFamily ? uniqueMeals() : Object.keys(MEALS).slice(0,3);
   return `<div class="fu">
@@ -1277,36 +1316,18 @@ function renderNutr() {
 // ── Shopping ───────────────────────────────────────────────
 function renderShop() {
   if (!currentFamily) return `<div style="padding:40px;text-align:center;color:var(--gray)">${!currentUser?`<button onclick="signInWithGoogle()" class="btn btnp">Get Active</button>`:"Set up your family first!"}</div>`;
-  const um=uniqueMeals();
-  const total=0;
-  const master=[];
-  const mealNames = um; // All planned meal names as strings
+  const um=uniqueMeals(),master=[];
+  const map={};
+  um.forEach(meal=>{(allMeals()[meal]?.ingredients||[]).forEach(ing=>{if(map[ing.item])map[ing.item].cost+=ing.cost;else map[ing.item]={...ing};});});
+  Object.values(map).forEach(v=>master.push(v));
+  const total=master.reduce((s,i)=>s+i.cost,0);
   return `<div class="fu">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div class="st" style="margin-bottom:0">🛒 Shopping</div>
-    <button id="shop-aria-btn" style="padding:5px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">🥗 Preppi Ideas</button>
-  </div>
-  ${mealNames.length === 0 ? `<div style="text-align:center;padding:55px 0;color:var(--gray)">
-    <div style="font-size:44px;margin-bottom:10px">🛒</div>
-    <div style="font-size:14px;margin-bottom:16px">Add meals to your calendar to generate your list!</div>
-    <button id="shop-plan-btn" style="padding:10px 20px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">👨‍🍳 Let Preppi Plan My Week</button>
-  </div>` : `
-  <div style="background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.2);border-radius:14px;padding:16px;margin-bottom:14px">
-    <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:12px">THIS WEEK'S MEALS (${mealNames.length})</div>
-    ${mealNames.map(meal => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span style="font-size:16px">🍽️</span>
-      <span style="font-size:13px;font-weight:600">${meal}</span>
-    </div>`).join("")}
-  </div>
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px">
-    <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:10px">🛒 SHOPPING LIST</div>
-    <div style="font-size:13px;color:var(--gray);line-height:1.8">Ask Preppi to generate a shopping list based on your planned meals!</div>
-    <button id="shop-generate-btn" style="width:100%;margin-top:12px;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">👨‍🍳 Generate Shopping List</button>
-    <div id="shop-list-result" style="margin-top:12px"></div>
-  </div>`}
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="st" style="margin-bottom:0">🛒 Shopping</div><div style="background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.22);border-radius:10px;padding:5px 14px;font-size:14px;font-weight:800;color:var(--yellow)">$${total.toFixed(2)}</div></div>
+  ${um.length===0?`<div style="text-align:center;padding:55px 0;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">🛒</div><div style="font-size:14px">Add meals to generate your list!</div></div>`:""}
+  ${um.length>1?`<div style="background:linear-gradient(135deg,rgba(105,201,208,.06),rgba(238,29,82,.04));border:1px solid rgba(105,201,208,.15);border-radius:14px;padding:16px;margin-bottom:12px"><div style="font-family:var(--fd);font-size:14px;font-weight:800;color:var(--cyan);margin-bottom:10px">✨ Combined List — ${master.length} items</div>${master.map((ing,i)=>`<div class="grow" style="${i===master.length-1?"border-bottom:none":""}"><span style="font-size:12px">• ${ing.item}</span><span style="font-size:10px;color:var(--yellow)">$${ing.cost.toFixed(2)}</span></div>`).join("")}</div>`:""}
+  ${um.map(meal=>{const d=allMeals()[meal];if(!d)return"";return`<div class="card" style="overflow:hidden;margin-bottom:10px"><div style="padding:12px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)"><span style="font-size:20px">${d.emoji}</span><span style="font-weight:800;font-size:14px;flex:1">${meal}</span><span style="font-size:12px;color:var(--yellow);font-weight:700">$${d.cost.toFixed(2)}</span></div><div style="padding:8px 14px 12px">${d.ingredients.map((ing,i)=>`<div class="grow" style="${i===d.ingredients.length-1?"border-bottom:none":""}"><span style="font-size:11px">• ${ing.item}</span><div style="display:flex;gap:9px"><span style="font-size:10px;color:var(--gray)">${ing.qty}</span><span style="font-size:10px;color:var(--yellow)">$${ing.cost.toFixed(2)}</span></div></div>`).join("")}</div></div>`;}).join("")}
   </div>`;
 }
-
 
 // ── Chat Room ──────────────────────────────────────────────
 function renderChat() {
@@ -1556,7 +1577,7 @@ Continue for all 7 days. Keep each meal name short (under 5 words).`;
     await saveFamilyDoc({ weekPlanDraft: parsed, ariaChat: updatedChat.slice(-20).map(m=>({role:m.role,text:m.text.substring(0,500)})) });
     // Store in global variable - most reliable approach
     if (currentFamily) currentFamily.weekPlanDraft = parsed;
-    ARIA_WEEK_PLAN = parsed;
+    PREPPI_WEEK_PLAN = parsed;
     showToast("✅ Plan ready! Go to Calendar tab to load it 📅", "success");
   } else {
     showToast("Preppi generated a plan but could not parse the meals. Try asking again!", "warn");
@@ -1607,7 +1628,7 @@ function renderSpinner() {
   </div>`;
   return `<div class="card" style="padding:20px;text-align:center">
   <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:4px;letter-spacing:-0.5px">🎯 Nutrition Challenge Spinner</div>
-  <div style="font-size:11px;color:var(--cyan);margin-bottom:16px">👨‍🍳 Powered by Preppi</div>
+  <div style="font-size:11px;color:var(--cyan);margin-bottom:16px">✨ Powered by Preppi</div>
   <div style="width:140px;height:140px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:0 0 30px rgba(105,201,208,.3);transition:transform .3s ease" id="spinner-wheel">${result?result.emoji:"🎯"}</div>
   ${result?`<div style="background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">${result.text}</div></div>`:"<div style='font-size:13px;color:var(--gray);margin-bottom:16px'>Spin for a personalized challenge from Preppi!</div>"}
   <button id="spin-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd);letter-spacing:-0.5px">${result?"🔄 Spin Again!":"🎯 Spin!"}</button>
@@ -1652,7 +1673,7 @@ Respond ONLY with JSON: {"emoji":"[single emoji]","text":"[fun challenge under 1
 }
 
 function renderMemory() {
-  if (!UI.memCards || UI.memCards.length === 0) { initMemory(); return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Preppi is setting up your cards...</div></div>`; }
+  if (!UI.memCards || UI.memCards.length === 0) { initMemory(); return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Aria is setting up your cards...</div></div>`; }
   if (UI.memLoading) return `<div class="card" style="padding:24px;text-align:center"><div style="font-size:36px;margin-bottom:12px;animation:bounce 1s ease infinite">🃏</div><div style="font-size:14px;color:var(--gray)">Preppi is generating new cards...</div></div>`;
   const cards = UI.memCards || [];
   return `<div class="card" style="padding:16px">
@@ -1826,7 +1847,7 @@ function getAriaGreeting() {
   const pickyOnes = hausMembers.filter(m => m.pickyEater).map(m => m.name);
   const memberNames = hausMembers.map(m => m.name);
 
-  let greeting = `Hey${firstName ? ' ' + firstName : ''}! 👋 I'm Preppi — your NeuroMeal AI! 👨‍🍳.
+  let greeting = `Hey${firstName ? ' ' + firstName : ''}! 👋 I'm Preppi — your NeuroMeal AI.
 
 `;
 
@@ -1874,7 +1895,7 @@ function renderAI() {
   return `<div class="fu" style="display:flex;flex-direction:column;height:calc(100vh-200px)">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
     <div class="st" style="margin-bottom:0">🥗 Preppi</div>
-    <button id="aria-meal-plan-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">✨ Preppi Plans My Week</button>
+    <button id="aria-meal-plan-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">✨ Plan My Week</button>
   </div>
   <div id="ai-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
     ${chatMessages.map((m,idx)=>`<div style="display:flex;gap:8px;align-items:flex-start;${m.role==="user"?"flex-direction:row-reverse":""}"><div style="width:32px;height:32px;border-radius:50%;background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card2)"};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.role==="user"?"👤":"🧠"}</div><div style="max-width:80%"><div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>${m.role==="assistant"&&idx>0?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button>${!m.text.includes("7-Day")?`<button data-save-recipe="${idx}" data-save-text="${encodeURIComponent(m.text.substring(0,500))}" style="padding:6px 12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:10px;color:var(--yellow);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🔖 Save to Cookbook</button>`:""}    </div>`:""}    </div></div>`).join("")}
@@ -1888,7 +1909,7 @@ function renderAI() {
   <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:500;display:flex;align-items:flex-end;justify-content:center">
     <div style="background:var(--card);border-radius:24px 24px 0 0;padding:24px;width:100%;max-width:600px">
       <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px">📅 Add to Calendar</div>
-      <div style="font-size:12px;color:var(--gray);margin-bottom:14px">Adding Preppi's suggestion to your weekly plan</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:14px">Adding Aria's suggestion to your weekly plan</div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:8px">WHICH DAY?</div>
@@ -2115,7 +2136,7 @@ function renderTips() {
   saved.length === 0 ? `<div style="text-align:center;padding:40px;color:var(--gray)">
     <div style="font-size:44px;margin-bottom:10px">📖</div>
     <div style="font-size:15px;font-weight:700;margin-bottom:8px">No saved recipes yet!</div>
-    <div style="font-size:13px;line-height:1.6">Ask Aria for meal suggestions and tap <span style="color:var(--yellow);font-weight:700">🔖 Save Recipe</span> to build your family cookbook!</div>
+    <div style="font-size:13px;line-height:1.6">Ask Preppi for meal suggestions and tap <span style="color:var(--yellow);font-weight:700">🔖 Save Recipe</span> to build your family cookbook!</div>
   </div>` :
   `<div style="display:flex;flex-direction:column;gap:12px">
     ${saved.map((r,i)=>`<div class="card" style="padding:16px">
@@ -2142,138 +2163,53 @@ function renderAddModal() {
   const existing = document.getElementById("add-modal");
   if (existing) existing.remove();
   const {day, type} = UI.showAdd;
-
-  // Check Aria weekly plan for this slot
-  const draft = ARIA_WEEK_PLAN || currentFamily?.weekPlanDraft || {};
+  const meals = allMeals();
+  
+  // Check if Aria has a suggestion for this specific day + meal type
+  const draft = PREPPI_WEEK_PLAN || currentFamily?.weekPlanDraft || UI.weeklyPlanData || {};
   const ariaSuggestion = draft?.[day]?.[type] || null;
-
+  
   const el = document.createElement("div");
   el.id = "add-modal";
-  el.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:500;overflow-y:auto";
-
-  el.innerHTML = `
-  <div style="max-width:480px;width:100%;margin:0 auto;padding:20px 16px 100px">
+  el.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;overflow-y:auto;animation:fadeIn .2s ease";
+  el.innerHTML = `<div style="max-width:480px;width:100%;margin:0 auto;padding:20px 16px 80px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-      <div style="font-family:var(--fd);font-size:18px;font-weight:800;letter-spacing:-0.5px">🍽️ ${type} · ${day}</div>
-      <button id="close-add-modal" style="width:34px;height:34px;border-radius:10px;background:var(--border);border:none;cursor:pointer;color:var(--white);font-size:18px;font-weight:700">✕</button>
+      <div style="font-family:var(--fd);font-size:18px;font-weight:800;letter-spacing:-0.5px">Add ${type} for ${day}</div>
+      <button onclick="document.getElementById('add-modal')?.remove();UI.showAdd=null;" style="width:34px;height:34px;border-radius:10px;background:var(--border);border:none;cursor:pointer;color:var(--white);font-size:16px">✕</button>
     </div>
-
-    ${ariaSuggestion ? `<div style="margin-bottom:18px">
-      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">🧠 FROM CHEF-LY'S PLAN</div>
-      <div id="aria-plan-suggestion" style="display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.08));border:2px solid var(--cyan);border-radius:14px;cursor:pointer">
+    ${ariaSuggestion ? `
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">🧠 ARIA SUGGESTS</div>
+      <div onclick="addMeal('${day}','${type}','${ariaSuggestion}')" style="display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.08));border:2px solid rgba(105,201,208,.4);border-radius:14px;cursor:pointer">
         <span style="font-size:28px">🧠</span>
-        <div style="flex:1"><div style="font-size:15px;font-weight:800;color:var(--cyan)">${ariaSuggestion}</div><div style="font-size:11px;color:var(--gray)">Tap to add</div></div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:800;color:var(--cyan)">${ariaSuggestion}</div>
+          <div style="font-size:11px;color:var(--gray)">From your Aria meal plan</div>
+        </div>
+        <span style="font-size:11px;padding:4px 8px;border-radius:8px;background:rgba(105,201,208,.2);color:var(--cyan)">Aria Pick ✨</span>
       </div>
+      <div style="font-size:10px;font-weight:700;color:var(--gray);letter-spacing:1px;margin:14px 0 8px">OR CHOOSE YOUR OWN</div>
     </div>` : ""}
-
-    <div style="margin-bottom:18px">
-      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">🔍 ASK CHEF-LY FOR IDEAS</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input id="aria-ask-input" placeholder="e.g. quick chicken dinner, easy kids breakfast..." style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none"/>
-        <button id="aria-ask-btn" style="padding:12px 16px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">Ask</button>
-      </div>
-      <div id="aria-ask-results"></div>
-    </div>
-
-    <div>
-      <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">✏️ OR TYPE YOUR OWN</div>
-      <div style="display:flex;gap:8px">
-        <input id="custom-meal-input" placeholder="Type any meal name..." style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none"/>
-        <button id="custom-meal-btn" style="padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--white);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--fb)">Add</button>
-      </div>
-    </div>
+    ${Object.entries(meals).filter(([,d])=>d.type===type).map(([name,d])=>`
+    <div onclick="addMeal('${day}','${type}','${name}')" style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;cursor:pointer">
+      <span style="font-size:28px">${d.emoji}</span>
+      <div style="flex:1"><div style="font-size:14px;font-weight:800">${name}</div><div style="font-size:11px;color:var(--gray)">${d.calories}cal · $${d.cost.toFixed(2)} · ${d.prepTime+d.cookTime}min</div></div>
+      <span style="font-size:11px;padding:4px 8px;border-radius:8px;background:${d.difficulty==="Easy"?"rgba(74,222,128,.15)":"rgba(250,204,21,.15)"};color:${d.difficulty==="Easy"?"var(--green)":"var(--yellow)"}">${d.difficulty}</span>
+    </div>`).join("")}
   </div>`;
-
   document.body.appendChild(el);
-
-  // Close
-  document.getElementById("close-add-modal").addEventListener("click", () => {
-    el.remove(); UI.showAdd = null;
-  });
-
-  // Aria plan suggestion
-  const planSug = document.getElementById("aria-plan-suggestion");
-  if (planSug) {
-    planSug.addEventListener("click", () => addMeal(day, type, ariaSuggestion));
-  }
-
-  // Custom meal input
-  document.getElementById("custom-meal-btn").addEventListener("click", () => {
-    const val = document.getElementById("custom-meal-input")?.value?.trim();
-    if (val) addMeal(day, type, val);
-  });
-  document.getElementById("custom-meal-input").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      const val = e.target.value?.trim();
-      if (val) addMeal(day, type, val);
-    }
-  });
-
-  // Ask Aria
-  const askBtn = document.getElementById("aria-ask-btn");
-  const askInput = document.getElementById("aria-ask-input");
-  const resultsEl = document.getElementById("aria-ask-results");
-
-  async function askAria() {
-    const query = askInput?.value?.trim();
-    if (!query) return;
-    askBtn.textContent = "...";
-    askBtn.disabled = true;
-    resultsEl.innerHTML = "<div style=\"padding:10px;font-size:12px;color:var(--gray)\">Preppi is thinking... 👨‍🍳</div>";
-
-    const profile = userDoc?.profile || {};
-    const hausMembers = currentFamily?.hausMembers || [];
-    const pickyOnes = hausMembers.filter(m => m.pickyEater).map(m => m.name);
-
-    const prompt = `Give me 4 meal options for ${type} on ${day}. Request: "${query}".
-Family diet: ${profile.diet || "Standard"}. 
-Foods to avoid: ${profile.avoid || "none"}.
-${pickyOnes.length > 0 ? "Picky eaters: " + pickyOnes.join(", ") + " — keep options simple." : ""}
-Reply with ONLY a JSON array of 4 meal names, max 5 words each. Example: ["Grilled Chicken Salad","Pasta Primavera","Beef Tacos","Veggie Stir Fry"]`;
-
-    try {
-      const reply = await callAI([{role:"user",content:prompt}], "You are a meal suggestion assistant. Reply only with a JSON array of 4 meal name strings.");
-      const clean = reply.replace(/```json|```/g,"").trim();
-      const options = JSON.parse(clean);
-      if (Array.isArray(options) && options.length > 0) {
-        resultsEl.innerHTML = "";
-        options.forEach(meal => {
-          const cleanMeal = meal.replace(/[<>"]/g, "").trim();
-          const div = document.createElement("div");
-          div.style.cssText = "display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer";
-          div.innerHTML = "<span style=\"font-size:20px\">🧠</span><div style=\"flex:1;font-size:13px;font-weight:700\">" + cleanMeal + "</div><span style=\"font-size:10px;color:var(--cyan);font-weight:700\">+ Add</span>";
-          div.addEventListener("click", () => addMeal(day, type, cleanMeal));
-          resultsEl.appendChild(div);
-        });
-      }
-    } catch(e) {
-      resultsEl.innerHTML = "<div style=\"padding:10px;font-size:12px;color:var(--pink)\">Preppi could not get a suggestions — try again!</div>";
-    }
-    askBtn.textContent = "Ask";
-    askBtn.disabled = false;
-  }
-
-  askBtn.addEventListener("click", askAria);
-  askInput.addEventListener("keydown", (e) => { if (e.key === "Enter") askAria(); });
 }
-
-
 
 async function addMeal(day, type, meal) {
   if (!currentUser) { showGetActiveModal(); return; }
-  if (!meal || !day || !type) return;
-  // Build weekPlan from currentFamily directly
-  const existing = currentFamily?.weekPlan || {};
-  const weekPlan = JSON.parse(JSON.stringify(existing)); // deep copy
+  const weekPlan = { ...(F().weekPlan||{}) };
   if (!weekPlan[day]) weekPlan[day] = {};
   weekPlan[day][type] = meal;
-  // Save and update local memory
   await saveFamilyDoc({ weekPlan });
-  if (currentFamily) currentFamily.weekPlan = weekPlan;
   document.getElementById('add-modal')?.remove();
   UI.showAdd = null;
-  showToast("✅ " + meal + " added to " + day + " " + type + "!", "success");
   renderMain();
+  showToast(`✅ ${meal} added to ${day} ${type}!`, "success");
 }
 
 async function removeMeal(day, type) {
@@ -2476,6 +2412,8 @@ window.saveWeekSnapshot = saveWeekSnapshot;
 window.showInviteCode = showInviteCode;
 window.quickSnack = quickSnack;
 window.sendAIMsg = sendAIMsg;
+window.sendPreppiMsg = sendAIMsg;
+window.loadDraftPlan = loadDraftPlan;
 window.sendChatMsg = sendChatMsg;
 window.createFamily = createFamily;
 window.joinFamily = joinFamily;

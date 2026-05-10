@@ -1625,12 +1625,18 @@ window.renderOnboarding = renderOnboarding;
 function startEditProfile() {
   UI.onboardStep = 0;
   UI.onboardData = {};
-  renderOnboarding();
+  const app = document.getElementById("app");
+  if (app) renderOnboarding();
 }
 window.startEditProfile = startEditProfile;
 window.flipCard = flipCard;
 window.selectOnboardChoice = selectOnboardChoice;
 window.obNext = obNext;
+window.flipCard = flipCard;
+window.resetProfile = resetProfile;  
+window.startEditProfile = startEditProfile;
+window.renderOnboarding = renderOnboarding;
+window.renderApp = renderApp;
 window.obBack = obBack;
 window.completeOnboarding = completeOnboarding;
 window.skipOnboarding = skipOnboarding;

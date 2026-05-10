@@ -675,6 +675,7 @@ function setTab(t) {
   UI.tab = t;
   UI.showAriaCalModal = false;
   UI.showAdd = null;
+  UI.aiLoading = false;
   renderNav();
   renderMain();
   // Show Nori tip
@@ -1452,6 +1453,7 @@ async function generateWeeklyPlan() {
   
   UI.aiLoading = true;
   UI.aiChat = [...UI.aiChat, {role:"user", text:"✨ Generate a full week of meals for my family!"}];
+  const _wt = setTimeout(() => { if(UI.aiLoading){UI.aiLoading=false;renderMain();} }, 25000);
   renderMain();
 
   const memberList = hausMembers.length > 0 
@@ -1483,14 +1485,9 @@ Continue for all 7 days. Keep each meal name short (under 5 words).`;
   UI.weeklyPlanData = parsed;
   const updatedChat = [...UI.aiChat, {role:"assistant", text:reply}];
   UI.aiChat = updatedChat;
-  // Save draft plan AND persist chat to Firestore
-  const saveData = {};
+  // Save draft plan to Firestore
   if (Object.keys(parsed).length > 0) {
-    saveData.weekPlanDraft = parsed;
-  }
-  saveData.ariaChat = updatedChat.slice(-20).map(m=>({role:m.role, text:m.text.substring(0,500)}));
-  await saveFamilyDoc(saveData);
-  if (Object.keys(parsed).length > 0) {
+    await saveFamilyDoc({ weekPlanDraft: parsed });
     showToast("✅ Plan ready! Go to Calendar tab to load it 📅", "success");
   }
   renderMain();
@@ -1797,10 +1794,7 @@ function renderAI() {
     }, 50);
   }
 
-  // Load persisted chat from Firestore if UI chat is empty
-  if (UI.aiChat.length === 0 && currentFamily?.ariaChat?.length > 0) {
-    UI.aiChat = currentFamily.ariaChat;
-  }
+  // Chat history lives in UI memory for this session
   const chatMessages = UI.aiChat.length === 0 
     ? [{role:"assistant", text: getAriaGreeting()}]
     : UI.aiChat;
@@ -1938,6 +1932,7 @@ async function sendAIMsg() {
   UI.aiInput = "";
   UI.aiLoading = true;
   if (input) input.value = "";
+  setTimeout(() => { if (UI.aiLoading) { UI.aiLoading = false; renderMain(); } }, 25000);
   renderMain();
   // Build rich system prompt with all family data
   const myProfile = userDoc?.profile || {};

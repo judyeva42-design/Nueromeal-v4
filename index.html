@@ -154,7 +154,7 @@ let unsubscribers = [];
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
-  showAdd:null, showMemEdit:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
+  showAdd:null, showMemEdit:null, showBudgetInput:false, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
   weSelected:[], weSugs:null,
   gathFams:[], gathOcc:null, gathResult:null,
   aiChat:[],
@@ -655,7 +655,7 @@ function renderNav() {
   const tabs = [
     {id:"dashboard",icon:"⚡",label:"Home"},
     {id:"calendar",icon:"📅",label:"Calendar"},
-    {id:"meals",icon:"🍽️",label:"Meals"},
+    {id:"meals",icon:"🥫",label:"Pantry"},
     {id:"trends",icon:"📈",label:"Trends"},
     {id:"nutrition",icon:"🥦",label:"Nutrition",b:alerts||null},
     {id:"shopping",icon:"🛒",label:"Shopping"},
@@ -1003,6 +1003,58 @@ function renderMain() {
     UI.showAdd = null;
     loadDraftPlan();
   });
+  // Pantry bindings
+  const editBudgetBtn = document.getElementById('edit-budget-btn');
+  if (editBudgetBtn) editBudgetBtn.addEventListener('click', () => { UI.showBudgetInput = !UI.showBudgetInput; renderMain(); });
+  const saveBudgetBtn = document.getElementById('save-budget-btn');
+  if (saveBudgetBtn) saveBudgetBtn.addEventListener('click', async function() {
+    const val = parseFloat(document.getElementById('budget-input')?.value);
+    if (val > 0) {
+      await saveFamilyDoc({ weeklyBudget: val });
+      if (currentFamily) currentFamily.weeklyBudget = val;
+      UI.showBudgetInput = false;
+      showToast('Budget set! Preppi will keep you on track 💰', 'success');
+      renderMain();
+    }
+  });
+  const findStoresBtn = document.getElementById('find-stores-btn');
+  if (findStoresBtn) findStoresBtn.addEventListener('click', () => window.open('https://maps.google.com/?q=grocery+stores+near+me', '_blank'));
+  const findWalmartBtn = document.getElementById('find-walmart-btn');
+  if (findWalmartBtn) findWalmartBtn.addEventListener('click', () => window.open('https://maps.google.com/?q=Walmart+near+me', '_blank'));
+  const findAldiBtn = document.getElementById('find-aldi-btn');
+  if (findAldiBtn) findAldiBtn.addEventListener('click', () => window.open('https://maps.google.com/?q=Aldi+near+me', '_blank'));
+  const findKrogerBtn = document.getElementById('find-kroger-btn');
+  if (findKrogerBtn) findKrogerBtn.addEventListener('click', () => window.open('https://maps.google.com/?q=Kroger+near+me', '_blank'));
+  const pantryPlanBtn = document.getElementById('pantry-plan-btn');
+  if (pantryPlanBtn) pantryPlanBtn.addEventListener('click', async function() {
+    const resultEl = document.getElementById('pantry-plan-result');
+    const budget = currentFamily?.weeklyBudget || 0;
+    const profile = userDoc?.profile || {};
+    const hausMembers = currentFamily?.hausMembers || [];
+    const hausSize = hausMembers.length + 1;
+    const prompt = `Plan a full week of family meals${budget > 0 ? " within a $" + budget + " weekly budget" : " that is budget friendly"} for ${hausSize} people. Diet: ${profile.diet||"Standard"}. Avoid: ${profile.avoid||"none"}. Include estimated cost per meal and a weekly total. Keep meals simple and practical for a busy family.`;
+    this.textContent = '🥗 Preppi is planning...';
+    this.disabled = true;
+    if (resultEl) resultEl.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:10px">Planning your budget week...</div>';
+    const reply = await callAI([{role:'user',content:prompt}], getPreppiSystemPrompt());
+    if (resultEl) resultEl.innerHTML = '<div style="font-size:12px;line-height:1.8;white-space:pre-wrap;color:var(--white);padding:10px;background:var(--card2);border-radius:10px;margin-top:8px">' + reply + '</div>';
+    this.textContent = '✨ Plan My Week Within Budget';
+    this.disabled = false;
+  });
+  const pantryTipsBtn = document.getElementById('pantry-tips-btn');
+  if (pantryTipsBtn) pantryTipsBtn.addEventListener('click', async function() {
+    const resultEl = document.getElementById('pantry-tips-result');
+    const budget = currentFamily?.weeklyBudget || 0;
+    const hausMembers = currentFamily?.hausMembers || [];
+    const prompt = `Give me 5 practical money-saving grocery tips for a family${budget > 0 ? " with a $" + budget + " weekly budget" : ""}. ${hausMembers.filter(m=>m.pickyEater).length > 0 ? "We have picky eaters so tips should be realistic." : ""} Include specific store recommendations and seasonal buying tips.`;
+    this.textContent = '💡 Loading tips...';
+    this.disabled = true;
+    const reply = await callAI([{role:'user',content:prompt}], 'You are a budget grocery shopping expert. Give practical, specific tips.');
+    if (resultEl) resultEl.innerHTML = '<div style="font-size:12px;line-height:1.8;white-space:pre-wrap;color:var(--white);padding:10px;background:var(--card2);border-radius:10px;margin-top:8px">' + reply + '</div>';
+    this.textContent = '💡 Get Money Saving Tips';
+    this.disabled = false;
+  });
+
   // Shopping buttons
   const shopGenBtn = document.getElementById('shop-generate-btn');
   if (shopGenBtn) shopGenBtn.addEventListener('click', generateShoppingList);
@@ -1255,57 +1307,65 @@ function renderCal() {
   </div>`;
 }
 function renderMeals() {
-  const um = currentFamily ? uniqueMeals() : Object.keys(MEALS).slice(0,3);
+  if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">🥫</div><div style="font-size:15px;margin-bottom:16px">Get Active to use The Pantry!</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;
+
+  const profile = userDoc?.profile || {};
+  const budget = currentFamily?.weeklyBudget || 0;
+  const plan = currentFamily?.weekPlan || {};
+  const shoppingList = currentFamily?.shoppingList || null;
+  
+  // Calculate estimated spend from shopping list if available
+  const budgetSet = budget > 0;
+
   return `<div class="fu">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div class="st" style="margin-bottom:0">🍽️ Meals</div>
-    ${currentFamily?`<button onclick="toggleAllCollapse()" class="btn btng">${(F().allCollapsed)?"📖 Recipes":"🛒 Lists"}</button>`:""}
-  </div>
-  ${!currentUser?`<div style="padding:12px 14px;border-radius:12px;background:rgba(105,201,208,.07);border:1px solid rgba(105,201,208,.2);margin-bottom:14px;font-size:12px;color:var(--gray)">🧠 Browsing as guest — <button onclick="signInWithGoogle()" style="background:none;border:none;color:var(--cyan);cursor:pointer;font-weight:700;font-size:12px">Get Active</button> to save meals to your plan!</div>`:""}
-  ${um.length===0?`<div style="text-align:center;padding:55px 0;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">🍽️</div><div style="font-size:14px;margin-bottom:12px">No meals planned yet!</div><button onclick="setTab('calendar')" class="btn btnp">Go to Calendar</button></div>`:um.map(renderMC).join("")}
-  </div>`;
-}
+  <div class="st" style="margin-bottom:16px">🥫 The Pantry</div>
 
-function renderMC(meal) {
-  const d=allMeals()[meal]; if(!d) return "";
-  const collapsed=currentFamily?(F().collapsedMeals||{})[meal]||false:false;
-  const steps=userDoc?(userDoc?.checkedSteps||{})[meal]||new Array(d.steps.length).fill(false):new Array(d.steps.length).fill(false);
-  const done=steps.filter(Boolean).length, prog=Math.round((done/d.steps.length)*100);
-  const isCk=userDoc?(userDoc?.cookedMeals||{})[meal]||false:false;
-  const start=calcStart(d.mealTime,d.prepTime,d.cookTime);
-  const tgt=DIET_T[F().activeDiet||"Standard"];
-  return `<div class="mc" id="mc-${meal.replace(/\s/g,"_")}">
-  <div class="mch">
-    <div class="mcem">${d.emoji}</div>
-    <div style="flex:1">
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span class="mct">${meal}</span>
-        ${isCk?`<span class="tag tck">✓ COOKED</span>`:""}
-        <span class="tag ${d.difficulty==="Easy"?"te":d.difficulty==="Medium"?"tm":"th"}">${d.difficulty}</span>
+  <!-- Budget Tracker -->
+  <div class="card" style="padding:16px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:800">💰 Weekly Budget</div>
+      <button id="edit-budget-btn" style="padding:5px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">${budgetSet ? "Edit" : "Set Budget"}</button>
+    </div>
+    ${budgetSet ? `<div style="font-size:28px;font-weight:900;color:var(--cyan);font-family:var(--fd)">$${budget.toFixed(2)}<span style="font-size:13px;color:var(--gray);font-weight:400"> / week</span></div>` : 
+    `<div style="font-size:13px;color:var(--gray)">Set your weekly food budget and Preppi will help you stay on track!</div>`}
+    ${UI.showBudgetInput ? `<div style="margin-top:10px;display:flex;gap:8px">
+      <input id="budget-input" type="number" placeholder="e.g. 150" value="${budget||""}" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none"/>
+      <button id="save-budget-btn" style="padding:10px 16px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">Save</button>
+    </div>` : ""}
+  </div>
+
+  <!-- Grocery Stores Near Me -->
+  <div class="card" style="padding:16px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:800;margin-bottom:10px">📍 Grocery Stores Near Me</div>
+    <div style="font-size:12px;color:var(--gray);line-height:1.6;margin-bottom:12px">Find the best prices near you. Tap to open in Maps!</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button id="find-stores-btn" style="padding:12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">📍 Find Stores Near Me</button>
+      <div style="display:flex;gap:8px">
+        <button id="find-walmart-btn" style="flex:1;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">🏪 Walmart</button>
+        <button id="find-aldi-btn" style="flex:1;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">🏪 Aldi</button>
+        <button id="find-kroger-btn" style="flex:1;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">🏪 Kroger</button>
       </div>
-      <div class="mcm"><span style="color:var(--cyan)">⏱ ${d.prepTime+d.cookTime}min</span><span style="color:var(--gray)">·</span><span style="color:var(--yellow)">$${d.cost.toFixed(2)}</span><span style="color:var(--gray)">·</span><span>${d.calories}cal</span></div>
     </div>
-    ${currentFamily?`<div class="mca"><button class="tglb" onclick="toggleCard('${meal}')">${collapsed?"📖":"🛒"}</button><button style="background:transparent;border:none;cursor:pointer;color:var(--gray2);font-size:14px;padding:2px 4px" onclick="${currentUser?`removeFromWeek('${meal}')`:"showGetActiveModal()"}">✕</button></div>`:""}
   </div>
-  ${collapsed?`<div style="padding:0 14px 14px"><div style="font-size:9px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">GROCERY LIST</div>${d.ingredients.map(ing=>`<div class="grow"><span style="font-size:12px">• ${ing.item}</span><div style="display:flex;gap:10px"><span style="font-size:10px;color:var(--gray)">${ing.qty}</span><span style="font-size:10px;color:var(--yellow)">$${ing.cost.toFixed(2)}</span></div></div>`).join("")}</div>`:`
-  <div>
-    <div class="prep">
-      <div class="ps"><div class="psl">START</div><div class="psv" style="color:var(--cyan)">${start}</div></div>
-      <div class="ps"><div class="psl">PREP</div><div class="psv">${d.prepTime}m</div></div>
-      <div class="ps"><div class="psl">COOK</div><div class="psv">${d.cookTime}m</div></div>
-      <div class="ps"><div class="psl">EAT AT</div><div class="psv" style="color:var(--pink)">${d.mealTime}</div></div>
-    </div>
-    ${d.veggieHacks?`<div class="vtips"><div class="vtips-t">🥦 VEGGIE HACKS</div>${d.veggieHacks.slice(0,2).map(t=>`<div class="vtip">${t}</div>`).join("")}</div>`:""}
-    <div class="steps">
-      <div style="font-size:9px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">STEPS</div>
-      ${d.steps.map((step,i)=>`<div class="step ${steps[i]?"done":""}" onclick="${currentUser?`checkStep('${meal}',${i})`:"showGetActiveModal()"}"><div class="sck ${steps[i]?"chk":""}">${steps[i]?`<span style="color:#000;font-size:10px">✓</span>`:""}</div><div class="stxt ${steps[i]?"done":""}"><span style="color:var(--cyan);font-weight:700;font-size:11px">${i+1}. </span>${step}</div></div>`).join("")}
-      ${prog===100&&currentUser?`<button onclick="${isCk?"":"markCooked('"+meal+"')"}" style="margin-top:8px;width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer;font-weight:800;font-size:12px;font-family:var(--fb);background:${isCk?"var(--border)":"linear-gradient(135deg,var(--green),#16a34a)"};color:${isCk?"var(--gray)":"#000"}">${isCk?"✓ COOKED":"🎉 MARK AS COOKED (+50 XP)"}</button>`:""}
-    </div>
-  </div>`}
+
+  <!-- Preppi Budget Meal Planner -->
+  <div class="card" style="padding:16px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:800;margin-bottom:6px">🥗 Budget Meal Planner</div>
+    <div style="font-size:12px;color:var(--gray);line-height:1.6;margin-bottom:12px">Tell Preppi your budget and she will plan a full week of meals that fits!</div>
+    <button id="pantry-plan-btn" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">✨ Plan My Week Within Budget</button>
+    <div id="pantry-plan-result" style="margin-top:10px"></div>
+  </div>
+
+  <!-- Price Tips from Preppi -->
+  <div class="card" style="padding:16px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:800;margin-bottom:6px">💡 Money Saving Tips</div>
+    <div style="font-size:12px;color:var(--gray);line-height:1.6;margin-bottom:12px">Preppi finds ways to cut your grocery bill without sacrificing quality!</div>
+    <button id="pantry-tips-btn" style="width:100%;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--white);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--fb)">💡 Get Money Saving Tips</button>
+    <div id="pantry-tips-result" style="margin-top:10px"></div>
+  </div>
+
   </div>`;
 }
-
-// ── Trends ─────────────────────────────────────────────────
 function renderTrends() {
   if (!currentFamily || !userDoc) return `<div style="padding:40px;text-align:center;color:var(--gray)">${!currentUser?`<button onclick="signInWithGoogle()" class="btn btnp">Get Active to see trends</button>`:"Set up your family first!"}</div>`;
   const hist=currentFamily?.weekHistory||[];

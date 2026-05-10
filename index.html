@@ -673,6 +673,8 @@ function renderNav() {
 
 function setTab(t) {
   UI.tab = t;
+  UI.showAriaCalModal = false;
+  UI.showAdd = null;
   renderNav();
   renderMain();
   // Show Nori tip
@@ -994,7 +996,11 @@ function renderMain() {
   if (UI.showMemEdit!==null) renderMemModal();
   // Load draft plan button
   const loadDraftBtn = document.getElementById('load-draft-btn');
-  if (loadDraftBtn) loadDraftBtn.addEventListener('click', loadDraftPlan);
+  if (loadDraftBtn) loadDraftBtn.addEventListener('click', () => {
+    UI.showAriaCalModal = false;
+    UI.showAdd = null;
+    loadDraftPlan();
+  });
   // Attach profile button listener
   const pb = document.getElementById('profile-setup-btn');
   if (pb) pb.addEventListener('click', function() {
@@ -1432,6 +1438,7 @@ async function loadDraftPlan() {
   const weekPlan = { ...(currentFamily?.weekPlan||{}), ...draft };
   await saveFamilyDoc({ weekPlan, weekPlanDraft: null });
   UI.weeklyPlanData = null;
+  UI.tab = "calendar";
   addXP(25);
   showToast("✅ " + count + " meals loaded into your calendar! +25 XP 🎉", "success");
   renderMain();

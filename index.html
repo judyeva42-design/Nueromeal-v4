@@ -1841,6 +1841,14 @@ function bindAI() {
   const el = document.getElementById("ai-msgs");
   if (el) el.scrollTop = el.scrollHeight;
 
+  // Plan My Week button
+  const planBtn = document.getElementById("aria-meal-plan-btn");
+  if (planBtn) planBtn.addEventListener("click", generateWeeklyPlan);
+
+  // Add Full Week to Calendar button
+  const addAllBtn = document.getElementById("add-all-cal-btn");
+  if (addAllBtn) addAllBtn.addEventListener("click", addAllToCalendar);
+
   // Send button
   const sendBtn = document.getElementById("ai-send-btn");
   if (sendBtn) sendBtn.addEventListener("click", sendAIMsg);

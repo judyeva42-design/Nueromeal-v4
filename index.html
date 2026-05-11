@@ -659,23 +659,20 @@ function renderNav() {
   const alerts = currentFamily ? getNutrAlerts(UI.selDay).length : 0;
   const chals = (currentFamily?.challenges||[]).filter(c=>c.status==="active").length;
   const tabs = [
-    {id:"dashboard",icon:"⚡",label:"Home"},
-    {id:"calendar",icon:"📅",label:"Calendar"},
+    {id:"dashboard",icon:"🏠",label:"Home"},
+    {id:"calendar",icon:"📅",label:"Plan"},
+    {id:"ai",icon:"🥗",label:"Preppi"},
     {id:"meals",icon:"🥫",label:"Pantry"},
-    {id:"trends",icon:"📈",label:"Trends"},
-    {id:"nutrition",icon:"🥦",label:"Nutrition",b:alerts||null},
-    {id:"shopping",icon:"🛒",label:"Shopping"},
-    {id:"compete",icon:"🏆",label:"Compete",b:chals||null},
-    {id:"rooms",icon:"🏟️",label:"Rooms"},
-    {id:"wellness",icon:"💙",label:"Wellness"},
-    {id:"game",icon:"🎮",label:"Game"},
     {id:"family",icon:"👨‍👩‍👧",label:"Family"},
-    {id:"ai",icon:"🧠",label:"Preppi"},
-    {id:"chat",icon:"💬",label:"Chat"},
-    {id:"videos",icon:"📹",label:"Videos"},
-    {id:"tips",icon:"📖",label:"Cookbook"},
   ];
-  document.getElementById("nav").innerHTML = `<div class="navi">${tabs.map(t=>`<button class="nt ${UI.tab===t.id?"active":""}" onclick="setTab('${t.id}')">${t.icon}<span class="ntl">${t.label}</span>${t.b?`<span class="nbadge">${t.b}</span>`:""}</button>`).join("")}</div>`;
+  document.getElementById("nav").innerHTML = `<div style="display:flex;justify-content:space-around;align-items:center;padding:0 4px;height:100%;max-width:480px;margin:0 auto">${tabs.map(t=>{
+    const active = UI.tab===t.id;
+    return `<button onclick="setTab('${t.id}')" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 10px;background:${active?"rgba(94,207,219,.1)":"transparent"};border:1px solid ${active?"rgba(94,207,219,.2)":"transparent"};border-radius:14px;cursor:pointer;min-width:56px;flex:1">
+      <div style="font-size:${active?"21px":"19px"}">${t.icon}</div>
+      <div style="font-size:9px;font-weight:${active?"800":"500"};color:${active?"var(--cyan)":"var(--gray)"};letter-spacing:0.3px;font-family:var(--fb);white-space:nowrap">${t.label}</div>
+      ${active?`<div style="width:18px;height:2px;background:var(--grad-main);border-radius:2px;margin-top:1px"></div>`:`<div style="width:18px;height:2px"></div>`}
+    </button>`;
+  }).join("")}</div>`;
 }
 
 function setTab(t) {
@@ -3283,10 +3280,15 @@ window.UI = UI;
 <div id="app"></div>
 <style>
 :root {
-  --bg:#0a0a0f; --card:#141420; --card2:#1a1a2e; --border:#2a2a3e; --border2:#3a3a50;
-  --white:#f0f0ff; --gray:#6b6b8a; --gray2:#4a4a66;
-  --cyan:#69C9D0; --pink:#EE1D52; --green:#4ade80; --yellow:#facc15;
-  --orange:#fb923c; --purple:#a78bfa;
+  --bg:#080810; --card:#111120; --card2:#181828; --card3:#0d0d1a;
+  --border:#22223a; --border2:#2e2e48; --border3:#3a3a55;
+  --white:#f2f2ff; --gray:#7070a0; --gray2:#454565; --gray3:#2a2a42;
+  --cyan:#5ecfdb; --pink:#f0195a; --green:#3dd68c; --yellow:#fbbf24;
+  --orange:#fb923c; --purple:#a78bfa; --blue:#60a5fa;
+  --grad-main:linear-gradient(135deg,#5ecfdb,#f0195a);
+  --grad-glow:linear-gradient(135deg,rgba(94,207,219,.12),rgba(240,25,90,.06));
+  --shadow:0 4px 24px rgba(0,0,0,.5);
+  --radius:16px; --radius-sm:10px; --radius-lg:24px;
   --fd:"Syne",sans-serif; --fb:"DM Sans",sans-serif; --fm:"Space Mono",monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}

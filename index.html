@@ -75,9 +75,9 @@ const TRIVIA_Q = [
   {q:"Which nut has the most omega-3?",opts:["Almonds","Cashews","Walnuts","Pistachios"],ans:2,exp:"Walnuts are the omega-3 champion!"},
 ];
 
-// Nori - Guide Character Messages
+// Preppi - Guide Character Messages
 const NORI_TIPS = [
-  {tab:"dashboard", msg:"Hey! I'm Nori 🧠 Your NeuroMeal guide! Check your meals for today and see how your week is shaping up!"},
+  {tab:"dashboard", msg:"Hey! I'm Preppi 🥗 Your NeuroMeal guide! Check your meals for today and see how your week is shaping up!"},
   {tab:"calendar", msg:"This is your meal playground! Tap any + to drop a meal into that slot. Mix it up!"},
   {tab:"meals", msg:"Swipe between recipe view and grocery list! The toggle at the top flips between them."},
   {tab:"nutrition", msg:"Those colorful bars show how your food groups are doing. Green means you're crushing it!"},
@@ -178,7 +178,7 @@ let UI = {
   showWardrobe:null,
   wardrobePreview:{},
   chatInput:"",
-  noriVisible:true,
+  preppiVisible:true,
 };
 
 // ── Firebase Auth ──────────────────────────────────────────
@@ -591,8 +591,10 @@ function renderFamilySetup() {
       </div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px">
         <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:14px">🔗 Join with Invite Code</div>
-        <input id="join-code-in" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;margin-bottom:10px;text-transform:uppercase;letter-spacing:3px;box-sizing:border-box" placeholder="6-DIGIT CODE" maxlength="6"/>
-        <button id="join-family-btn-setup" style="width:100%;padding:13px;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--white);font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd)">Join Family Circle</button>
+        <div style="background:var(--card2);border:1px solid rgba(250,204,21,.3);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:9px;font-weight:800;padding:3px 8px;background:rgba(250,204,21,.15);border-radius:6px;color:var(--yellow);display:inline-block;margin-bottom:8px">🔜 COMING SOON</div>
+          <div style="font-size:12px;color:var(--gray);line-height:1.6">Family member accounts are on the way! You will be able to join a household using an invite code very soon.</div>
+        </div>
       </div>
       <button onclick="handleSignOut()" style="width:100%;margin-top:12px;padding:10px;background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:12px;font-family:var(--fb)">Sign out</button>
     </div>
@@ -683,13 +685,13 @@ function setTab(t) {
   UI.aiLoading = false;
   renderNav();
   renderMain();
-  // Show Nori tip
+  // Show Preppi tip
   const tip = NORI_TIPS.find(n=>n.tab===t);
-  if (tip && UI.noriVisible) showNoriTip(tip.msg);
+  if (tip && UI.preppiVisible) showPreppiTip(tip.msg);
 }
 function setDay(d) { UI.selDay = d; renderMain(); }
 
-function showNoriTip(msg) {
+function showPreppiTip(msg) {
   const existing = document.getElementById("nori-tip");
   if (existing) existing.remove();
   const el = document.createElement("div");
@@ -703,22 +705,22 @@ function showNoriTip(msg) {
 
 // ── Onboarding ─────────────────────────────────────────────
 const ONBOARD_STEPS = [
-  { type:'welcome', emoji:'🧠✨', nori:"Well HELLO there, superstar!! I'm Nori — your NeuroMeal brain guide! I'm about to ask you a few questions so Preppi can make this app feel like it was built JUST for you. Ready to make some magic? ✨" },
-  { type:'text', field:'name', nori:"First things first — what do we call you? Not just 'hey you' 😄", label:'YOUR NAME', placeholder:"What's your name?" },
-  { type:'number', field:'age', nori:"How many trips around the sun have you taken? 🌍 Preppi just wants to make sure your meal portions are on point!", label:'YOUR AGE', placeholder:'Enter your age' },
-  { type:'choice', field:'sex', nori:"Which best describes you? This helps Preppi nail your nutrition targets! 💪", label:'', options:['Female 👩','Male 👨','Non-binary 🌈','Prefer not to say 🤐'] },
-  { type:'double', nori:"Height and weight time! Preppi keeps your secrets 🤫 This is just so your nutrition goals are realistic for YOUR body!", labels:['Height (e.g. 5ft 4in)','Weight (e.g. 165 lbs)'] },
-  { type:'choice', field:'activity', nori:"On a typical day, how active are you? Be honest — Preppi can handle the truth! 😄", label:'', options:['🛋️ Mostly sitting (desk job, Netflix champion)','🚶 Lightly active (walks, light errands)','💃 Moderately active (regular workouts)','🏃 Very active (daily intense exercise)','🔥 Super active (athlete or physical job)'] },
-  { type:'choice', field:'goal', nori:"What is your main goal right now? Preppi will keep this in mind with EVERY suggestion!", label:'', options:['⚖️ Lose weight','💪 Build muscle','🔋 More energy','🧠 Brain-friendly eating (AuDHD/ADHD)','❤️ General health','💊 Managing a health condition','🌱 Just eat better overall'] },
-  { type:'choice', field:'diet', nori:"Does your eating follow any particular style? Pick the one that fits best!", label:'', options:['🥗 Standard (I eat pretty much everything)','🥩 Keto (low carb, high fat)','🌿 Vegan (plant-based all the way)','🐟 Vegetarian','🫙 Mediterranean','🚫🌾 Gluten-Free','🥛 Dairy-Free','🦴 Paleo','💉 GLP-1 (Ozempic/Wegovy/Mounjaro)'] },
-  { type:'text', field:'avoid', nori:"Is there a food that makes you go absolutely NOT, not today, not ever? 🙅 List anything you want Preppi to NEVER suggest!", label:'FOODS TO AVOID (optional)', placeholder:'e.g. mushrooms, shellfish, cilantro...' },
-  { type:'text', field:'loves', nori:"Now the fun part — what foods make you do a little happy dance? 💃 Tell Preppi your favorites!", label:'FAVORITE FOODS (optional)', placeholder:'e.g. pasta, tacos, avocado...' },
-  { type:'choice', field:'pickyEater', nori:"Are you feeding any picky eaters? You know the type — chicken nuggets and air 😂", label:'', options:['🙅 Nope, everyone eats everything!','😬 One picky eater in the house','😅 Multiple picky eaters (send help)','🤦 I AM the picky eater 😂'] },
-  { type:'choice', field:'fridgeVibes', nori:"Last one — just for fun! 🎉 If your fridge could play a theme song when you opened it, what genre would it be? 🎵", label:'', options:['🎸 Rock (I open it with INTENTION)','🎹 Jazz (spontaneous fridge discoveries)','🎵 Pop (whatever is trending in the pantry)','🎤 Hype music (I am about to COOK)','🎶 Lo-fi (just a chill snack, no drama)','🎺 Classical (I meal prep on Sundays like an adult)'] },
-  { type:'text', field:'allergies', nori:"⚠️ Do you or anyone in your household have any ALLERGIES? This is a safety question — Preppi will NEVER suggest anything with these ingredients!", label:'ALLERGIES (hard exclusions — safety level)', placeholder:'e.g. peanuts, shellfish, tree nuts, dairy...' },
-  { type:'double2', nori:"Almost done! Want to track your weight goals? This helps Preppi suggest the right meals for where you want to be! Totally optional 💪", labels:['Current Weight (optional)','Target Weight (optional)'], fields:['currentWeight','targetWeight'] },
-  { type:'text', field:'phone', nori:"📱 Last thing — your phone number! SMS meal reminders and daily tips are coming soon. Drop your number and you will be first to know when it launches! 🔔", label:'PHONE NUMBER (optional)', placeholder:'e.g. (555) 123-4567...' },
-  { type:'complete', emoji:'🎉🧠🔥', nori:"YESSS!! You did it!! 🎉 Preppi now knows everything she needs to make NeuroMeal feel like it was built just for you! Your meals are about to get SO much smarter!" },
+  { type:'welcome', emoji:'🧠✨', preppi:"Well HELLO there, superstar!! I'm Preppi — your NeuroMeal nutrition guide! I'm about to ask you a few questions so Preppi can make this app feel like it was built JUST for you. Ready to make some magic? ✨" },
+  { type:'text', field:'name', preppi:"First things first — what do we call you? Not just 'hey you' 😄", label:'YOUR NAME', placeholder:"What's your name?" },
+  { type:'number', field:'age', preppi:"How many trips around the sun have you taken? 🌍 Preppi just wants to make sure your meal portions are on point!", label:'YOUR AGE', placeholder:'Enter your age' },
+  { type:'choice', field:'sex', preppi:"Which best describes you? This helps Preppi nail your nutrition targets! 💪", label:'', options:['Female 👩','Male 👨','Non-binary 🌈','Prefer not to say 🤐'] },
+  { type:'double', preppi:"Height and weight time! Preppi keeps your secrets 🤫 This is just so your nutrition goals are realistic for YOUR body!", labels:['Height (e.g. 5ft 4in)','Weight (e.g. 165 lbs)'] },
+  { type:'choice', field:'activity', preppi:"On a typical day, how active are you? Be honest — Preppi can handle the truth! 😄", label:'', options:['🛋️ Mostly sitting (desk job, Netflix champion)','🚶 Lightly active (walks, light errands)','💃 Moderately active (regular workouts)','🏃 Very active (daily intense exercise)','🔥 Super active (athlete or physical job)'] },
+  { type:'choice', field:'goal', preppi:"What is your main goal right now? Preppi will keep this in mind with EVERY suggestion!", label:'', options:['⚖️ Lose weight','💪 Build muscle','🔋 More energy','🧠 Brain-friendly eating (AuDHD/ADHD)','❤️ General health','💊 Managing a health condition','🌱 Just eat better overall'] },
+  { type:'choice', field:'diet', preppi:"Does your eating follow any particular style? Pick the one that fits best!", label:'', options:['🥗 Standard (I eat pretty much everything)','🥩 Keto (low carb, high fat)','🌿 Vegan (plant-based all the way)','🐟 Vegetarian','🫙 Mediterranean','🚫🌾 Gluten-Free','🥛 Dairy-Free','🦴 Paleo','💉 GLP-1 (Ozempic/Wegovy/Mounjaro)'] },
+  { type:'text', field:'avoid', preppi:"Is there a food that makes you go absolutely NOT, not today, not ever? 🙅 List anything you want Preppi to NEVER suggest!", label:'FOODS TO AVOID (optional)', placeholder:'e.g. mushrooms, shellfish, cilantro...' },
+  { type:'text', field:'loves', preppi:"Now the fun part — what foods make you do a little happy dance? 💃 Tell Preppi your favorites!", label:'FAVORITE FOODS (optional)', placeholder:'e.g. pasta, tacos, avocado...' },
+  { type:'choice', field:'pickyEater', preppi:"Are you feeding any picky eaters? You know the type — chicken nuggets and air 😂", label:'', options:['🙅 Nope, everyone eats everything!','😬 One picky eater in the house','😅 Multiple picky eaters (send help)','🤦 I AM the picky eater 😂'] },
+  { type:'choice', field:'fridgeVibes', preppi:"Last one — just for fun! 🎉 If your fridge could play a theme song when you opened it, what genre would it be? 🎵", label:'', options:['🎸 Rock (I open it with INTENTION)','🎹 Jazz (spontaneous fridge discoveries)','🎵 Pop (whatever is trending in the pantry)','🎤 Hype music (I am about to COOK)','🎶 Lo-fi (just a chill snack, no drama)','🎺 Classical (I meal prep on Sundays like an adult)'] },
+  { type:'text', field:'allergies', preppi:"⚠️ Do you or anyone in your household have any ALLERGIES? This is a safety question — Preppi will NEVER suggest anything with these ingredients!", label:'ALLERGIES (hard exclusions — safety level)', placeholder:'e.g. peanuts, shellfish, tree nuts, dairy...' },
+  { type:'double2', preppi:"Almost done! Want to track your weight goals? This helps Preppi suggest the right meals for where you want to be! Totally optional 💪", labels:['Current Weight (optional)','Target Weight (optional)'], fields:['currentWeight','targetWeight'] },
+  { type:'text', field:'phone', preppi:"📱 Last thing — your phone number! SMS meal reminders and daily tips are coming soon. Drop your number and you will be first to know when it launches! 🔔", label:'PHONE NUMBER (optional)', placeholder:'e.g. (555) 123-4567...' },
+  { type:'complete', emoji:'🎉🧠🔥', preppi:"YESSS!! You did it!! 🎉 Preppi now knows everything she needs to make NeuroMeal feel like it was built just for you! Your meals are about to get SO much smarter!" },
 ];
 
 function renderOnboard() {
@@ -1222,13 +1224,14 @@ function renderMain() {
   if (shareInviteBtn) shareInviteBtn.addEventListener('click', async function() {
     const code = currentFamily?.inviteCode;
     if (!code) return;
-    const msg = "Join my family on NeuroMeal! Use invite code: " + code + " at nueromeal.netlify.app";
+    const url = "https://nueromeal.netlify.app";
+    const msg = "Hey! Join me on NeuroMeal 🧠🥗\nThe AI-powered family meal planning app!\n\nDownload at: " + url + "\n\nUse my family code " + code + " to join the Evans Family when member accounts launch!";
     if (navigator.share) {
-      try { await navigator.share({ title: 'Join NeuroMeal!', text: msg }); } 
+      try { await navigator.share({ title: 'Join NeuroMeal! 🧠🥗', text: msg, url }); }
       catch(e) { navigator.clipboard?.writeText(msg); showToast('Invite copied to clipboard! 📋', 'success'); }
     } else {
       navigator.clipboard?.writeText(msg);
-      showToast('Invite copied! Paste it anywhere to share 📋', 'success');
+      showToast('Invite copied! Paste it anywhere 📋', 'success');
     }
   });
   const editProfileBtn = document.getElementById('edit-my-profile-btn');
@@ -2042,8 +2045,10 @@ function renderFamily() {
     </div>
     <div class="card" style="padding:20px">
       <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:14px">🔗 Join Family</div>
-      <input id="join-code-in" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;margin-bottom:10px;text-transform:uppercase;letter-spacing:3px;box-sizing:border-box" placeholder="INVITE CODE"/>
-      <button id="join-family-btn" style="width:100%;padding:13px;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--white);font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd)">Join</button>
+        <div style="background:var(--card2);border:1px solid rgba(250,204,21,.3);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:9px;font-weight:800;padding:3px 8px;background:rgba(250,204,21,.15);border-radius:6px;color:var(--yellow);display:inline-block;margin-bottom:8px">🔜 COMING SOON</div>
+          <div style="font-size:12px;color:var(--gray);line-height:1.6">Family member accounts are on the way! They will use your invite code to join your household.</div>
+        </div>
     </div>
     </div>`;
   }
@@ -2061,7 +2066,14 @@ function renderFamily() {
         <button id="edit-my-profile-btn" style="padding:6px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit Profile</button>
       </div>
     </div>
-    <div style="font-size:12px;color:var(--gray);margin-bottom:12px">Invite Code: <span style="color:var(--cyan);font-weight:700;letter-spacing:2px">${currentFamily.inviteCode}</span></div>
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px">YOUR FAMILY CODE</div>
+        <div style="font-size:9px;font-weight:800;padding:3px 8px;background:rgba(250,204,21,.15);border:1px solid rgba(250,204,21,.3);border-radius:6px;color:var(--yellow)">🔜 COMING SOON</div>
+      </div>
+      <div style="font-size:22px;font-weight:900;color:var(--cyan);letter-spacing:4px;font-family:var(--fd);margin-bottom:6px">${currentFamily.inviteCode}</div>
+      <div style="font-size:11px;color:var(--gray);line-height:1.5">Family member accounts are coming! Aubri, Ksaan and Rich will use this code to join your household and see their personal dashboard, log water, and earn rewards.</div>
+    </div>
     ${members.length > 0 ? `<div style="font-size:10px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:8px">ACTIVE MEMBERS</div>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px">${members.map(m=>`<div style="background:var(--card2);border:1px solid ${m.color||"var(--cyan)"};border-radius:14px;padding:12px;text-align:center;min-width:80px"><div style="font-size:28px;margin-bottom:4px">${m.emoji||"🧑"}</div><div style="font-size:12px;font-weight:700">${m.name}</div><div style="font-size:9px;color:var(--gray)">${m.diet||"Standard"}</div></div>`).join("")}</div>` : ""}
   </div>
@@ -2308,21 +2320,38 @@ function getPreppiSystemPrompt() {
   const hausMembers = currentFamily?.hausMembers || [];
   const pickyOnes = hausMembers.filter(m=>m.pickyEater).map(m=>m.name);
   const weekPlan = currentFamily?.weekPlan || {};
+  const budget = currentFamily?.weeklyBudget || null;
   const plannedMeals = Object.entries(weekPlan).map(([day,meals])=>
-    Object.entries(meals||{}).filter(([,v])=>v).map(([type,meal])=>`${day} ${type}: ${meal}`).join(", ")
+    Object.entries(meals||{}).filter(([,v])=>v).map(([type,meal])=>day+" "+type+": "+meal).join(", ")
   ).filter(Boolean).join("; ");
 
-  return `You are Preppi, a warm encouraging family meal planning AI for NeuroMeal.
-${profile.name ? "User: " + profile.name : ""}
-${profile.diet ? "Diet: " + profile.diet : ""}
-${profile.goal ? "Goal: " + profile.goal : ""}
-${profile.allergies ? "⚠️ ALLERGIES (never suggest): " + profile.allergies : ""}\n${profile.avoid ? "Avoid (preference): " + profile.avoid : ""}
-${hausMembers.length > 0 ? "Household: " + hausMembers.map(m=>`${m.name}${m.pickyEater?" (picky)":""}${m.diet&&m.diet!=="Standard"?", "+m.diet:""}`).join("; ") : ""}
-${pickyOnes.length > 0 ? "Picky eaters: " + pickyOnes.join(", ") + " — suggest simple modifications" : ""}
-${plannedMeals ? "This week's meals: " + plannedMeals : ""}
-Be warm, practical, and concise. Use emojis sparingly. Always consider the whole family.`;
+  return "You are Preppi, the heart and expert guide of NeuroMeal — a certified nutritionist, meal planning specialist, health and fitness coach, and personal success guide all in one warm encouraging personality.\n\n" +
+  "Your role is to lead this family to their health and wellness goals through smart meal planning, nutrition education, and positive reinforcement.\n\n" +
+  "FAMILY PROFILE:\n" +
+  (profile.name ? "Primary user: " + profile.name + "\n" : "") +
+  (profile.age ? "Age: " + profile.age + "\n" : "") +
+  (profile.diet ? "Diet: " + profile.diet + "\n" : "") +
+  (profile.goal ? "Health goal: " + profile.goal + "\n" : "") +
+  (profile.currentWeight ? "Current weight: " + profile.currentWeight + "\n" : "") +
+  (profile.targetWeight ? "Target weight: " + profile.targetWeight + "\n" : "") +
+  (profile.allergies ? "ALLERGIES - NEVER SUGGEST THESE: " + profile.allergies + "\n" : "") +
+  (profile.avoid ? "Avoid: " + profile.avoid + "\n" : "") +
+  (profile.loves ? "Loves: " + profile.loves + "\n" : "") +
+  "\nHOUSEHOLD MEMBERS:\n" +
+  (hausMembers.length > 0 ? hausMembers.map(m=>
+    "- " + m.name +
+    (m.age ? ", age " + m.age : "") +
+    (m.diet && m.diet !== "Standard" ? ", " + m.diet : "") +
+    (m.pickyEater ? " (picky eater)" : "") +
+    (m.goal ? ", goal: " + m.goal : "") +
+    (m.allergies ? " ALLERGIC TO: " + m.allergies : "") +
+    (m.avoid ? ", avoids: " + m.avoid : "")
+  ).join("\n") : "No additional household members") +
+  (pickyOnes.length > 0 ? "\n\nPICKY EATERS: " + pickyOnes.join(", ") + " — suggest simple familiar modifications" : "") +
+  (budget ? "\nWEEKLY BUDGET: $" + budget : "") +
+  (plannedMeals ? "\n\nTHIS WEEK'S MEAL PLAN:\n" + plannedMeals : "\nNo meals planned yet") +
+  "\n\nPERSONALITY: Warm, encouraging, never judgmental. Celebrate every win. Give practical advice a busy family can use. Be concise and AuDHD-friendly. You are the expert — give confident knowledgeable guidance.";
 }
-
 function getPreppiGreeting() {
   const profile = userDoc?.profile || {};
   const hausMembers = currentFamily?.hausMembers || [];

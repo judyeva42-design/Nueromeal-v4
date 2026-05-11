@@ -991,13 +991,48 @@ function bindFamilyMembers() {
   });
 
   // Remove member buttons
+  // Toggle HC card
+  document.querySelectorAll('[data-toggle-hc]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      UI.expandedMember = UI.expandedMember === "hc" ? null : "hc";
+      renderMain();
+    });
+  });
+
   // Toggle member expand
   document.querySelectorAll('[data-toggle-member]').forEach(btn => {
     btn.addEventListener('click', function() {
-      const idx = parseInt(this.getAttribute('data-toggle-member'));
+      const val = this.getAttribute('data-toggle-member');
+      const idx = parseInt(val);
       UI.expandedMember = UI.expandedMember === idx ? null : idx;
       renderMain();
     });
+  });
+
+  // Head Chef water logging
+  document.querySelectorAll('[data-hc-water]').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const amt = parseInt(this.getAttribute('data-hc-water'));
+      const profile = userDoc?.profile || {};
+      const name = profile.name || "me";
+      const today = new Date().toDateString();
+      const waterLog = JSON.parse(JSON.stringify(currentFamily?.waterLog || {}));
+      if (!waterLog[today]) waterLog[today] = {};
+      waterLog[today][name] = (waterLog[today][name] || 0) + amt;
+      await saveFamilyDoc({ waterLog });
+      if (currentFamily) currentFamily.waterLog = waterLog;
+      showToast("💧 +" + amt + "oz logged for you!", "success");
+      renderMain();
+    });
+  });
+
+  // Edit profile from HC card
+  const editHCBtn = document.getElementById('edit-my-profile-btn-hc');
+  if (editHCBtn) editHCBtn.addEventListener('click', function() {
+    const p = userDoc?.profile || {};
+    UI.onboardData = { ...p };
+    UI.onboardStep = 0;
+    renderOnboard();
   });
 
   // Water logging
@@ -1176,7 +1211,7 @@ function renderMain() {
     const budget = currentFamily?.weeklyBudget || 0;
     const profile = userDoc?.profile || {};
     const hausMembers = currentFamily?.hausMembers || [];
-    const hausSize = hausMembers.length + 1;
+    const hausSize = (hausMembers||[]).length + 1; // +1 for Head Chef
     const prompt = `Plan a full week of family meals${budget > 0 ? " within a $" + budget + " weekly budget" : " that is budget friendly"} for ${hausSize} people. Diet: ${profile.diet||"Standard"}. Avoid: ${profile.avoid||"none"}. Include estimated cost per meal and a weekly total. Keep meals simple and practical for a busy family.`;
     this.textContent = '🥗 Preppi is planning...';
     this.disabled = true;
@@ -1198,6 +1233,41 @@ function renderMain() {
     if (resultEl) resultEl.innerHTML = '<div style="font-size:12px;line-height:1.8;white-space:pre-wrap;color:var(--white);padding:10px;background:var(--card2);border-radius:10px;margin-top:8px">' + reply + '</div>';
     this.textContent = '💡 Get Money Saving Tips';
     this.disabled = false;
+  });
+
+  // Home screen water logging - Meal Master
+  document.querySelectorAll('[data-water-me]').forEach(btn => {
+    btn.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      const amt = parseInt(this.getAttribute('data-water-me'));
+      const name = userDoc?.profile?.name || 'me';
+      const today = new Date().toDateString();
+      const waterLog = JSON.parse(JSON.stringify(currentFamily?.waterLog || {}));
+      if (!waterLog[today]) waterLog[today] = {};
+      waterLog[today][name] = (waterLog[today][name] || 0) + amt;
+      await saveFamilyDoc({ waterLog });
+      if (currentFamily) currentFamily.waterLog = waterLog;
+      showToast('💧 +' + amt + 'oz logged!', 'success');
+      renderMain();
+    });
+  });
+  // Home screen water logging - Members
+  document.querySelectorAll('[data-water-member]').forEach(btn => {
+    btn.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      const mi = parseInt(this.getAttribute('data-water-member'));
+      const amt = parseInt(this.getAttribute('data-water-amt'));
+      const member = (currentFamily?.hausMembers||[])[mi];
+      if (!member) return;
+      const today = new Date().toDateString();
+      const waterLog = JSON.parse(JSON.stringify(currentFamily?.waterLog || {}));
+      if (!waterLog[today]) waterLog[today] = {};
+      waterLog[today][member.name] = (waterLog[today][member.name] || 0) + amt;
+      await saveFamilyDoc({ waterLog });
+      if (currentFamily) currentFamily.waterLog = waterLog;
+      showToast('💧 +' + amt + 'oz for ' + member.name + '!', 'success');
+      renderMain();
+    });
   });
 
   // Room sub-navigation bindings
@@ -1235,6 +1305,23 @@ function renderMain() {
     });
   });
   // Shopping buttons
+  // Dashboard water logging
+  document.querySelectorAll('[data-dash-water]').forEach(btn => {
+    btn.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      const amt = parseInt(this.getAttribute('data-dash-water'));
+      const who = this.getAttribute('data-dash-who');
+      const today = new Date().toDateString();
+      const waterLog = JSON.parse(JSON.stringify(currentFamily?.waterLog || {}));
+      if (!waterLog[today]) waterLog[today] = {};
+      waterLog[today][who] = (waterLog[today][who] || 0) + amt;
+      await saveFamilyDoc({ waterLog });
+      if (currentFamily) currentFamily.waterLog = waterLog;
+      showToast("💧 +" + amt + "oz for " + who + "!", "success");
+      renderMain();
+    });
+  });
+
   // Calendar buttons
   document.querySelectorAll('[data-selday]').forEach(btn => {
     btn.addEventListener('click', function() { UI.selDay = this.getAttribute('data-selday'); renderMain(); });
@@ -1527,7 +1614,10 @@ function renderDash() {
     
     <!-- Today's Meals -->
     <div id="dash-meals-card" onclick="setTab('plan')" style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:14px;cursor:pointer;transition:border-color .2s" onmouseenter="this.style.borderColor='var(--cyan)'" onmouseleave="this.style.borderColor='var(--border)'">
-      <div style="font-size:20px;margin-bottom:6px">🍽️</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-size:20px">🍽️</div>
+        <div style="font-size:8px;color:var(--cyan);font-weight:700">Open →</div>
+      </div>
       <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:8px">Today's Meals</div>
       ${mealTypes.filter(t=>todayMeals[t]).length === 0 
         ? `<div style="font-size:10px;color:var(--gray);line-height:1.6">Nothing planned<br>for today yet</div><div style="margin-top:8px;font-size:9px;color:var(--cyan);font-weight:700">+ Add meals →</div>`
@@ -1535,33 +1625,44 @@ function renderDash() {
       }
     </div>
 
-    <!-- Family Water -->
-    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:14px">
-      <div style="font-size:20px;margin-bottom:6px">💧</div>
-      <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:8px">Family Water</div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <!-- Primary user -->
+    <!-- Family Water - Interactive inline card -->
+    <div style="background:var(--card);border:1.5px dashed var(--border2);border-radius:16px;padding:14px;position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-            <span style="font-size:9px;color:var(--gray)">${firstName}</span>
-            <span style="font-size:9px;color:var(--cyan)">${myWaterLogged}/${myWaterGoal}oz</span>
+          <div style="font-size:20px;margin-bottom:4px">💧</div>
+          <div style="font-size:11px;font-weight:800;color:var(--white)">Family Water</div>
+        </div>
+        <div style="font-size:8px;font-weight:800;padding:3px 7px;background:rgba(94,207,219,.12);border:1px solid rgba(94,207,219,.25);border-radius:6px;color:var(--cyan)">TAP +</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <!-- Meal Master (you) -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+            <span style="font-size:9px;color:var(--cyan);font-weight:700">👑 ${firstName}</span>
+            <div style="display:flex;gap:4px;align-items:center">
+              <button data-water-me="8" style="padding:2px 5px;background:rgba(94,207,219,.15);border:1px solid rgba(94,207,219,.3);border-radius:4px;color:var(--cyan);font-size:8px;font-weight:700;cursor:pointer;font-family:var(--fb)">+8</button>
+              <span style="font-size:9px;color:var(--cyan)">${myWaterLogged}/${myWaterGoal}oz</span>
+            </div>
           </div>
           <div style="height:4px;background:var(--border);border-radius:2px">
-            <div style="width:${Math.min(100,Math.round((myWaterLogged/myWaterGoal)*100))}%;height:100%;background:linear-gradient(90deg,var(--cyan),var(--pink));border-radius:2px"></div>
+            <div style="width:${Math.min(100,Math.round((myWaterLogged/myWaterGoal)*100))}%;height:100%;background:linear-gradient(90deg,var(--cyan),var(--pink));border-radius:2px;transition:width .3s"></div>
           </div>
         </div>
-        ${hausMembers.slice(0,2).map(m => {
+        ${hausMembers.slice(0,3).map((m,mi) => {
           const mWater = waterLog[todayStr]?.[m.name] || 0;
-          const mGoal = m.waterGoalOz || 64;
+          const mGoal = m.waterGoalOz || (parseInt(m.age||18) < 9 ? 40 : parseInt(m.age||18) < 14 ? 56 : parseInt(m.age||18) < 18 ? 64 : 80);
           const mPct = Math.min(100,Math.round((mWater/mGoal)*100));
           const color = mPct >= 100 ? 'var(--green)' : mPct >= 50 ? 'var(--cyan)' : 'var(--pink)';
           return `<div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
               <span style="font-size:9px;color:var(--gray)">${m.name}</span>
-              <span style="font-size:9px;color:${color}">${mWater}/${mGoal}oz</span>
+              <div style="display:flex;gap:4px;align-items:center">
+                <button data-water-member="${mi}" data-water-amt="8" style="padding:2px 5px;background:rgba(94,207,219,.1);border:1px solid rgba(94,207,219,.2);border-radius:4px;color:var(--cyan);font-size:8px;font-weight:700;cursor:pointer;font-family:var(--fb)">+8</button>
+                <span style="font-size:9px;color:${color}">${mWater}/${mGoal}oz</span>
+              </div>
             </div>
             <div style="height:4px;background:var(--border);border-radius:2px">
-              <div style="width:${mPct}%;height:100%;background:${color};border-radius:2px"></div>
+              <div style="width:${mPct}%;height:100%;background:${color};border-radius:2px;transition:width .3s"></div>
             </div>
           </div>`;
         }).join("")}
@@ -1792,7 +1893,7 @@ async function generateShoppingList() {
 
   const profile = userDoc?.profile || {};
   const hausMembers = currentFamily?.hausMembers || [];
-  const hausSize = hausMembers.length + 1;
+  const hausSize = (hausMembers||[]).length + 1; // +1 for Head Chef
 
   const prompt = `Create a complete shopping list for a family of ${hausSize} for these meals: ${meals.join(", ")}.
 Diet: ${profile.diet||"Standard"}. Avoid: ${profile.avoid||"none"}.
@@ -2069,7 +2170,7 @@ async function generateWeeklyPlan() {
   if (!currentUser || !currentFamily) return;
   const profile = userDoc?.profile || {};
   const hausMembers = currentFamily?.hausMembers || [];
-  const hausSize = hausMembers.length + 1;
+  const hausSize = (hausMembers||[]).length + 1; // +1 for Head Chef
   
   UI.aiLoading = true;
   UI.aiChat = [...UI.aiChat, {role:"user", text:"✨ Generate a full week of meals for my family!"}];
@@ -2312,7 +2413,7 @@ function renderFamily() {
       <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px">${currentFamily.name}</div>
       <div style="display:flex;gap:6px">
         <button id="share-invite-btn" style="padding:6px 10px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:10px;color:var(--green);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">📤 Invite</button>
-        <button id="edit-my-profile-btn" style="padding:6px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit Profile</button>
+
       </div>
     </div>
     <div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
@@ -2325,6 +2426,44 @@ function renderFamily() {
     </div>
     ${members.length > 0 ? `<div style="font-size:10px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:8px">ACTIVE MEMBERS</div>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px">${members.map(m=>`<div style="background:var(--card2);border:1px solid ${m.color||"var(--cyan)"};border-radius:14px;padding:12px;text-align:center;min-width:80px"><div style="font-size:28px;margin-bottom:4px">${m.emoji||"🧑"}</div><div style="font-size:12px;font-weight:700">${m.name}</div><div style="font-size:9px;color:var(--gray)">${m.diet||"Standard"}</div></div>`).join("")}</div>` : ""}
+  </div>
+
+  <!-- Head Chef Card -->
+  <div class="card" style="padding:16px;margin-bottom:14px">
+    <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:10px">👨‍🍳 HEAD CHEF</div>
+    <div data-toggle-hc="1" style="display:flex;align-items:center;gap:10px;cursor:pointer">
+      <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👨‍🍳</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:800">${profile.name||currentUser.displayName||"Head Chef"}</div>
+        <div style="font-size:10px;color:var(--gray)">${profile.age?"Age "+profile.age+" · ":""}${profile.diet||"Standard"}${profile.goal?" · "+profile.goal:""}</div>
+        ${profile.allergies?`<div style="font-size:10px;color:var(--pink);margin-top:2px">⚠️ Allergic to: ${profile.allergies}</div>`:""}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <div style="font-size:10px;color:var(--cyan)">💧${(currentFamily?.waterLog||{})[new Date().toDateString()]?.[profile.name||"me"]||0}/${profile.waterGoalOz||64}oz</div>
+        <div style="font-size:12px;color:var(--gray)">${UI.expandedMember==="hc"?"▲":"▼"}</div>
+      </div>
+    </div>
+    ${UI.expandedMember==="hc"?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px">💧 WATER TODAY</div>
+          <div style="font-size:10px;color:var(--gray)">${(currentFamily?.waterLog||{})[new Date().toDateString()]?.[profile.name||"me"]||0} of ${profile.waterGoalOz||64}oz</div>
+        </div>
+        <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden;margin-bottom:8px">
+          <div style="height:100%;width:${Math.min(100,Math.round(((currentFamily?.waterLog||{})[new Date().toDateString()]?.[profile.name||"me"]||0)/(profile.waterGoalOz||64)*100))}%;background:linear-gradient(135deg,var(--cyan),var(--pink));border-radius:4px"></div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button data-hc-water="8" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+8oz</button>
+          <button data-hc-water="16" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+16oz</button>
+          <button data-hc-water="32" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+32oz</button>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:4px">📅 TODAY'S MENU</div>
+        <div style="font-size:11px;color:var(--white);line-height:1.6">${Object.entries(currentFamily?.weekPlan?.[UI.selDay]||{}).filter(([,v])=>v).map(([t,m])=>t+": "+m).join(" · ")||"Nothing planned yet"}</div>
+      </div>
+      <button id="edit-my-profile-btn-hc" style="width:100%;padding:8px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit My Profile</button>
+    </div>`:""}
   </div>
 
   <div class="card" style="padding:16px;margin-bottom:14px">
@@ -2646,7 +2785,7 @@ function getPreppiSystemPrompt() {
   return "You are Preppi, the heart and expert guide of NeuroMeal — a certified nutritionist, meal planning specialist, health and fitness coach, and personal success guide all in one warm encouraging personality.\n\n" +
   "Your role is to lead this family to their health and wellness goals through smart meal planning, nutrition education, and positive reinforcement.\n\n" +
   "FAMILY PROFILE:\n" +
-  (profile.name ? "Primary user: " + profile.name + "\n" : "") +
+  (profile.name ? "Head Chef: " + profile.name + "\n" : "") +
   (profile.age ? "Age: " + profile.age + "\n" : "") +
   (profile.diet ? "Diet: " + profile.diet + "\n" : "") +
   (profile.goal ? "Health goal: " + profile.goal + "\n" : "") +
@@ -2721,7 +2860,7 @@ function bindAI() {
     const profile = userDoc?.profile || {};
     const hausMembers = currentFamily?.hausMembers || [];
     const pickyOnes = hausMembers.filter(m=>m.pickyEater).map(m=>m.name);
-    const hausSize = hausMembers.length + 1;
+    const hausSize = (hausMembers||[]).length + 1; // +1 for Head Chef
 
     const prompt = "Give me a complete recipe for " + what + "." +
       (answers.who ? " Serving: " + answers.who + "." : " Serves " + hausSize + ".") +

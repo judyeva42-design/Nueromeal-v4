@@ -2328,8 +2328,8 @@ function renderAI() {
   </div>` : `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div style="font-size:13px;font-weight:800;color:var(--cyan)">🥗 Preppi</div>
-    <div style="display:flex;gap:8px">
-
+    <div style="display:flex;gap:6px">
+      <button id="qa-recipe-chat" style="padding:6px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">🍳 Recipe</button>
       <button id="preppi-clear-chat" style="padding:6px 10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--gray);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">Clear</button>
     </div>
   </div>`}
@@ -2547,6 +2547,14 @@ function bindAI() {
 
 
   // Clear chat
+  // Recipe button in chat header
+  const recipeChatBtn = document.getElementById("qa-recipe-chat");
+  if (recipeChatBtn) recipeChatBtn.addEventListener("click", () => {
+    UI.showRecipeModal = true;
+    UI.recipeAnswers = {};
+    renderMain();
+  });
+
   const clearBtn = document.getElementById("preppi-clear-chat");
   if (clearBtn) clearBtn.addEventListener("click", () => {
     UI.aiChat = [];

@@ -154,7 +154,7 @@ let unsubscribers = [];
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
-  showAdd:null, showMemEdit:null, showBudgetInput:false, editingMemberIdx:null, expandedMember:null, activeRecipe:null, checkedSteps:[], showRecipeModal:false, recipeAnswers:{}, planRoom:"calendar", preppiRoom:"chat", familyRoom:"profiles", circleRoom:"feed", onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
+  showAdd:null, showMemEdit:null, showBudgetInput:false, editingMemberIdx:null, expandedMember:null, activeRecipe:null, checkedSteps:[], showRecipeModal:false, recipeAnswers:{}, planRoom:"calendar", preppiRoom:"chat", familyRoom:"profiles", subModal:null, circleRoom:"feed", onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
   weSelected:[], weSugs:null,
   gathFams:[], gathOcc:null, gathResult:null,
   aiChat:[],
@@ -1144,6 +1144,7 @@ function renderMain() {
   if (UI.tab==="family") bindFamilyMembers();
   if (UI.tab==="circle" && UI.circleRoom==="chat") setTimeout(() => bindChat(), 50);
   if (UI.showAdd) renderAddModal();
+  if (UI.subModal) renderSubModal();
   if (UI.showMemEdit!==null) renderMemModal();
   // Load draft plan button
   const loadDraftBtn = document.getElementById('load-draft-btn');
@@ -1711,52 +1712,23 @@ function renderDash() {
       }
     </div>
 
-    <!-- Family Water - Interactive inline card -->
-    <div style="background:var(--card);border:1.5px dashed var(--border2);border-radius:16px;padding:14px;position:relative">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-        <div>
-          <div style="font-size:20px;margin-bottom:4px">💧</div>
-          <div style="font-size:11px;font-weight:800;color:var(--white)">Family Water</div>
-        </div>
-        <div style="font-size:8px;font-weight:800;padding:3px 7px;background:rgba(94,207,219,.12);border:1px solid rgba(94,207,219,.25);border-radius:6px;color:var(--cyan)">TAP +</div>
+        <!-- Family Rings -->
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:14px" onclick="setTab('family')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:800;color:var(--white)">Family Rings</div>
+        <div style="font-size:9px;color:var(--gray)">💧water · 🥗meals</div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:7px">
-        <!-- Meal Master (you) -->
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-            <span style="font-size:9px;color:var(--cyan);font-weight:700">👑 ${firstName}</span>
-            <div style="display:flex;gap:4px;align-items:center">
-              <button data-water-me="8" style="padding:2px 5px;background:rgba(94,207,219,.15);border:1px solid rgba(94,207,219,.3);border-radius:4px;color:var(--cyan);font-size:8px;font-weight:700;cursor:pointer;font-family:var(--fb)">+8</button>
-              <span style="font-size:9px;color:var(--cyan)">${myWaterLogged}/${myWaterGoal}oz</span>
-            </div>
-          </div>
-          <div style="height:4px;background:var(--border);border-radius:2px">
-            <div style="width:${Math.min(100,Math.round((myWaterLogged/myWaterGoal)*100))}%;height:100%;background:linear-gradient(90deg,var(--cyan),var(--pink));border-radius:2px;transition:width .3s"></div>
-          </div>
-        </div>
-        ${hausMembers.slice(0,3).map((m,mi) => {
-          const mWater = waterLog[todayStr]?.[m.name] || 0;
-          const mGoal = m.waterGoalOz || (parseInt(m.age||18) < 9 ? 40 : parseInt(m.age||18) < 14 ? 56 : parseInt(m.age||18) < 18 ? 64 : 80);
-          const mPct = Math.min(100,Math.round((mWater/mGoal)*100));
-          const color = mPct >= 100 ? 'var(--green)' : mPct >= 50 ? 'var(--cyan)' : 'var(--pink)';
-          return `<div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-              <span style="font-size:9px;color:var(--gray)">${m.name}</span>
-              <div style="display:flex;gap:4px;align-items:center">
-                <button data-water-member="${mi}" data-water-amt="8" style="padding:2px 5px;background:rgba(94,207,219,.1);border:1px solid rgba(94,207,219,.2);border-radius:4px;color:var(--cyan);font-size:8px;font-weight:700;cursor:pointer;font-family:var(--fb)">+8</button>
-                <span style="font-size:9px;color:${color}">${mWater}/${mGoal}oz</span>
-              </div>
-            </div>
-            <div style="height:4px;background:var(--border);border-radius:2px">
-              <div style="width:${mPct}%;height:100%;background:${color};border-radius:2px;transition:width .3s"></div>
-            </div>
-          </div>`;
-        }).join("")}
+      <div style="display:flex;gap:6px;justify-content:space-around">
+        ${(()=>{
+          const allMembers = [{name:profile.name||firstName,emoji:'👨‍🍳',waterGoal:myWaterGoal}, ...hausMembers.slice(0,3).map(m=>({name:m.name,emoji:m.emoji||'🧑',waterGoal:m.waterGoalOz||64}))];
+          return allMembers.map(m=>{
+            const rings = getMemberRings(m.name, m.waterGoal);
+            return ringsSVG(rings.waterPct, rings.nutritionPct, 62, m.name, m.emoji);
+          }).join('');
+        })()}
       </div>
     </div>
-  </div>
-
-  <!-- Row 2: Space Cards 2x2 grid -->
+    <!-- Row 2: Space Cards 2x2 grid -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
     
     <!-- Plan Card -->
@@ -1815,6 +1787,97 @@ function renderDash() {
   </div>`;
 }
 
+// ── Phase 5: Meal Confirmation & Rings ─────────────────────────────
+
+window.confirmMeal = async function(day, type, memberName, status, subMeal) {
+  if (!currentFamily) return;
+  const today = new Date().toDateString();
+  const mealLog = JSON.parse(JSON.stringify(currentFamily?.mealLog || {}));
+  if (!mealLog[today]) mealLog[today] = {};
+  if (!mealLog[today][memberName]) mealLog[today][memberName] = {};
+  const meal = subMeal || currentFamily?.weekPlan?.[day]?.[type] || 'Unknown meal';
+  mealLog[today][memberName][type] = { status, meal, time: new Date().toISOString() };
+  await saveFamilyDoc({ mealLog });
+  if (currentFamily) currentFamily.mealLog = mealLog;
+  
+  // XP rewards
+  if (status === 'eaten') {
+    addXP(5);
+    showToast('✅ ' + meal + ' confirmed! +5 XP 🎉', 'success');
+    // Check if all meals eaten today
+    const todayLog = mealLog[today][memberName] || {};
+    const eaten = Object.values(todayLog).filter(m => m.status === 'eaten').length;
+    if (eaten >= 3) { addXP(20); showToast('🌟 Amazing! All meals logged today! +20 XP', 'success'); }
+  } else if (status === 'subbed') {
+    addXP(5);
+    showToast('🔄 Swap logged! +5 XP', 'success');
+  }
+  renderMain();
+};
+
+window.showSubModal = function(day, type, memberName) {
+  UI.subModal = { day, type, memberName };
+  renderMain();
+};
+
+function getMemberRings(memberName, waterGoal, isHeadChef) {
+  const today = new Date().toDateString();
+  const waterLog = currentFamily?.waterLog || {};
+  const mealLog = currentFamily?.mealLog || {};
+  
+  // Water ring
+  const waterLogged = waterLog[today]?.[memberName] || 0;
+  const waterPct = Math.min(100, Math.round((waterLogged / waterGoal) * 100));
+  
+  // Nutrition ring - based on confirmed meals today
+  const todayMeals = mealLog[today]?.[memberName] || {};
+  const confirmedMeals = Object.values(todayMeals).filter(m => m.status === 'eaten' || m.status === 'subbed').length;
+  const plannedMeals = Object.values(currentFamily?.weekPlan?.[UI.selDay] || {}).filter(Boolean).length;
+  const nutritionPct = plannedMeals > 0 ? Math.min(100, Math.round((confirmedMeals / Math.max(plannedMeals, 3)) * 100)) : 0;
+  
+  return { waterPct, nutritionPct, waterLogged, waterGoal, confirmedMeals };
+}
+
+function ringsSVG(waterPct, nutritionPct, size, name, emoji) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const outerR = (size / 2) - 6;
+  const innerR = outerR - 10;
+  const stroke = 8;
+  
+  function arcPath(r, pct) {
+    if (pct <= 0) return '';
+    const angle = (pct / 100) * 360 - 0.01;
+    const rad = (angle - 90) * Math.PI / 180;
+    const startX = cx + r * Math.cos(-Math.PI / 2);
+    const startY = cy + r * Math.sin(-Math.PI / 2);
+    const endX = cx + r * Math.cos(rad - Math.PI / 2);
+    const endY = cy + r * Math.sin(rad - Math.PI / 2);
+    const large = angle > 180 ? 1 : 0;
+    return 'M ' + startX + ' ' + startY + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + endX + ' ' + endY;
+  }
+  
+  const wColor = waterPct >= 100 ? '#3dd68c' : waterPct >= 80 ? '#5ecfdb' : waterPct >= 50 ? '#fbbf24' : '#f0195a';
+  const nColor = nutritionPct >= 100 ? '#3dd68c' : nutritionPct >= 80 ? '#a78bfa' : nutritionPct >= 50 ? '#fbbf24' : '#f0195a';
+  const pulse = (waterPct >= 100 && nutritionPct >= 100) ? 'animation:pulse 1.5s ease infinite' : '';
+  
+  return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">' +
+    '<svg width="' + size + '" height="' + size + '" style="' + pulse + '">' +
+    // Track circles
+    '<circle cx="' + cx + '" cy="' + cy + '" r="' + outerR + '" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="' + stroke + '"/>' +
+    '<circle cx="' + cx + '" cy="' + cy + '" r="' + innerR + '" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="' + (stroke-2) + '"/>' +
+    // Water ring (outer)
+    (waterPct > 0 ? '<path d="' + arcPath(outerR, waterPct) + '" fill="none" stroke="' + wColor + '" stroke-width="' + stroke + '" stroke-linecap="round"/>' : '') +
+    // Nutrition ring (inner)  
+    (nutritionPct > 0 ? '<path d="' + arcPath(innerR, nutritionPct) + '" fill="none" stroke="' + nColor + '" stroke-width="' + (stroke-2) + '" stroke-linecap="round"/>' : '') +
+    // Emoji center
+    '<text x="' + cx + '" y="' + (cy+5) + '" text-anchor="middle" font-size="' + (size*0.28) + '">' + emoji + '</text>' +
+    '</svg>' +
+    '<div style="font-size:9px;font-weight:700;color:var(--gray);text-align:center;max-width:' + size + 'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + name.split(' ')[0] + '</div>' +
+    '</div>';
+}
+
+
 function getDailyTip() {
   const tips = [
     "Meal prepping on Sundays saves an average of 4 hours during the week. Even just washing and chopping veggies counts!",
@@ -1840,6 +1903,8 @@ function renderCal() {
   const draft = PREPPI_WEEK_PLAN || currentFamily?.weekPlanDraft || {};
   const hasDraft = Object.keys(draft).length > 0;
   const day = UI.selDay || "Mon";
+  const todayStr = new Date().toDateString();
+  const mealLog = currentFamily?.mealLog || {};
 
   return `<div class="fu">
   ${hasDraft ? `<div id="draft-banner" style="background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.1));border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
@@ -1861,7 +1926,15 @@ function renderCal() {
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px">
         <div style="width:75px;font-size:10px;font-weight:800;color:var(--gray);letter-spacing:0.5px;flex-shrink:0">${type.toUpperCase()}</div>
         <div style="flex:1;min-width:0">
-          ${meal ? `<div style="font-size:13px;font-weight:700;color:var(--white);line-height:1.3">${meal}</div>` 
+          ${meal ? `<div style="font-size:13px;font-weight:700;color:var(--white);line-height:1.3">${meal}</div>
+            ${(()=>{
+              const headChefName = userDoc?.profile?.name || 'me';
+              const loggedStatus = mealLog[todayStr]?.[headChefName]?.[type]?.status;
+              if (loggedStatus === 'eaten') return '<div style="font-size:10px;color:var(--green);margin-top:3px">✅ Eaten</div>';
+              if (loggedStatus === 'subbed') return '<div style="font-size:10px;color:var(--yellow);margin-top:3px">🔄 ' + (mealLog[todayStr]?.[headChefName]?.[type]?.meal || 'Substituted') + '</div>';
+              if (day === UI.selDay) return '<div style="display:flex;gap:4px;margin-top:6px"><button onclick="window.confirmMeal(\'' + day + '\',\'' + type + '\',\'' + (userDoc?.profile?.name||'me') + '\',\'eaten\')" style="flex:1;padding:4px;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.3);border-radius:6px;color:var(--green);font-size:9px;font-weight:700;cursor:pointer">✅ Ate it</button><button onclick="window.showSubModal(\'' + day + '\',\'' + type + '\',\'' + (userDoc?.profile?.name||'me') + '\')" style="flex:1;padding:4px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:6px;color:var(--yellow);font-size:9px;font-weight:700;cursor:pointer">🔄 Swap</button></div>';
+              return '';
+            })()}` 
                  : sug ? `<div style="font-size:12px;color:var(--cyan)">🥗 ${sug}</div><div style="font-size:10px;color:var(--gray)">Preppi suggests</div>`
                        : `<div style="font-size:12px;color:var(--gray)">Nothing planned</div>`}
         </div>
@@ -3322,6 +3395,39 @@ function renderTips() {
   </div>`}
   </div>`;
 }
+function renderSubModal() {
+  const existing = document.getElementById('sub-modal');
+  if (existing) existing.remove();
+  const {day, type, memberName} = UI.subModal;
+  const el = document.createElement('div');
+  el.id = 'sub-modal';
+  el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:600;display:flex;align-items:flex-end';
+  el.innerHTML = '<div style="width:100%;max-width:480px;margin:0 auto;background:var(--card);border-radius:20px 20px 0 0;padding:20px 16px 40px">' +
+    '<div style="font-size:15px;font-weight:800;margin-bottom:16px">🔄 What did you have instead?</div>' +
+    '<div style="font-size:11px;color:var(--gray);margin-bottom:12px">For ' + type + ' · ' + memberName + '</div>' +
+    '<input id="sub-input" placeholder="e.g. Grilled chicken, salad..." style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box;margin-bottom:12px"/>' +
+    '<div style="display:flex;gap:8px">' +
+    '<button id="sub-cancel" style="flex:1;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--white);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb)">Cancel</button>' +
+    '<button id="sub-confirm" style="flex:1;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-size:13px;font-weight:900;cursor:pointer;font-family:var(--fd)">Log It!</button>' +
+    '</div></div>';
+  document.body.appendChild(el);
+  document.getElementById('sub-cancel').addEventListener('click', () => { el.remove(); UI.subModal = null; });
+  document.getElementById('sub-confirm').addEventListener('click', () => {
+    const val = document.getElementById('sub-input')?.value?.trim();
+    if (!val) return;
+    window.confirmMeal(day, type, memberName, 'subbed', val);
+    el.remove();
+    UI.subModal = null;
+  });
+  document.getElementById('sub-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const val = e.target.value?.trim();
+      if (val) { window.confirmMeal(day, type, memberName, 'subbed', val); el.remove(); UI.subModal = null; }
+    }
+  });
+}
+
+
 function renderAddModal() {
   const existing = document.getElementById("add-modal");
   if (existing) existing.remove();
@@ -3731,6 +3837,10 @@ window.logHCWater = async function(amt) {
   await saveFamilyDoc({ waterLog });
   if (currentFamily) currentFamily.waterLog = waterLog;
   showToast('💧 +' + amt + 'oz logged!', 'success');
+  renderMain();
+};
+window.showSubModal = function(day, type, memberName) {
+  UI.subModal = { day, type, memberName };
   renderMain();
 };
 window.toggleHC = function() {

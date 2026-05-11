@@ -1134,12 +1134,12 @@ function renderMain() {
   else if (UI.tab==="ai") bindAI();
   try {
     el.innerHTML = (map[UI.tab]||renderDash)();
-  if (UI.tab==="family") bindFamilyMembers();
   } catch(e) {
     console.error("Render error:", e);
     el.innerHTML = `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:36px;margin-bottom:12px">⚠️</div><div style="font-size:14px;margin-bottom:8px">Something went wrong loading this tab</div><div style="font-size:11px;color:var(--gray2)">${e.message}</div></div>`;
   }
   if (UI.tab==="chat" || (UI.tab==="circle" && UI.circleRoom==="chat")) bindChat();
+  if (UI.tab==="family") bindFamilyMembers();
   if (UI.showAdd) renderAddModal();
   if (UI.showMemEdit!==null) renderMemModal();
   // Load draft plan button
@@ -1995,7 +1995,7 @@ function renderChat() {
   ${currentUser&&currentFamily?`
   <div style="flex-shrink:0;display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border)">
     <input id="chat-input" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:22px;padding:11px 16px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none" placeholder="Say something..." onkeydown="if(event.key==='Enter')sendChatMsg()"/>
-    <button onclick="sendChatMsg()" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;cursor:pointer;font-size:20px;flex-shrink:0">↑</button>
+    <button onclick="sendChatMsg()" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;cursor:pointer;font-size:20px;flex-shrink:0" id="chat-send-btn">↑</button>
   </div>`:`<div style="text-align:center;padding:12px;color:var(--gray);font-size:12px">${!currentUser?"Get Active to join the chat!":"Set up your family to chat!"}</div>`}
   </div>`;
 }
@@ -2004,6 +2004,10 @@ function bindChat() {
   if (!currentFamily) return;
   const el = document.getElementById("chat-msgs");
   if (el) el.scrollTop = el.scrollHeight;
+  const sendBtn = document.getElementById("chat-send-btn");
+  if (sendBtn) sendBtn.addEventListener("click", sendChatMsg);
+  const input = document.getElementById("chat-input");
+  if (input) input.addEventListener("keydown", e => { if (e.key === "Enter") sendChatMsg(); });
 }
 
 async function sendChatMsg() {

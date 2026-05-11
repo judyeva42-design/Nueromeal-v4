@@ -1097,47 +1097,46 @@ function renderMain() {
     loadDraftPlan();
   });
   // Cookbook bindings
-  document.querySelectorAll('[data-open-recipe]').forEach(btn => {
-    btn.addEventListener('click', function() {
-      UI.activeRecipe = parseInt(this.getAttribute('data-open-recipe'));
+  try {
+    document.querySelectorAll('[data-open-recipe]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        UI.activeRecipe = parseInt(this.getAttribute('data-open-recipe'));
+        UI.checkedSteps = [];
+        renderMain();
+      });
+    });
+    const backBtn = document.getElementById('back-to-cookbook');
+    if (backBtn) backBtn.addEventListener('click', () => { UI.activeRecipe = null; UI.checkedSteps = []; renderMain(); });
+    document.querySelectorAll('[data-check-step]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const i = parseInt(this.getAttribute('data-check-step'));
+        UI.checkedSteps = (UI.checkedSteps||[]).includes(i) ? (UI.checkedSteps||[]).filter(s=>s!==i) : [...(UI.checkedSteps||[]), i];
+        renderMain();
+      });
+    });
+    const deleteRecipeBtn = document.getElementById('delete-recipe-btn');
+    if (deleteRecipeBtn) deleteRecipeBtn.addEventListener('click', async function() {
+      const idx = parseInt(this.getAttribute('data-recipe-idx'));
+      const savedRecipes = [...(currentFamily?.savedRecipes||[])];
+      savedRecipes.splice(idx, 1);
+      await saveFamilyDoc({ savedRecipes });
+      if (currentFamily) currentFamily.savedRecipes = savedRecipes;
+      UI.activeRecipe = null;
       UI.checkedSteps = [];
+      showToast('Recipe removed from Cookbook', 'success');
       renderMain();
     });
-  });
-  const backBtn = document.getElementById('back-to-cookbook');
-  if (backBtn) backBtn.addEventListener('click', () => { UI.activeRecipe = null; UI.checkedSteps = []; renderMain(); });
-  document.querySelectorAll('[data-check-step]').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const i = parseInt(this.getAttribute('data-check-step'));
-      const steps = UI.checkedSteps || [];
-      UI.checkedSteps = steps.includes(i) ? steps.filter(s=>s!==i) : [...steps, i];
-      renderMain();
+    document.querySelectorAll('[data-plan-recipe]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const idx = parseInt(this.getAttribute('data-plan-recipe'));
+        const recipe = (currentFamily?.savedRecipes||[])[idx];
+        if (recipe) {
+          UI.showAdd = { day: UI.selDay || "Mon", type: "Dinner" };
+          setTab("calendar");
+        }
+      });
     });
-  });
-  const deleteRecipeBtn = document.getElementById('delete-recipe-btn');
-  if (deleteRecipeBtn) deleteRecipeBtn.addEventListener('click', async function() {
-    const idx = parseInt(this.getAttribute('data-recipe-idx'));
-    const savedRecipes = [...(currentFamily?.savedRecipes||[])];
-    savedRecipes.splice(idx, 1);
-    await saveFamilyDoc({ savedRecipes });
-    if (currentFamily) currentFamily.savedRecipes = savedRecipes;
-    UI.activeRecipe = null;
-    UI.checkedSteps = [];
-    showToast('Recipe removed from Cookbook', 'success');
-    renderMain();
-  });
-  document.querySelectorAll('[data-plan-recipe]').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const idx = parseInt(this.getAttribute('data-plan-recipe'));
-      const recipe = (currentFamily?.savedRecipes||[])[idx];
-      if (recipe) {
-        UI.showAdd = { day: UI.selDay || "Mon", type: "Dinner" };
-        // Pre-fill the custom meal input with recipe name
-        UI.planningRecipeName = recipe.name;
-        setTab("calendar");
-      }
-    });
-  });
+  } catch(e) { console.warn('Cookbook bindings error:', e); }
   // Pantry bindings
   const editBudgetBtn = document.getElementById('edit-budget-btn');
   if (editBudgetBtn) editBudgetBtn.addEventListener('click', () => { UI.showBudgetInput = !UI.showBudgetInput; renderMain(); });
@@ -2915,6 +2914,12 @@ Reply ONLY with a valid JSON array of exactly 6 meal names, 3-5 words each. No m
   }
 
   document.getElementById("preppi-ask-btn").addEventListener("click", askPreppi);
+}
+
+function openAdd(day, type) {
+  if (!currentUser) { showGetActiveModal(); return; }
+  UI.showAdd = { day, type };
+  renderMain();
 }
 
 async function addMeal(day, type, meal) {

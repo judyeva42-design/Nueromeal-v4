@@ -2523,7 +2523,7 @@ function renderFamily() {
   <!-- Head Chef Card -->
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:10px">👨‍🍳 HEAD CHEF</div>
-    <div data-toggle-hc="1" style="display:flex;align-items:center;gap:10px;cursor:pointer">
+    <div onclick="window.toggleHC()" style="display:flex;align-items:center;gap:10px;cursor:pointer">
       <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👨‍🍳</div>
       <div style="flex:1">
         <div style="font-size:14px;font-weight:800">${profile.name||currentUser.displayName||"Head Chef"}</div>
@@ -2535,6 +2535,9 @@ function renderFamily() {
         <div style="font-size:12px;color:var(--gray)">${UI.expandedMember==="hc"?"▲":"▼"}</div>
       </div>
     </div>
+    <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <button onclick="window.editHeadChef()" style="flex:1;padding:8px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit My Profile</button>
+    </div>
     ${UI.expandedMember==="hc"?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
       <div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -2545,9 +2548,9 @@ function renderFamily() {
           <div style="height:100%;width:${Math.min(100,Math.round(((currentFamily?.waterLog||{})[new Date().toDateString()]?.[profile.name||"me"]||0)/(profile.waterGoalOz||64)*100))}%;background:linear-gradient(135deg,var(--cyan),var(--pink));border-radius:4px"></div>
         </div>
         <div style="display:flex;gap:6px">
-          <button data-hc-water="8" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+8oz</button>
-          <button data-hc-water="16" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+16oz</button>
-          <button data-hc-water="32" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+32oz</button>
+          <button onclick="window.logHCWater(8)" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+8oz</button>
+          <button onclick="window.logHCWater(16)" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+16oz</button>
+          <button onclick="window.logHCWater(32)" style="flex:1;padding:6px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">+32oz</button>
         </div>
       </div>
       <div style="margin-bottom:10px">
@@ -2584,6 +2587,10 @@ function renderFamily() {
               <div style="font-size:10px;color:${waterPct>=100?"var(--green)":"var(--cyan)"}">💧${waterLogged}/${waterGoal}oz</div>
               <div style="font-size:12px;color:var(--gray)">${expanded?"▲":"▼"}</div>
             </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+            <button onclick="window.editMember(${i})" style="flex:1;padding:7px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit</button>
+            <button onclick="window.removeMemberByIdx(${i})" style="padding:7px 10px;background:rgba(238,29,82,.1);border:1px solid rgba(238,29,82,.3);border-radius:8px;color:var(--pink);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">× Remove</button>
           </div>
           ${expanded?`<div style="padding:0 14px 14px;border-top:1px solid var(--border)">
             <div style="margin-top:12px;margin-bottom:10px">
@@ -3709,6 +3716,41 @@ window.quickSnack = quickSnack;
 window.sendAIMsg = sendAIMsg;
 window.sendPreppiMsg = sendAIMsg;
 window.loadDraftPlan = loadDraftPlan;
+window.editMember = function(i) {
+  UI.editingMemberIdx = i;
+  UI.showAddMember = false;
+  renderMain();
+};
+window.logHCWater = async function(amt) {
+  const profile = userDoc?.profile || {};
+  const name = profile.name || 'me';
+  const today = new Date().toDateString();
+  const waterLog = JSON.parse(JSON.stringify(currentFamily?.waterLog || {}));
+  if (!waterLog[today]) waterLog[today] = {};
+  waterLog[today][name] = (waterLog[today][name] || 0) + amt;
+  await saveFamilyDoc({ waterLog });
+  if (currentFamily) currentFamily.waterLog = waterLog;
+  showToast('💧 +' + amt + 'oz logged!', 'success');
+  renderMain();
+};
+window.toggleHC = function() {
+  UI.expandedMember = UI.expandedMember === 'hc' ? null : 'hc';
+  renderMain();
+};
+window.removeMemberByIdx = async function(i) {
+  const hausMembers = [...(currentFamily?.hausMembers||[])];
+  const removed = hausMembers.splice(i, 1)[0];
+  await saveFamilyDoc({ hausMembers });
+  if (currentFamily) currentFamily.hausMembers = hausMembers;
+  showToast(removed.name + ' removed', 'success');
+  renderMain();
+};
+window.editHeadChef = function() {
+  const p = userDoc?.profile || {};
+  UI.onboardData = { ...p };
+  UI.onboardStep = 0;
+  renderOnboard();
+};
 window.sendChatMsg = sendChatMsg;
 window.createFamily = createFamily;
 window.joinFamily = joinFamily;  // keep for any remaining onclick references

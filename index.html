@@ -686,6 +686,7 @@ function setTab(t) {
   if (t === "tips") { UI.tab = "preppi"; UI.preppiRoom = "cookbook"; }
   if (t === "game") { UI.tab = "preppi"; UI.preppiRoom = "games"; }
   if (t === "calendar") { UI.tab = "plan"; UI.planRoom = "calendar"; }
+  if (t === "chat") { UI.tab = "circle"; UI.circleRoom = "chat"; }
   if (t === "shopping") { UI.tab = "plan"; UI.planRoom = "shopping"; }
   if (t === "meals") UI.tab = "pantry";
   renderNav();
@@ -1127,12 +1128,18 @@ function renderMain() {
     // Legacy routes still work
     calendar:renderCal, meals:renderMeals, ai:renderAI, tips:renderTips,
     shopping:renderShop, wellness:renderWellness, game:renderGame,
-    compete:renderCompete, nutrition:renderNutr, trends:renderTrends,
+    compete:renderCompete, nutrition:renderNutr, chat:renderChat, trends:renderTrends,
   };
   if (UI.tab==="preppi") bindAI();
   else if (UI.tab==="ai") bindAI();
-  el.innerHTML = (map[UI.tab]||renderDash)();
-  if (UI.tab==="chat") bindChat();
+  try {
+    el.innerHTML = (map[UI.tab]||renderDash)();
+  if (UI.tab==="family") bindFamilyMembers();
+  } catch(e) {
+    console.error("Render error:", e);
+    el.innerHTML = `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:36px;margin-bottom:12px">⚠️</div><div style="font-size:14px;margin-bottom:8px">Something went wrong loading this tab</div><div style="font-size:11px;color:var(--gray2)">${e.message}</div></div>`;
+  }
+  if (UI.tab==="chat" || (UI.tab==="circle" && UI.circleRoom==="chat")) bindChat();
   if (UI.showAdd) renderAddModal();
   if (UI.showMemEdit!==null) renderMemModal();
   // Load draft plan button
@@ -1199,12 +1206,8 @@ function renderMain() {
   });
   const findStoresBtn = document.getElementById('find-stores-btn');
   if (findStoresBtn) findStoresBtn.addEventListener('click', () => window.open('https://maps.google.com/?q=grocery+stores+near+me', '_blank'));
-  const findWalmartBtn = document.getElementById('find-walmart-btn');
-  if (findWalmartBtn) findWalmartBtn.addEventListener('click', () => window.open('https://maps.google.com/?q=Walmart+near+me', '_blank'));
-  const findAldiBtn = document.getElementById('find-aldi-btn');
-  if (findAldiBtn) findAldiBtn.addEventListener('click', () => window.open('https://maps.google.com/?q=Aldi+near+me', '_blank'));
-  const findKrogerBtn = document.getElementById('find-kroger-btn');
-  if (findKrogerBtn) findKrogerBtn.addEventListener('click', () => window.open('https://maps.google.com/?q=Kroger+near+me', '_blank'));
+  const findFlippBtn = document.getElementById('find-flipp-btn');
+  if (findFlippBtn) findFlippBtn.addEventListener('click', () => window.open('https://flipp.com', '_blank'));
   const pantryPlanBtn = document.getElementById('pantry-plan-btn');
   if (pantryPlanBtn) pantryPlanBtn.addEventListener('click', async function() {
     const resultEl = document.getElementById('pantry-plan-result');
@@ -1226,7 +1229,16 @@ function renderMain() {
     const resultEl = document.getElementById('pantry-tips-result');
     const budget = currentFamily?.weeklyBudget || 0;
     const hausMembers = currentFamily?.hausMembers || [];
-    const prompt = `Give me 5 practical money-saving grocery tips for a family${budget > 0 ? " with a $" + budget + " weekly budget" : ""}. ${hausMembers.filter(m=>m.pickyEater).length > 0 ? "We have picky eaters so tips should be realistic." : ""} Include specific store recommendations and seasonal buying tips.`;
+    const prompt = `You are a smart shopping guide for a family in West Chester, PA.
+Give me a personalized shopping guide that includes:
+1. Which local stores are best for which items (Aldi for produce, Walmart for pantry, etc)
+2. What to look for on sale this time of year (${new Date().toLocaleString('default', {month:'long'})})
+3. Top 3 money saving strategies for our specific meals this week
+4. Best coupon apps to use (Ibotta, Flipp, Checkout 51)
+5. One specific tip for families with ${hausMembers.filter(m=>m.pickyEater).length > 0 ? "picky eaters" : "kids"}
+${budget > 0 ? "Weekly budget: $" + budget : ""}
+${currentFamily?.shoppingList ? "This week's meals on our list: " + currentFamily.shoppingList.substring(0,200) : ""}
+Keep it practical and actionable.`;
     this.textContent = '💡 Loading tips...';
     this.disabled = true;
     const reply = await callAI([{role:'user',content:prompt}], 'You are a budget grocery shopping expert. Give practical, specific tips.');
@@ -1282,7 +1294,11 @@ function renderMain() {
     });
   });
   document.querySelectorAll('[data-circle-sub]').forEach(btn => {
-    btn.addEventListener('click', function() { UI.circleRoom = this.getAttribute('data-circle-sub'); renderMain(); });
+    btn.addEventListener('click', function() { 
+      UI.circleRoom = this.getAttribute('data-circle-sub'); 
+      renderMain();
+      if (UI.circleRoom === 'chat') bindChat();
+    });
   });
 
   // Shopping buttons
@@ -1513,6 +1529,7 @@ function renderPreppiRoom() {
 function renderCircle() {
   const subRooms = [
     {id:"feed", icon:"📸", label:"Feed"},
+    {id:"chat", icon:"💬", label:"Chat"},
     {id:"challenges", icon:"🏆", label:"Challenges"},
   ];
   const sub = UI.circleRoom || "feed";
@@ -1814,17 +1831,6 @@ function renderMeals() {
   </div>
 
   <!-- Grocery Stores Near Me -->
-  <div class="card" style="padding:16px;margin-bottom:14px">
-    <div style="font-size:13px;font-weight:800;margin-bottom:10px">📍 Grocery Stores Near Me</div>
-    <div style="font-size:12px;color:var(--gray);line-height:1.6;margin-bottom:12px">Find the best prices near you. Tap to open in Maps!</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button id="find-stores-btn" style="padding:12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">📍 Find Stores Near Me</button>
-      <div style="display:flex;gap:8px">
-        <button id="find-walmart-btn" style="flex:1;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">🏪 Walmart</button>
-        <button id="find-aldi-btn" style="flex:1;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">🏪 Aldi</button>
-        <button id="find-kroger-btn" style="flex:1;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">🏪 Kroger</button>
-      </div>
-    </div>
   </div>
 
   <!-- Preppi Budget Meal Planner -->
@@ -1835,11 +1841,15 @@ function renderMeals() {
     <div id="pantry-plan-result" style="margin-top:10px"></div>
   </div>
 
-  <!-- Price Tips from Preppi -->
+  <!-- Smart Shopping Guide from Preppi -->
   <div class="card" style="padding:16px;margin-bottom:14px">
-    <div style="font-size:13px;font-weight:800;margin-bottom:6px">💡 Money Saving Tips</div>
-    <div style="font-size:12px;color:var(--gray);line-height:1.6;margin-bottom:12px">Preppi finds ways to cut your grocery bill without sacrificing quality!</div>
-    <button id="pantry-tips-btn" style="width:100%;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--white);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--fb)">💡 Get Money Saving Tips</button>
+    <div style="font-size:13px;font-weight:800;margin-bottom:4px">💡 Smart Shopping Guide</div>
+    <div style="font-size:11px;color:var(--gray);line-height:1.6;margin-bottom:12px">Preppi suggests the best stores for your meals, current deals, and money saving strategies based on your location and planned meals.</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button id="find-stores-btn" style="flex:1;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📍 Stores Near Me</button>
+      <button id="find-flipp-btn" style="flex:1;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🏷️ Weekly Flyers</button>
+    </div>
+    <button id="pantry-tips-btn" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">🥗 Get Preppi's Smart Shopping Guide</button>
     <div id="pantry-tips-result" style="margin-top:10px"></div>
   </div>
 
@@ -2385,6 +2395,9 @@ function tapMemCard(idx) {
 // ── Family ─────────────────────────────────────────────────
 function renderFamily() {
   if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">👨‍👩‍👧</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;
+  // Declare early so Head Chef card can use them
+  const profile = userDoc?.profile || {};
+  const hausMembers = currentFamily?.hausMembers || [];
   if (!currentFamily) {
     return `<div class="fu">
     <div class="st">👨‍👩‍👧 Family Setup</div>
@@ -2403,7 +2416,7 @@ function renderFamily() {
     </div>`;
   }
   const members = currentFamily?.members || [];
-  const hausMembers = currentFamily?.hausMembers || [];
+  // profile and hausMembers already declared at top of function
   
   return `<div class="fu">
   <div class="st">👨‍👩‍👧 Family Hub</div>
@@ -2436,7 +2449,7 @@ function renderFamily() {
       <div style="flex:1">
         <div style="font-size:14px;font-weight:800">${profile.name||currentUser.displayName||"Head Chef"}</div>
         <div style="font-size:10px;color:var(--gray)">${profile.age?"Age "+profile.age+" · ":""}${profile.diet||"Standard"}${profile.goal?" · "+profile.goal:""}</div>
-        ${profile.allergies?`<div style="font-size:10px;color:var(--pink);margin-top:2px">⚠️ Allergic to: ${profile.allergies}</div>`:""}
+        ${profile.allergies?"<div style=\"font-size:10px;color:var(--pink);margin-top:2px\">⚠️ Allergic to: "+profile.allergies+"</div>":""}
       </div>
       <div style="display:flex;gap:6px;align-items:center">
         <div style="font-size:10px;color:var(--cyan)">💧${(currentFamily?.waterLog||{})[new Date().toDateString()]?.[profile.name||"me"]||0}/${profile.waterGoalOz||64}oz</div>

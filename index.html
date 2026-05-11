@@ -76,7 +76,7 @@ const TRIVIA_Q = [
 ];
 
 // Preppi - Guide Character Messages
-const NORI_TIPS = [
+const PREPPI_TIPS = [
   {tab:"dashboard", msg:"Hey! I'm Preppi 🥗 Your NeuroMeal guide! Check your meals for today and see how your week is shaping up!"},
   {tab:"calendar", msg:"This is your meal playground! Tap any + to drop a meal into that slot. Mix it up!"},
   {tab:"meals", msg:"Swipe between recipe view and grocery list! The toggle at the top flips between them."},
@@ -686,18 +686,18 @@ function setTab(t) {
   renderNav();
   renderMain();
   // Show Preppi tip
-  const tip = NORI_TIPS.find(n=>n.tab===t);
+  const tip = PREPPI_TIPS.find(n=>n.tab===t);
   if (tip && UI.preppiVisible) showPreppiTip(tip.msg);
 }
 function setDay(d) { UI.selDay = d; renderMain(); }
 
 function showPreppiTip(msg) {
-  const existing = document.getElementById("nori-tip");
+  const existing = document.getElementById("preppi-tip");
   if (existing) existing.remove();
   const el = document.createElement("div");
-  el.id = "nori-tip";
+  el.id = "preppi-tip";
   el.style.cssText = "position:fixed;bottom:90px;right:16px;background:var(--card);border:2px solid var(--cyan);border-radius:16px;padding:12px 14px;max-width:240px;z-index:800;animation:slideIn .3s ease;box-shadow:0 8px 32px rgba(105,201,208,.2)";
-  el.innerHTML = `<div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:24px">🧠</div><div><div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:3px">NORI SAYS</div><div style="font-size:11px;line-height:1.5;color:var(--white)">${msg}</div></div><button onclick="this.closest('#nori-tip').remove()" style="background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:14px;padding:0;flex-shrink:0">×</button></div>`;
+  el.innerHTML = `<div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:24px">🥗</div><div><div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:3px">PREPPI SAYS</div><div style="font-size:11px;line-height:1.5;color:var(--white)">${msg}</div></div><button onclick="this.closest('#preppi-tip').remove()" style="background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:14px;padding:0;flex-shrink:0">×</button></div>`;
   document.body.appendChild(el);
   setTimeout(() => { if(el.parentNode) el.remove(); }, 5000);
 }
@@ -762,8 +762,8 @@ function renderOnboard() {
         <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:20px">
           <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🧠</div>
           <div style="background:var(--card2);border-radius:18px 18px 18px 4px;padding:14px 16px;flex:1">
-            <div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:4px">NORI SAYS</div>
-            <div style="font-size:13px;line-height:1.6;color:var(--white)">${s.nori}</div>
+            <div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:4px">PREPPI SAYS</div>
+            <div style="font-size:13px;line-height:1.6;color:var(--white)">${s.preppi}</div>
           </div>
         </div>
 

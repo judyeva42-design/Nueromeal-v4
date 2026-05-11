@@ -686,7 +686,7 @@ function setTab(t) {
   // Map legacy tab IDs to new room IDs
   if (t === "ai") { UI.tab = "preppi"; UI.preppiRoom = "chat"; }
   if (t === "tips") { UI.tab = "preppi"; UI.preppiRoom = "cookbook"; }
-  if (t === "game") { UI.tab = "preppi"; UI.preppiRoom = "games"; }
+  if (t === "game") { UI.tab = "circle"; UI.circleRoom = "games"; }
   if (t === "calendar") { UI.tab = "plan"; UI.planRoom = "calendar"; }
   if (t === "chat") { UI.tab = "circle"; UI.circleRoom = "chat"; }
   if (t === "shopping") { UI.tab = "plan"; UI.planRoom = "shopping"; }
@@ -1029,13 +1029,14 @@ function bindFamilyMembers() {
     });
   });
 
-  // Edit profile from HC card
-  const editHCBtn = document.getElementById('edit-my-profile-btn-hc');
-  if (editHCBtn) editHCBtn.addEventListener('click', function() {
-    const p = userDoc?.profile || {};
-    UI.onboardData = { ...p };
-    UI.onboardStep = 0;
-    renderOnboard();
+  // Edit profile from HC card - use delegation since button only exists when expanded
+  document.querySelectorAll('#edit-my-profile-btn-hc').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const p = userDoc?.profile || {};
+      UI.onboardData = { ...p };
+      UI.onboardStep = 0;
+      renderOnboard();
+    });
   });
 
   // Water logging
@@ -1132,16 +1133,16 @@ function renderMain() {
     shopping:renderShop, wellness:renderWellness, game:renderGame,
     compete:renderCompete, nutrition:renderNutr, chat:renderChat, trends:renderTrends,
   };
-  if (UI.tab==="preppi") bindAI();
-  else if (UI.tab==="ai") bindAI();
   try {
     el.innerHTML = (map[UI.tab]||renderDash)();
   } catch(e) {
     console.error("Render error:", e);
     el.innerHTML = `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:36px;margin-bottom:12px">⚠️</div><div style="font-size:14px;margin-bottom:8px">Something went wrong loading this tab</div><div style="font-size:11px;color:var(--gray2)">${e.message}</div></div>`;
   }
+  if (UI.tab==="preppi" || UI.tab==="ai") bindAI();
   if (UI.tab==="chat" || (UI.tab==="circle" && UI.circleRoom==="chat")) bindChat();
   if (UI.tab==="family") bindFamilyMembers();
+  if (UI.tab==="circle" && UI.circleRoom==="chat") setTimeout(() => bindChat(), 50);
   if (UI.showAdd) renderAddModal();
   if (UI.showMemEdit!==null) renderMemModal();
   // Load draft plan button
@@ -1292,7 +1293,6 @@ Keep it practical and actionable.`;
     btn.addEventListener('click', function() { 
       UI.preppiRoom = this.getAttribute('data-preppi-sub'); 
       renderMain();
-      if (UI.preppiRoom === 'chat') bindAI();
     });
   });
   document.querySelectorAll('[data-circle-sub]').forEach(btn => {
@@ -1323,6 +1323,23 @@ Keep it practical and actionable.`;
     });
   });
   // Shopping buttons
+  // Dashboard water logging
+  document.querySelectorAll('[data-dash-water]').forEach(btn => {
+    btn.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      const amt = parseInt(this.getAttribute('data-dash-water'));
+      const who = this.getAttribute('data-dash-who');
+      const today = new Date().toDateString();
+      const waterLog = JSON.parse(JSON.stringify(currentFamily?.waterLog || {}));
+      if (!waterLog[today]) waterLog[today] = {};
+      waterLog[today][who] = (waterLog[today][who] || 0) + amt;
+      await saveFamilyDoc({ waterLog });
+      if (currentFamily) currentFamily.waterLog = waterLog;
+      showToast("💧 +" + amt + "oz for " + who + "!", "success");
+      renderMain();
+    });
+  });
+
   // Dashboard water logging
   document.querySelectorAll('[data-dash-water]').forEach(btn => {
     btn.addEventListener('click', async function(e) {
@@ -1406,9 +1423,16 @@ Keep it practical and actionable.`;
       showToast('Invite copied! Paste it anywhere 📋', 'success');
     }
   });
+  // Edit profile buttons - both main and HC card
   const editProfileBtn = document.getElementById('edit-my-profile-btn');
   if (editProfileBtn) editProfileBtn.addEventListener('click', function() {
-    // Pre-populate onboard data with existing profile
+    const p = userDoc?.profile || {};
+    UI.onboardData = { ...p };
+    UI.onboardStep = 0;
+    renderOnboard();
+  });
+  const editHCBtn = document.getElementById('edit-my-profile-btn-hc');
+  if (editHCBtn) editHCBtn.addEventListener('click', function() {
     const p = userDoc?.profile || {};
     UI.onboardData = { ...p };
     UI.onboardStep = 0;
@@ -1505,7 +1529,6 @@ function renderPreppiRoom() {
   const subRooms = [
     {id:"chat", icon:"🥗", label:"Preppi"},
     {id:"cookbook", icon:"📖", label:"Cookbook"},
-    {id:"games", icon:"🎮", label:"Games"},
   ];
   const sub = UI.preppiRoom || "chat";
 
@@ -1516,15 +1539,12 @@ function renderPreppiRoom() {
 
   if (sub === "chat") {
     const aiContent = renderAI();
+    // bindAI will be called by renderMain after innerHTML is set
     return aiContent.replace('style="display:flex;flex-direction:column;height:calc(100vh - 180px)">', `style="display:flex;flex-direction:column;height:calc(100vh - 180px)">${subNav}`);
   }
   if (sub === "cookbook") {
     const cbContent = renderTips();
     return cbContent.replace('<div class="fu">', `<div class="fu">${subNav}`);
-  }
-  if (sub === "games") {
-    const gameContent = renderGame();
-    return gameContent.replace('<div class="fu">', `<div class="fu">${subNav}`);
   }
   return `<div class="fu">${subNav}</div>`;
 }
@@ -1534,6 +1554,7 @@ function renderCircle() {
   const subRooms = [
     {id:"feed", icon:"📸", label:"Feed"},
     {id:"chat", icon:"💬", label:"Chat"},
+    {id:"games", icon:"🎮", label:"Games"},
     {id:"challenges", icon:"🏆", label:"Challenges"},
   ];
   const sub = UI.circleRoom || "feed";
@@ -1542,6 +1563,22 @@ function renderCircle() {
     ${subRooms.map(r => `<button data-circle-sub="${r.id}" style="flex:1;padding:9px;border-radius:8px;border:none;background:${sub===r.id?"rgba(240,25,90,.12)":"transparent"};color:${sub===r.id?"#f0195a":"var(--gray)"};border:${sub===r.id?"1px solid rgba(240,25,90,.3)":"1px solid transparent"};font-size:12px;font-weight:${sub===r.id?"800":"600"};cursor:pointer;font-family:var(--fb);transition:all .2s">${r.icon} ${r.label}</button>`).join("")}
   </div>
   <div style="height:3px;background:linear-gradient(90deg,#f0195a,#a78bfa);border-radius:2px;margin-bottom:20px;opacity:0.6"></div>`;
+
+  // Games sub-room
+  if (sub === "games") {
+    const gameContent = renderGame();
+    return gameContent.replace('<div class="fu">', '<div class="fu">' + subNav);
+  }
+
+  // Handle chat sub-room separately since it needs bindChat
+  if (sub === "chat") {
+    const chatContent = renderChat();
+    return chatContent.replace('<div class="fu"', '<div class="fu" data-circle-chat="1"').replace(
+      '</div>',
+      `<div style="padding:0 16px 8px">${subNav}</div></div>`,
+      1
+    );
+  }
 
   return `<div class="fu">
   <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--room-circle);margin-bottom:4px;letter-spacing:-0.5px">🫂 Circle</div>

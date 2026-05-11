@@ -154,7 +154,7 @@ let unsubscribers = [];
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
-  showAdd:null, showMemEdit:null, showBudgetInput:false, editingMemberIdx:null, expandedMember:null, activeRecipe:null, checkedSteps:[], onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
+  showAdd:null, showMemEdit:null, showBudgetInput:false, editingMemberIdx:null, expandedMember:null, activeRecipe:null, checkedSteps:[], showRecipeModal:false, recipeAnswers:{}, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
   weSelected:[], weSugs:null,
   gathFams:[], gathOcc:null, gathResult:null,
   aiChat:[],
@@ -2299,7 +2299,7 @@ function renderAI() {
 
   // Quick action buttons
   const quickActions = [
-    { id:'qa-cook', emoji:'🍳', label:'Cook This', desc:'Step by step recipe' },
+    { id:'qa-recipe', emoji:'🍳', label:'Get a Recipe', desc:'Guided recipe builder' },
     { id:'qa-tips', emoji:'💡', label:'Tips & Tricks', desc:'Picky eater hacks' },
     { id:'qa-prep', emoji:'📋', label:'Prep Guide', desc:'What to prep this week' },
     { id:'qa-shop', emoji:'🛒', label:'Smart Shopping', desc:'Generate your list' },
@@ -2329,7 +2329,7 @@ function renderAI() {
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div style="font-size:13px;font-weight:800;color:var(--cyan)">🥗 Preppi</div>
     <div style="display:flex;gap:8px">
-      <button id="preppi-plan-btn" style="padding:6px 12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">✨ Plan My Week</button>
+
       <button id="preppi-clear-chat" style="padding:6px 10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--gray);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">Clear</button>
     </div>
   </div>`}
@@ -2352,6 +2352,76 @@ function renderAI() {
     <input id="ai-input" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:22px;padding:12px 16px;color:var(--white);font-size:13px;font-family:var(--fb);outline:none" placeholder="Ask Preppi anything about food..."/>
     <button id="ai-send-btn" style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;cursor:pointer;font-size:22px;flex-shrink:0">↑</button>
   </div>
+
+  ${UI.showRecipeModal ? `<div style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:600;overflow-y:auto">
+  <div style="max-width:480px;width:100%;margin:0 auto;padding:20px 16px 100px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-family:var(--fd);font-size:18px;font-weight:800">🍳 Get a Recipe</div>
+      <button id="close-recipe-modal" style="width:34px;height:34px;border-radius:10px;background:var(--border);border:none;cursor:pointer;color:var(--white);font-size:18px">✕</button>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">WHAT DO YOU WANT TO MAKE?</div>
+      <input id="recipe-what" placeholder="e.g. chicken, pasta, something with rice..." style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">WHO IS EATING?</div>
+      <div style="display:flex;flex-direction:column;gap:8px" id="rq-who">
+        <button data-rq="who" data-rv="Just me" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;font-family:var(--fb)">
+          <div style="font-size:13px;font-weight:700;color:var(--white)">Just me</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:2px">Single serving, quick and simple</div>
+        </button>
+        <button data-rq="who" data-rv="The whole family" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;font-family:var(--fb)">
+          <div style="font-size:13px;font-weight:700;color:var(--white)">The whole family</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:2px">Scaled for everyone at the table</div>
+        </button>
+        <button data-rq="who" data-rv="Picky eaters included" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;font-family:var(--fb)">
+          <div style="font-size:13px;font-weight:700;color:var(--white)">Picky eaters included 🙈</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:2px">Kid-friendly, simple flavors, no surprises</div>
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">HOW MUCH TIME?</div>
+      <div style="display:flex;flex-direction:column;gap:8px" id="rq-time">
+        <button data-rq="time" data-rv="15 minutes" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;font-family:var(--fb)">
+          <div style="font-size:13px;font-weight:700;color:var(--white)">⚡ 15 minutes</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:2px">Super quick — minimal prep, done fast</div>
+        </button>
+        <button data-rq="time" data-rv="30 minutes" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;font-family:var(--fb)">
+          <div style="font-size:13px;font-weight:700;color:var(--white)">⏱️ 30 minutes</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:2px">Most weeknight meals fall here</div>
+        </button>
+        <button data-rq="time" data-rv="1 hour or more" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;font-family:var(--fb)">
+          <div style="font-size:13px;font-weight:700;color:var(--white)">🕐 1 hour+</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:2px">Weekend cooking, slow cooked, more flavour</div>
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">SKILL LEVEL?</div>
+      <div style="display:flex;flex-direction:column;gap:8px" id="rq-skill">
+        <button data-rq="skill" data-rv="very easy, beginner friendly" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;font-family:var(--fb)">
+          <div style="font-size:13px;font-weight:700;color:var(--white)">🟢 Easy</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:2px">Simple steps, basic ingredients, hard to mess up</div>
+        </button>
+        <button data-rq="skill" data-rv="medium difficulty" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;font-family:var(--fb)">
+          <div style="font-size:13px;font-weight:700;color:var(--white)">🟡 Medium</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:2px">Some technique involved, worth the effort</div>
+        </button>
+        <button data-rq="skill" data-rv="challenging, I can handle it" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;font-family:var(--fb)">
+          <div style="font-size:13px;font-weight:700;color:var(--white)">🔴 I can handle it!</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:2px">Advanced techniques, impressive results</div>
+        </button>
+      </div>
+    </div>
+
+    <button id="get-recipe-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:14px;color:#000;font-weight:900;font-size:15px;cursor:pointer;font-family:var(--fd)">🍳 Get My Recipe from Preppi!</button>
+  </div>
+  </div>` : ""}
   </div>`;
 }
 
@@ -2415,13 +2485,66 @@ function bindAI() {
   const el = document.getElementById("ai-msgs");
   if (el) el.scrollTop = el.scrollHeight;
 
+  // Recipe modal bindings
+  const closeRecipeModal = document.getElementById("close-recipe-modal");
+  if (closeRecipeModal) closeRecipeModal.addEventListener("click", () => { UI.showRecipeModal = false; renderMain(); });
+
+  // Recipe question toggles
+  document.querySelectorAll("[data-rq]").forEach(btn => {
+    btn.addEventListener("click", function() {
+      const q = this.getAttribute("data-rq");
+      const v = this.getAttribute("data-rv");
+      if (!UI.recipeAnswers) UI.recipeAnswers = {};
+      UI.recipeAnswers[q] = UI.recipeAnswers[q] === v ? "" : v;
+      document.querySelectorAll("[data-rq=\"" + q + "\"]").forEach(b => {
+        const sel = b.getAttribute("data-rv") === UI.recipeAnswers[q];
+        b.style.borderColor = sel ? "var(--cyan)" : "var(--border)";
+        b.style.background = sel ? "rgba(105,201,208,.15)" : "transparent";
+        b.style.color = sel ? "var(--cyan)" : "var(--white)";
+      });
+    });
+  });
+
+  const getRecipeBtn = document.getElementById("get-recipe-btn");
+  if (getRecipeBtn) getRecipeBtn.addEventListener("click", async function() {
+    const what = document.getElementById("recipe-what")?.value?.trim();
+    if (!what) { showToast("Tell Preppi what you want to make!", "warn"); return; }
+    const answers = UI.recipeAnswers || {};
+    const profile = userDoc?.profile || {};
+    const hausMembers = currentFamily?.hausMembers || [];
+    const pickyOnes = hausMembers.filter(m=>m.pickyEater).map(m=>m.name);
+    const hausSize = hausMembers.length + 1;
+
+    const prompt = "Give me a complete recipe for " + what + "." +
+      (answers.who ? " Serving: " + answers.who + "." : " Serves " + hausSize + ".") +
+      (answers.time ? " Time available: " + answers.time + "." : "") +
+      (answers.skill ? " Difficulty: " + answers.skill + "." : "") +
+      (profile.allergies ? " NEVER include: " + profile.allergies + "." : "") +
+      (pickyOnes.length > 0 ? " Keep it simple for picky eaters: " + pickyOnes.join(", ") + "." : "") +
+      " Format the response EXACTLY like this:\n" +
+      "Recipe Name\n\n" +
+      "Prep time: X mins | Cook time: X mins | Serves: X\n\n" +
+      "Ingredients:\n- item 1\n- item 2\n\n" +
+      "Instructions:\n1. Step one\n2. Step two\n\n" +
+      "Preppi's Tip: helpful tip here";
+
+    UI.showRecipeModal = false;
+    UI.aiChat = [...UI.aiChat, {role:"user", text:"🍳 Get me a recipe for: " + what}];
+    UI.aiLoading = true;
+    setTimeout(() => { if(UI.aiLoading){UI.aiLoading=false;renderMain();} }, 25000);
+    renderMain();
+
+    const reply = await callAI([{role:"user",content:prompt}], getPreppiSystemPrompt());
+    UI.aiLoading = false;
+    UI.aiChat = [...UI.aiChat, {role:"assistant", text:reply}];
+    renderMain();
+  });
+
   // Send button
   const sendBtn = document.getElementById("ai-send-btn");
   if (sendBtn) sendBtn.addEventListener("click", sendAIMsg);
 
-  // Plan My Week button
-  const planBtn = document.getElementById("preppi-plan-btn");
-  if (planBtn) planBtn.addEventListener("click", generateWeeklyPlan);
+
 
   // Clear chat
   const clearBtn = document.getElementById("preppi-clear-chat");
@@ -2434,10 +2557,10 @@ function bindAI() {
 
   // Quick action buttons
   const actions = {
-    "qa-cook": () => {
-      const todayMeals = Object.values(currentFamily?.weekPlan?.[UI.selDay]||{}).filter(Boolean);
-      const meal = todayMeals[0] || "a meal";
-      sendQuickMessage("Give me a simple step-by-step recipe for " + meal + ". Keep it practical for a family!");
+    "qa-recipe": () => {
+      UI.showRecipeModal = true;
+      UI.recipeAnswers = {};
+      renderMain();
     },
     "qa-tips": () => sendQuickMessage("Give me your top picky eater tricks and tips for my family. What are the best ways to hide veggies and get kids to try new foods?"),
     "qa-prep": () => {

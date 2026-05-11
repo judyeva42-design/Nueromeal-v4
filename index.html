@@ -666,12 +666,14 @@ function renderNav() {
     {id:"family",icon:"👨‍👩‍👧",label:"Family"},
     {id:"circle",icon:"🫂",label:"Circle"},
   ];
+  const roomColors = {dashboard:"var(--room-home)",plan:"var(--room-plan)",preppi:"var(--room-preppi)",pantry:"var(--room-pantry)",family:"var(--room-family)",circle:"var(--room-circle)"};
   document.getElementById("nav").innerHTML = `<div style="display:flex;justify-content:space-around;align-items:center;padding:0 4px;height:100%;max-width:480px;margin:0 auto">${tabs.map(t=>{
     const active = UI.tab===t.id;
-    return `<button onclick="setTab('${t.id}')" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 10px;background:${active?"rgba(94,207,219,.1)":"transparent"};border:1px solid ${active?"rgba(94,207,219,.2)":"transparent"};border-radius:14px;cursor:pointer;min-width:56px;flex:1">
-      <div style="font-size:${active?"21px":"19px"}">${t.icon}</div>
-      <div style="font-size:9px;font-weight:${active?"800":"500"};color:${active?"var(--cyan)":"var(--gray)"};letter-spacing:0.3px;font-family:var(--fb);white-space:nowrap">${t.label}</div>
-      ${active?`<div style="width:18px;height:2px;background:var(--grad-main);border-radius:2px;margin-top:1px"></div>`:`<div style="width:18px;height:2px"></div>`}
+    const rc = roomColors[t.id] || "var(--cyan)";
+    return `<button onclick="setTab('${t.id}')" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 10px;background:${active?"rgba(255,255,255,.06)":"transparent"};border:1px solid ${active?"rgba(255,255,255,.1)":"transparent"};border-radius:14px;cursor:pointer;min-width:48px;flex:1;transition:all .2s">
+      <div style="font-size:${active?"22px":"18px"};transition:font-size .15s">${t.icon}</div>
+      <div style="font-size:9px;font-weight:${active?"800":"500"};color:${active?rc:"var(--gray)"};letter-spacing:0.3px;font-family:var(--fb);white-space:nowrap;transition:color .2s">${t.label}</div>
+      <div style="width:${active?"20px":"0px"};height:2px;background:${rc};border-radius:2px;margin-top:1px;transition:width .2s"></div>
     </button>`;
   }).join("")}</div>`;
 }
@@ -703,7 +705,7 @@ function showPreppiTip(msg) {
   const el = document.createElement("div");
   el.id = "preppi-tip";
   el.style.cssText = "position:fixed;bottom:90px;right:16px;background:var(--card);border:2px solid var(--cyan);border-radius:16px;padding:12px 14px;max-width:240px;z-index:800;animation:slideIn .3s ease;box-shadow:0 8px 32px rgba(105,201,208,.2)";
-  el.innerHTML = `<div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:24px">🥗</div><div><div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:3px">PREPPI SAYS</div><div style="font-size:11px;line-height:1.5;color:var(--white)">${msg}</div></div><button onclick="this.closest('#preppi-tip').remove()" style="background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:14px;padding:0;flex-shrink:0">×</button></div>`;
+  el.innerHTML = `<div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:24px">🥗</div><div><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><div style="font-size:11px;font-weight:900;color:var(--room-preppi);font-family:var(--fd)">Preppi</div><div style="font-size:9px;color:var(--gray)">· Your nutrition guide</div></div><div style="font-size:11px;line-height:1.5;color:var(--white)">${msg}</div></div><button onclick="this.closest('#preppi-tip').remove()" style="background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:14px;padding:0;flex-shrink:0">×</button></div>`;
   document.body.appendChild(el);
   setTimeout(() => { if(el.parentNode) el.remove(); }, 5000);
 }
@@ -1483,8 +1485,9 @@ function renderPlan() {
   const sub = UI.planRoom || "calendar";
   
   const subNav = `<div style="display:flex;gap:8px;margin-bottom:20px;background:var(--card2);border-radius:var(--radius-sm);padding:4px">
-    ${subRooms.map(r => `<button data-plan-sub="${r.id}" style="flex:1;padding:9px;border-radius:8px;border:none;background:${sub===r.id?"var(--card3)":"transparent"};color:${sub===r.id?"var(--cyan)":"var(--gray)"};font-size:12px;font-weight:${sub===r.id?"800":"600"};cursor:pointer;font-family:var(--fb);transition:all .2s">${r.icon} ${r.label}</button>`).join("")}
-  </div>`;
+    ${subRooms.map(r => `<button data-plan-sub="${r.id}" style="flex:1;padding:9px;border-radius:8px;border:none;background:${sub===r.id?"rgba(96,165,250,.15)":"transparent"};color:${sub===r.id?"#60a5fa":"var(--gray)"};border:${sub===r.id?"1px solid rgba(96,165,250,.3)":"1px solid transparent"};font-size:12px;font-weight:${sub===r.id?"800":"600"};cursor:pointer;font-family:var(--fb);transition:all .2s">${r.icon} ${r.label}</button>`).join("")}
+  </div>
+  <div style="height:3px;background:linear-gradient(90deg,#60a5fa,#5ecfdb);border-radius:2px;margin-bottom:20px;opacity:0.6"></div>`;
 
   if (sub === "calendar") {
     const calContent = renderCal();
@@ -1507,8 +1510,9 @@ function renderPreppiRoom() {
   const sub = UI.preppiRoom || "chat";
 
   const subNav = `<div style="display:flex;gap:8px;margin-bottom:20px;background:var(--card2);border-radius:var(--radius-sm);padding:4px">
-    ${subRooms.map(r => `<button data-preppi-sub="${r.id}" style="flex:1;padding:9px;border-radius:8px;border:none;background:${sub===r.id?"var(--card3)":"transparent"};color:${sub===r.id?"var(--cyan)":"var(--gray)"};font-size:12px;font-weight:${sub===r.id?"800":"600"};cursor:pointer;font-family:var(--fb);transition:all .2s">${r.icon} ${r.label}</button>`).join("")}
-  </div>`;
+    ${subRooms.map(r => `<button data-preppi-sub="${r.id}" style="flex:1;padding:9px;border-radius:8px;border:none;background:${sub===r.id?"rgba(61,214,140,.12)":"transparent"};color:${sub===r.id?"#3dd68c":"var(--gray)"};border:${sub===r.id?"1px solid rgba(61,214,140,.3)":"1px solid transparent"};font-size:12px;font-weight:${sub===r.id?"800":"600"};cursor:pointer;font-family:var(--fb);transition:all .2s">${r.icon} ${r.label}</button>`).join("")}
+  </div>
+  <div style="height:3px;background:linear-gradient(90deg,#3dd68c,#5ecfdb);border-radius:2px;margin-bottom:20px;opacity:0.6"></div>`;
 
   if (sub === "chat") {
     const aiContent = renderAI();
@@ -1535,11 +1539,12 @@ function renderCircle() {
   const sub = UI.circleRoom || "feed";
 
   const subNav = `<div style="display:flex;gap:8px;margin-bottom:20px;background:var(--card2);border-radius:var(--radius-sm);padding:4px">
-    ${subRooms.map(r => `<button data-circle-sub="${r.id}" style="flex:1;padding:9px;border-radius:8px;border:none;background:${sub===r.id?"var(--card3)":"transparent"};color:${sub===r.id?"var(--cyan)":"var(--gray)"};font-size:12px;font-weight:${sub===r.id?"800":"600"};cursor:pointer;font-family:var(--fb);transition:all .2s">${r.icon} ${r.label}</button>`).join("")}
-  </div>`;
+    ${subRooms.map(r => `<button data-circle-sub="${r.id}" style="flex:1;padding:9px;border-radius:8px;border:none;background:${sub===r.id?"rgba(240,25,90,.12)":"transparent"};color:${sub===r.id?"#f0195a":"var(--gray)"};border:${sub===r.id?"1px solid rgba(240,25,90,.3)":"1px solid transparent"};font-size:12px;font-weight:${sub===r.id?"800":"600"};cursor:pointer;font-family:var(--fb);transition:all .2s">${r.icon} ${r.label}</button>`).join("")}
+  </div>
+  <div style="height:3px;background:linear-gradient(90deg,#f0195a,#a78bfa);border-radius:2px;margin-bottom:20px;opacity:0.6"></div>`;
 
   return `<div class="fu">
-  <div class="st" style="margin-bottom:4px">🫂 Circle</div>
+  <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--room-circle);margin-bottom:4px;letter-spacing:-0.5px">🫂 Circle</div>
   <div style="font-size:12px;color:var(--gray);margin-bottom:16px">Your community of families and friends</div>
   ${subNav}
   
@@ -1618,10 +1623,37 @@ function renderDash() {
   return `<div class="fu">
 
   <!-- Preppi Greeting Bar -->
-  <div id="dash-preppi-bar" style="background:var(--card);border:1.5px solid var(--border2);border-radius:20px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;box-shadow:0 0 24px rgba(94,207,219,.08)">
-    <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#5ecfdb,#f0195a);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 0 16px rgba(94,207,219,.3)">🥗</div>
+  <div id="dash-preppi-bar" style="background:linear-gradient(135deg,rgba(94,207,219,.08),rgba(167,139,250,.06));border:1.5px solid rgba(167,139,250,.25);border-radius:20px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#5ecfdb,#f0195a);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 20px rgba(94,207,219,.4);overflow:hidden">
+      <svg viewBox="0 0 52 52" width="52" height="52" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background -->
+        <circle cx="26" cy="26" r="26" fill="url(#preppiGrad)"/>
+        <defs>
+          <linearGradient id="preppiGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#5ecfdb"/>
+            <stop offset="100%" stop-color="#f0195a"/>
+          </linearGradient>
+        </defs>
+        <!-- Face -->
+        <circle cx="26" cy="22" r="11" fill="#f5c5a3"/>
+        <!-- Hair -->
+        <ellipse cx="26" cy="13" rx="11" ry="7" fill="#2d1b00"/>
+        <!-- Eyes -->
+        <circle cx="22" cy="21" r="1.5" fill="#2d1b00"/>
+        <circle cx="30" cy="21" r="1.5" fill="#2d1b00"/>
+        <!-- Smile -->
+        <path d="M22 25 Q26 28 30 25" stroke="#2d1b00" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        <!-- Chef hat -->
+        <rect x="18" y="8" width="16" height="5" rx="2" fill="white" opacity="0.95"/>
+        <ellipse cx="26" cy="8" rx="8" ry="4" fill="white" opacity="0.95"/>
+        <!-- Body/outfit -->
+        <path d="M14 40 Q14 33 26 33 Q38 33 38 40 L38 52 L14 52 Z" fill="white" opacity="0.9"/>
+        <!-- Apron detail -->
+        <path d="M20 35 L32 35 L32 45 L20 45 Z" fill="#5ecfdb" opacity="0.6"/>
+      </svg>
+    </div>
     <div style="flex:1;min-width:0">
-      <div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:3px">PREPPI SAYS</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><div style="font-size:11px;font-weight:900;color:var(--room-preppi);font-family:var(--fd)">Preppi</div><div style="font-size:9px;color:var(--gray)">· Your nutrition guide</div></div>
       <div style="font-size:12px;color:var(--white);line-height:1.5">${preppiMsg}</div>
     </div>
   </div>
@@ -1691,35 +1723,39 @@ function renderDash() {
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
     
     <!-- Plan Card -->
-    <div id="dash-plan-card" style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:14px;cursor:pointer" onclick="setTab('plan')">
+    <div style="background:var(--card);border:1.5px solid rgba(96,165,250,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('plan')">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-plan)"></div>
       <div style="font-size:20px;margin-bottom:6px">📅</div>
       <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Plan</div>
       <div style="font-size:10px;color:var(--gray);line-height:1.6">${daysPlanned} of 7 days<br>planned</div>
-      <div style="margin-top:8px;font-size:9px;color:var(--cyan);font-weight:700">Open →</div>
+      <div style="margin-top:8px;font-size:9px;color:var(--room-plan);font-weight:700">Open →</div>
     </div>
 
     <!-- Preppi Card -->
-    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:14px;cursor:pointer" onclick="setTab('preppi')">
+    <div style="background:var(--card);border:1.5px solid rgba(167,139,250,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('preppi')">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-preppi)"></div>
       <div style="font-size:20px;margin-bottom:6px">🥗</div>
       <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Preppi</div>
       <div style="font-size:10px;color:var(--gray);line-height:1.6">Your nutrition<br>guide & chef</div>
-      <div style="margin-top:8px;font-size:9px;color:var(--cyan);font-weight:700">Chat →</div>
+      <div style="margin-top:8px;font-size:9px;color:var(--room-preppi);font-weight:700">Chat →</div>
     </div>
 
     <!-- Pantry Card -->
-    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:14px;cursor:pointer" onclick="setTab('pantry')">
+    <div style="background:var(--card);border:1.5px solid rgba(251,191,36,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('pantry')">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-pantry)"></div>
       <div style="font-size:20px;margin-bottom:6px">🥫</div>
       <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Pantry</div>
       <div style="font-size:10px;color:var(--gray);line-height:1.6">${budget > 0 ? '$' + budgetLeft + ' budget<br>this week' : 'Set your weekly<br>budget'}</div>
-      <div style="margin-top:8px;font-size:9px;color:${budget>0?'var(--green)':'var(--yellow)'};font-weight:700">${budget > 0 ? 'On track ✓' : 'Set budget →'}</div>
+      <div style="margin-top:8px;font-size:9px;color:var(--room-pantry);font-weight:700">${budget > 0 ? 'On track ✓' : 'Set budget →'}</div>
     </div>
 
     <!-- Family Card -->
-    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:14px;cursor:pointer" onclick="setTab('family')">
+    <div style="background:var(--card);border:1.5px solid rgba(61,214,140,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('family')">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-family)"></div>
       <div style="font-size:20px;margin-bottom:6px">👨‍👩‍👧</div>
       <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Family</div>
       <div style="font-size:10px;color:var(--gray);line-height:1.6">${hausMembers.length + 1} member${hausMembers.length > 0 ? 's' : ''}<br>${hausMembers.length > 0 ? hausMembers.map(m=>m.name).join(', ') : 'Just you'}</div>
-      <div style="margin-top:8px;font-size:9px;color:var(--cyan);font-weight:700">View →</div>
+      <div style="margin-top:8px;font-size:9px;color:var(--room-family);font-weight:700">View →</div>
     </div>
   </div>
 
@@ -1775,7 +1811,7 @@ function renderCal() {
     <button id="load-draft-btn" style="padding:8px 16px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:12px;cursor:pointer;font-family:var(--fd)">Load Week!</button>
   </div>` : ""}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div class="st" style="margin-bottom:0">📅 Calendar</div>
+    <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--room-plan);margin-bottom:0;letter-spacing:-0.5px">📅 Calendar</div>
     <button id="clear-cal-btn" style="padding:5px 10px;background:rgba(238,29,82,.1);border:1px solid rgba(238,29,82,.3);border-radius:8px;color:var(--pink);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">Clear Week</button>
   </div>
   <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px">
@@ -1814,7 +1850,9 @@ function renderMeals() {
   const budgetSet = budget > 0;
 
   return `<div class="fu">
-  <div class="st" style="margin-bottom:16px">🥫 The Pantry</div>
+  <div style="height:3px;background:linear-gradient(90deg,#fbbf24,#fb923c);border-radius:2px;margin-bottom:16px;opacity:0.6"></div>
+  <div style="font-family:var(--fd);font-size:24px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;color:#fbbf24">🥫 Pantry</div>
+  <div style="font-size:12px;color:var(--gray);margin-bottom:20px">Budget, stores and smart shopping</div>
 
   <!-- Budget Tracker -->
   <div class="card" style="padding:16px;margin-bottom:14px">
@@ -1935,7 +1973,7 @@ function renderShop() {
 
   return `<div class="fu">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div class="st" style="margin-bottom:0">🛒 Shopping</div>
+    <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--room-plan);margin-bottom:0;letter-spacing:-0.5px">🛒 Shopping</div>
     <button id="shop-generate-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">🥗 Generate List</button>
   </div>
 
@@ -2404,7 +2442,7 @@ function renderFamily() {
   const hausMembers = currentFamily?.hausMembers || [];
   if (!currentFamily) {
     return `<div class="fu">
-    <div class="st">👨‍👩‍👧 Family Setup</div>
+    <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--room-family);margin-bottom:16px;letter-spacing:-0.5px">👨‍👩‍👧 Family</div>
     <div class="card" style="padding:20px;margin-bottom:12px">
       <div style="font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:14px">🏠 Create Family</div>
       <input id="fam-name-in" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;margin-bottom:10px;box-sizing:border-box" placeholder="Family name"/>
@@ -3657,8 +3695,25 @@ window.UI = UI;
   --shadow:0 4px 24px rgba(0,0,0,.5);
   --radius:16px; --radius-sm:10px; --radius-lg:24px;
   --fd:"Syne",sans-serif; --fb:"DM Sans",sans-serif; --fm:"Space Mono",monospace;
+  
+  /* Room accent colors */
+  --room-home:#5ecfdb;
+  --room-plan:#60a5fa;
+  --room-preppi:#3dd68c;
+  --room-pantry:#fbbf24;
+  --room-family:#a78bfa;
+  --room-circle:#f0195a;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+.room-header{padding:20px 20px 0;max-width:480px;margin:0 auto;}
+.room-title{font-family:var(--fd);font-size:24px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;}
+.room-subtitle{font-size:12px;color:var(--gray);margin-bottom:16px;}
+.room-accent-bar{height:3px;border-radius:2px;margin-bottom:20px;}
+.sub-nav{display:flex;gap:6px;margin-bottom:20px;background:var(--card2);border-radius:var(--radius-sm);padding:4px;}
+.sub-btn{flex:1;padding:9px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fb);transition:all .15s;}
+.sub-btn.active{font-weight:800;}
+
 body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
 .shell{display:flex;flex-direction:column;min-height:100vh;max-width:600px;margin:0 auto}
 .topbar{background:rgba(10,10,15,.98);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}

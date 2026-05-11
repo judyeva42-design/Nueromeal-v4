@@ -154,7 +154,7 @@ let unsubscribers = [];
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
-  showAdd:null, showMemEdit:null, showBudgetInput:false, editingMemberIdx:null, expandedMember:null, onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
+  showAdd:null, showMemEdit:null, showBudgetInput:false, editingMemberIdx:null, expandedMember:null, activeRecipe:null, checkedSteps:[], onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
   weSelected:[], weSugs:null,
   gathFams:[], gathOcc:null, gathResult:null,
   aiChat:[],
@@ -1095,6 +1095,48 @@ function renderMain() {
     UI.showAriaCalModal = false;
     UI.showAdd = null;
     loadDraftPlan();
+  });
+  // Cookbook bindings
+  document.querySelectorAll('[data-open-recipe]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      UI.activeRecipe = parseInt(this.getAttribute('data-open-recipe'));
+      UI.checkedSteps = [];
+      renderMain();
+    });
+  });
+  const backBtn = document.getElementById('back-to-cookbook');
+  if (backBtn) backBtn.addEventListener('click', () => { UI.activeRecipe = null; UI.checkedSteps = []; renderMain(); });
+  document.querySelectorAll('[data-check-step]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const i = parseInt(this.getAttribute('data-check-step'));
+      const steps = UI.checkedSteps || [];
+      UI.checkedSteps = steps.includes(i) ? steps.filter(s=>s!==i) : [...steps, i];
+      renderMain();
+    });
+  });
+  const deleteRecipeBtn = document.getElementById('delete-recipe-btn');
+  if (deleteRecipeBtn) deleteRecipeBtn.addEventListener('click', async function() {
+    const idx = parseInt(this.getAttribute('data-recipe-idx'));
+    const savedRecipes = [...(currentFamily?.savedRecipes||[])];
+    savedRecipes.splice(idx, 1);
+    await saveFamilyDoc({ savedRecipes });
+    if (currentFamily) currentFamily.savedRecipes = savedRecipes;
+    UI.activeRecipe = null;
+    UI.checkedSteps = [];
+    showToast('Recipe removed from Cookbook', 'success');
+    renderMain();
+  });
+  document.querySelectorAll('[data-plan-recipe]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const idx = parseInt(this.getAttribute('data-plan-recipe'));
+      const recipe = (currentFamily?.savedRecipes||[])[idx];
+      if (recipe) {
+        UI.showAdd = { day: UI.selDay || "Mon", type: "Dinner" };
+        // Pre-fill the custom meal input with recipe name
+        UI.planningRecipeName = recipe.name;
+        setTab("calendar");
+      }
+    });
   });
   // Pantry bindings
   const editBudgetBtn = document.getElementById('edit-budget-btn');
@@ -2299,9 +2341,8 @@ function renderAI() {
       <div style="max-width:80%">
         <div style="background:${m.role==="user"?"linear-gradient(135deg,var(--cyan),var(--pink))":"var(--card)"};color:${m.role==="user"?"#000":"var(--white)"};padding:12px 16px;border-radius:${m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px"};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.text}</div>
         ${m.role==="assistant"&&idx>0?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-          <button data-aria-add="${idx}" data-aria-text="${encodeURIComponent(m.text.substring(0,200))}" style="padding:6px 12px;background:rgba(105,201,208,.15);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button>
           ${!m.text.includes("7-Day")&&!m.text.includes("Day Meal Plan")?`<button data-save-recipe="${idx}" data-save-text="${encodeURIComponent(m.text.substring(0,500))}" style="padding:6px 12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:10px;color:var(--yellow);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🔖 Save to Cookbook</button>`:""}
-          ${m.text.includes("Day")&&m.text.includes("Breakfast")&&(PREPPI_WEEK_PLAN&&Object.keys(PREPPI_WEEK_PLAN).length>0)?`<button id="load-week-btn" style="padding:6px 12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-size:11px;font-weight:900;cursor:pointer;font-family:var(--fd)">🗓️ Load to Calendar</button>`:""}
+          ${m.text.includes("Day")&&m.text.includes("Breakfast")?`<div style="width:100%;margin-top:6px;padding:10px 12px;background:rgba(105,201,208,.08);border:1px solid rgba(105,201,208,.2);border-radius:10px;font-size:11px;color:var(--cyan);line-height:1.6">💡 <strong>To add these meals:</strong> Head to the 📅 Calendar tab, tap <strong>+ Add</strong> on any meal slot, and I'll be right there with suggestions!</div>`:""}
         </div>`:""}
       </div>
     </div>`).join("")}
@@ -2390,9 +2431,7 @@ function bindAI() {
     renderMain();
   });
 
-  // Load to Calendar button
-  const loadWeekBtn = document.getElementById("load-week-btn");
-  if (loadWeekBtn) loadWeekBtn.addEventListener("click", loadDraftPlan);
+
 
   // Quick action buttons
   const actions = {
@@ -2417,17 +2456,7 @@ function bindAI() {
     if (btn) btn.addEventListener("click", fn);
   });
 
-  // Add to Calendar buttons
-  document.querySelectorAll("[data-aria-add]").forEach(btn => {
-    btn.addEventListener("click", function() {
-      const idx = parseInt(this.getAttribute("data-aria-add"));
-      UI.ariaAddMeal = UI.aiChat[idx]?.text || decodeURIComponent(this.getAttribute("data-aria-text")||"");
-      UI.showAriaCalModal = true;
-      const hausSize = (currentFamily?.hausMembers||[]).length + 1;
-      UI.ariaServings = hausSize > 1 ? hausSize : 4;
-      renderMain();
-    });
-  });
+
 
   // Save recipe buttons
   document.querySelectorAll("[data-save-recipe]").forEach(btn => {
@@ -2435,11 +2464,36 @@ function bindAI() {
       const idx = parseInt(this.getAttribute("data-save-recipe"));
       const text = decodeURIComponent(this.getAttribute("data-save-text")||"");
       const lines = text.split("\n").map(l=>l.replace(/[*#]/g,"").trim()).filter(Boolean);
-      const name = lines.find(l=>l.length>3&&l.length<60&&!l.startsWith("-"))||"Preppi Recipe";
+      
+      // Parse recipe name
+      const name = lines.find(l=>l.length>3&&l.length<60&&!l.toLowerCase().startsWith("ingredient")&&!l.startsWith("-")&&!l.match(/^\d/))||"Preppi Recipe";
+      
+      // Parse ingredients
+      const ingredientStart = lines.findIndex(l=>l.toLowerCase().includes("ingredient"));
+      const stepStart = lines.findIndex(l=>l.toLowerCase().includes("instruction")||l.toLowerCase().includes("direction")||l.toLowerCase().includes("step"));
+      const ingredients = ingredientStart > -1 ? lines.slice(ingredientStart+1, stepStart > -1 ? stepStart : ingredientStart+15).filter(l=>l.startsWith("-")||l.match(/^\d+/)).map(l=>l.replace(/^[-\d.]+\s*/,"")) : [];
+      
+      // Parse steps
+      const steps = stepStart > -1 ? lines.slice(stepStart+1).filter(l=>l.match(/^\d+/)||l.length>15).map(l=>l.replace(/^\d+[.)]\s*/,"")).filter(l=>l.length>5) : [];
+      
+      // Parse times
+      const prepMatch = text.match(/prep[^:]*:\s*(\d+\s*(?:min|hour|hr))/i);
+      const cookMatch = text.match(/cook[^:]*:\s*(\d+\s*(?:min|hour|hr))/i);
+      
       const hausSize = (currentFamily?.hausMembers||[]).length + 1;
-      const recipe = { name, notes: text.substring(0,300), servings: hausSize, savedAt: new Date().toISOString() };
+      const recipe = { 
+        name, 
+        ingredients, 
+        steps,
+        notes: text.substring(0,500),
+        servings: hausSize,
+        prepTime: prepMatch ? prepMatch[1] : null,
+        cookTime: cookMatch ? cookMatch[1] : null,
+        savedAt: new Date().toISOString()
+      };
       const savedRecipes = [...(currentFamily?.savedRecipes||[]), recipe];
       await saveFamilyDoc({ savedRecipes });
+      if (currentFamily) currentFamily.savedRecipes = savedRecipes;
       showToast("🔖 Saved to Cookbook!", "success");
       renderMain();
     });
@@ -2602,35 +2656,96 @@ async function saveVideo() {
 // ── Veggie Tips ─────────────────────────────────────────────
 function renderTips() {
   const saved = currentFamily?.savedRecipes || [];
-  return `<div class="fu">
-  <div class="st">📖 Cookbook</div>
-  ${!currentUser ? `<div style="text-align:center;padding:40px;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">📖</div><div>Get Active to save recipes!</div></div>` :
-  saved.length === 0 ? `<div style="text-align:center;padding:40px;color:var(--gray)">
-    <div style="font-size:44px;margin-bottom:10px">📖</div>
-    <div style="font-size:15px;font-weight:700;margin-bottom:8px">No saved recipes yet!</div>
-    <div style="font-size:13px;line-height:1.6">Ask Preppi for meal suggestions and tap <span style="color:var(--yellow);font-weight:700">🔖 Save Recipe</span> to build your family cookbook!</div>
-  </div>` :
-  `<div style="display:flex;flex-direction:column;gap:12px">
-    ${saved.map((r,i)=>`<div class="card" style="padding:16px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-        <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px;flex:1">${r.name}</div>
-        <button data-unsave="${i}" style="background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:18px;padding:0 0 0 8px;flex-shrink:0">×</button>
+  const activeRecipe = UI.activeRecipe !== undefined ? UI.activeRecipe : null;
+
+  // Show full recipe view if one is selected
+  if (activeRecipe !== null && saved[activeRecipe]) {
+    const r = saved[activeRecipe];
+    const steps = r.steps || [];
+    const checkedSteps = UI.checkedSteps || [];
+    const ingredients = r.ingredients || [];
+    return `<div class="fu">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button id="back-to-cookbook" style="padding:6px 12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">← Back</button>
+      <div style="font-family:var(--fd);font-size:16px;font-weight:800;flex:1;letter-spacing:-0.5px">${r.name}</div>
+      <button data-plan-recipe="${activeRecipe}" style="padding:6px 12px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🍽️ Plan This</button>
+    </div>
+
+    ${r.description ? `<div style="font-size:13px;color:var(--gray);margin-bottom:14px;line-height:1.6">${r.description}</div>` : ""}
+
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      ${r.prepTime ? `<div style="padding:6px 12px;background:var(--card2);border-radius:8px;font-size:11px;font-weight:700;color:var(--white)">⏱️ Prep: ${r.prepTime}</div>` : ""}
+      ${r.cookTime ? `<div style="padding:6px 12px;background:var(--card2);border-radius:8px;font-size:11px;font-weight:700;color:var(--white)">🔥 Cook: ${r.cookTime}</div>` : ""}
+      ${r.servings ? `<div style="padding:6px 12px;background:var(--card2);border-radius:8px;font-size:11px;font-weight:700;color:var(--white)">👨‍👩‍👧 Serves: ${r.servings}</div>` : ""}
+    </div>
+
+    ${ingredients.length > 0 ? `<div class="card" style="padding:14px;margin-bottom:14px">
+      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:10px">🛒 INGREDIENTS</div>
+      ${ingredients.map(ing => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px">•</span>
+        <span style="font-size:13px;color:var(--white)">${ing}</span>
+      </div>`).join("")}
+    </div>` : ""}
+
+    ${steps.length > 0 ? `<div class="card" style="padding:14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px">👩‍🍳 STEPS</div>
+        <div style="font-size:10px;color:var(--gray)">${checkedSteps.length}/${steps.length} done</div>
       </div>
-      ${r.servings?`<div style="font-size:11px;color:var(--cyan);font-weight:700;margin-bottom:6px">👥 ${r.servings} servings</div>`:""}
-      <div style="font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:10px">${(r.notes||"").substring(0,150)}${r.notes&&r.notes.length>150?"...":""}</div>
-      <button data-add-saved="${i}" style="width:100%;padding:8px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">📅 Add to Calendar</button>
+      ${steps.map((step, i) => {
+        const checked = checkedSteps.includes(i);
+        return `<div data-check-step="${i}" style="display:flex;gap:10px;padding:10px;background:${checked ? "rgba(74,222,128,.08)" : "transparent"};border-radius:10px;margin-bottom:6px;cursor:pointer;transition:background .2s">
+          <div style="width:24px;height:24px;border-radius:50%;border:2px solid ${checked ? "var(--green)" : "var(--border)"};background:${checked ? "var(--green)" : "transparent"};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+            ${checked ? `<span style="color:#000;font-size:12px;font-weight:900">✓</span>` : `<span style="font-size:10px;font-weight:800;color:var(--gray)">${i+1}</span>`}
+          </div>
+          <div style="flex:1;font-size:13px;line-height:1.6;color:${checked ? "var(--gray)" : "var(--white)"};text-decoration:${checked ? "line-through" : "none"}">${step}</div>
+        </div>`;
+      }).join("")}
+      ${checkedSteps.length === steps.length && steps.length > 0 ? `<div style="text-align:center;padding:14px;background:rgba(74,222,128,.1);border-radius:10px;margin-top:8px">
+        <div style="font-size:20px;margin-bottom:4px">🎉</div>
+        <div style="font-size:13px;font-weight:800;color:var(--green)">Recipe complete! Enjoy your meal!</div>
+      </div>` : ""}
+    </div>` : `<div class="card" style="padding:14px;margin-bottom:14px;font-size:13px;color:var(--white);white-space:pre-wrap;line-height:1.8">${r.notes||r.text||""}</div>`}
+
+    ${r.tip ? `<div style="background:rgba(105,201,208,.08);border:1px solid rgba(105,201,208,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:4px">🥗 PREPPI'S TIP</div>
+      <div style="font-size:12px;color:var(--white);line-height:1.6">${r.tip}</div>
+    </div>` : ""}
+
+    <button id="delete-recipe-btn" data-recipe-idx="${activeRecipe}" style="width:100%;padding:10px;background:rgba(238,29,82,.08);border:1px solid rgba(238,29,82,.2);border-radius:10px;color:var(--pink);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb);margin-bottom:20px">🗑️ Remove from Cookbook</button>
+    </div>`;
+  }
+
+  // Cookbook list view
+  return `<div class="fu">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div class="st" style="margin-bottom:0">📖 Cookbook</div>
+    <div style="font-size:11px;color:var(--gray)">${saved.length} recipe${saved.length!==1?"s":""}</div>
+  </div>
+
+  ${!currentUser ? `<div style="text-align:center;padding:40px;color:var(--gray)"><div style="font-size:44px;margin-bottom:10px">📖</div><div style="margin-bottom:16px">Get Active to save recipes!</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>` :
+  saved.length === 0 ? `<div style="text-align:center;padding:40px;color:var(--gray)">
+    <div style="font-size:44px;margin-bottom:12px">📖</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:8px">Your Cookbook is empty!</div>
+    <div style="font-size:13px;line-height:1.6">Ask Preppi for a recipe and tap <span style="color:var(--yellow);font-weight:700">🔖 Save to Cookbook</span> to build your collection!</div>
+  </div>` :
+  `<div style="display:flex;flex-direction:column;gap:10px">
+    ${saved.map((r, i) => `<div data-open-recipe="${i}" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:12px">
+      <div style="font-size:32px;flex-shrink:0">🍳</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:800;margin-bottom:3px">${r.name||"Saved Recipe"}</div>
+        <div style="font-size:11px;color:var(--gray);display:flex;gap:8px;flex-wrap:wrap">
+          ${r.servings ? `<span>👨‍👩‍👧 Serves ${r.servings}</span>` : ""}
+          ${r.prepTime ? `<span>⏱️ ${r.prepTime}</span>` : ""}
+          ${r.steps?.length ? `<span>📋 ${r.steps.length} steps</span>` : ""}
+          ${r.savedAt ? `<span>📅 ${new Date(r.savedAt).toLocaleDateString()}</span>` : ""}
+        </div>
+      </div>
+      <div style="font-size:18px;color:var(--gray)">›</div>
     </div>`).join("")}
   </div>`}
   </div>`;
 }
-
-// ── Action Functions ───────────────────────────────────────
-function openAdd(day, type) {
-  if (!currentUser) { showGetActiveModal(); return; }
-  UI.showAdd = {day, type};
-  renderMain();
-}
-
 function renderAddModal() {
   const existing = document.getElementById("add-modal");
   if (existing) existing.remove();

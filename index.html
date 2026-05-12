@@ -154,7 +154,7 @@ let unsubscribers = [];
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
-  showAdd:null, showMemEdit:null, showBudgetInput:false, editingMemberIdx:null, expandedMember:null, activeRecipe:null, checkedSteps:[], showRecipeModal:false, recipeAnswers:{}, planRoom:"calendar", preppiRoom:"chat", familyRoom:"profiles", subModal:null, circleRoom:"feed", onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
+  showAdd:null, showMemEdit:null, showBudgetInput:false, editingMemberIdx:null, expandedMember:null, activeRecipe:null, checkedSteps:[], showRecipeModal:false, recipeAnswers:{}, planRoom:"calendar", preppiRoom:"chat", familyRoom:"profiles", subModal:null, showAvatarSection:false, avatarTab:"headchef", circleRoom:"feed", onboardStep:0, onboardData:{}, showOnboard:false, showAddMember:false, ariaAddMeal:null, showAriaCalModal:false, ariaCalDay:"Mon", ariaCalType:"Dinner", ariaServings:4, ariaFixMsg:null, weeklyPlanData:null,
   weSelected:[], weSugs:null,
   gathFams:[], gathOcc:null, gathResult:null,
   aiChat:[],
@@ -728,6 +728,7 @@ const ONBOARD_STEPS = [
   { type:'text', field:'allergies', preppi:"⚠️ Do you or anyone in your household have any ALLERGIES? This is a safety question — Preppi will NEVER suggest anything with these ingredients!", label:'ALLERGIES (hard exclusions — safety level)', placeholder:'e.g. peanuts, shellfish, tree nuts, dairy...' },
   { type:'double2', preppi:"Almost done! Want to track your weight goals? This helps Preppi suggest the right meals for where you want to be! Totally optional 💪", labels:['Current Weight (optional)','Target Weight (optional)'], fields:['currentWeight','targetWeight'] },
   { type:'text', field:'phone', preppi:"📱 Last thing — your phone number! SMS meal reminders and daily tips are coming soon. Drop your number and you will be first to know when it launches! 🔔", label:'PHONE NUMBER (optional)', placeholder:'e.g. (555) 123-4567...' },
+  { type:'avatar', emoji:'🎨✨', preppi:"Almost done! Let's create your avatar! Tap the button below to customize your look! 🎨" },
   { type:'complete', emoji:'🎉🧠🔥', preppi:"YESSS!! You did it!! 🎉 Preppi now knows everything she needs to make NeuroMeal feel like it was built just for you! Your meals are about to get SO much smarter!" },
 ];
 
@@ -794,6 +795,30 @@ function renderOnboard() {
           <div>
             <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">${s.labels[1]}</div>
             <input id="ob-weight" value="${UI.onboardData.weight||''}" placeholder="e.g. 165 lbs" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
+          </div>
+        </div>` : ''}
+        ${s.type === 'avatar' ? `<div style="display:flex;flex-direction:column;gap:12px">
+          ${UI.onboardData.avatarUrl ? `
+          <div style="text-align:center">
+            <img src="${UI.onboardData.avatarUrl}" width="120" height="120" style="border-radius:50%;border:3px solid var(--cyan);background:var(--card2)"/>
+            <div style="font-size:11px;color:var(--green);margin-top:8px;font-weight:700">✅ Avatar saved!</div>
+          </div>
+          <button id="edit-avatar-btn" style="width:100%;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--white);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit Avatar</button>
+          ` : `
+          <div style="background:rgba(94,207,219,.06);border:1.5px solid rgba(94,207,219,.2);border-radius:14px;padding:14px;text-align:center;margin-bottom:4px">
+            <div style="font-size:32px;margin-bottom:8px">🎨</div>
+            <div style="font-size:13px;font-weight:800;color:var(--white);margin-bottom:6px">Create Your Avatar</div>
+            <div style="font-size:11px;color:var(--gray);line-height:1.6;margin-bottom:12px">Upload a selfie or build from scratch. Choose your body type, skin tone, hair, clothes and accessories!</div>
+            <button id="open-avaturn-btn" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--room-preppi));border:none;border-radius:12px;color:#000;font-size:14px;font-weight:900;cursor:pointer;font-family:var(--fd)">🎨 Create My Avatar</button>
+          </div>
+          <div style="font-size:10px;color:var(--gray);text-align:center">Powered by Avaturn · Free · 10,000+ customization options</div>
+          `}
+          <div id="avaturn-container" style="display:none;position:fixed;inset:0;z-index:1000;background:#000">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#111">
+              <div style="font-size:14px;font-weight:800;color:#fff">Create Your Avatar</div>
+              <button id="close-avaturn" style="padding:6px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:12px;cursor:pointer">Close</button>
+            </div>
+            <iframe id="avaturn-frame" src="https://neuromeal.avaturn.dev/?frameApi" allow="camera *; microphone *" style="width:100%;height:calc(100% - 50px);border:none"></iframe>
           </div>
         </div>` : ''}
         ${s.type === 'double2' ? `<div style="display:flex;flex-direction:column;gap:10px">
@@ -915,6 +940,9 @@ function bindOnboard() {
           targetWeight: UI.onboardData.targetWeight || '',
           phone: UI.onboardData.phone || '',
           waterGoalOz: UI.onboardData.age ? (parseInt(UI.onboardData.age) < 9 ? 40 : parseInt(UI.onboardData.age) < 14 ? 56 : parseInt(UI.onboardData.age) < 18 ? 64 : 80) : 64,
+          avatarUrl: UI.onboardData.avatarUrl || null,
+          avatarUrl: UI.onboardData.avatarUrl || '',
+          isPremium: false,
         };
         await saveUserDoc({ profileComplete: true, profile, name: profile.name });
         addXP(50);
@@ -926,6 +954,52 @@ function bindOnboard() {
       }
     });
   }
+
+  // Avatar creator button in onboarding
+  const obCreateAvatar = document.getElementById('ob-create-avatar');
+  if (obCreateAvatar) obCreateAvatar.addEventListener('click', () => {
+    const name = UI.onboardData.name || 'Your';
+    // Open Avaturn and save URL to onboardData
+    openAvaturnCreator(name, false, (url) => {
+      UI.onboardData.avatarUrl = url;
+      renderOnboard();
+    });
+  });
+
+  // Avaturn avatar creator
+  const openAvaturnBtn = document.getElementById('open-avaturn-btn');
+  const editAvatarBtn = document.getElementById('edit-avatar-btn');
+  const closeAvaturn = document.getElementById('close-avaturn');
+  const avaturnContainer = document.getElementById('avaturn-container');
+  const avaturnFrame = document.getElementById('avaturn-frame');
+
+  function openAvaturn() {
+    if (avaturnContainer) avaturnContainer.style.display = 'block';
+  }
+  function closeAvaturnModal() {
+    if (avaturnContainer) avaturnContainer.style.display = 'none';
+  }
+
+  if (openAvaturnBtn) openAvaturnBtn.addEventListener('click', openAvaturn);
+  if (editAvatarBtn) editAvatarBtn.addEventListener('click', openAvaturn);
+  if (closeAvaturn) closeAvaturn.addEventListener('click', closeAvaturnModal);
+
+  // Listen for avatar export from Avaturn
+  window.addEventListener('message', function(event) {
+    if (event.data?.source !== 'readyplayerme' && !event.data?.eventName) return;
+    try {
+      const json = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      if (json?.eventName === 'v1.avatar.exported' || json?.eventName === 'v2.avatar.exported') {
+        const url = json?.data?.url || json?.url;
+        if (url) {
+          UI.onboardData.avatarUrl = url;
+          closeAvaturnModal();
+          renderOnboard();
+          showToast('🎨 Avatar saved! Looking great!', 'success');
+        }
+      }
+    } catch(e) {}
+  });
 
   // Back button
   const backBtn = document.getElementById('ob-back');
@@ -963,6 +1037,60 @@ function bindFamilyMembers() {
   });
 
   // Save member button
+  // Member Avaturn
+  const openMemberAvaturn = document.getElementById('open-member-avaturn');
+  const closeMemberAvaturn = document.getElementById('close-member-avaturn');
+  const memberAvaturnContainer = document.getElementById('member-avaturn-container');
+
+  if (openMemberAvaturn) openMemberAvaturn.addEventListener('click', () => {
+    if (memberAvaturnContainer) memberAvaturnContainer.style.display = 'block';
+  });
+  if (closeMemberAvaturn) closeMemberAvaturn.addEventListener('click', () => {
+    if (memberAvaturnContainer) memberAvaturnContainer.style.display = 'none';
+  });
+
+  // Listen for member avatar export
+  window._memberAvatarHandler = function(event) {
+    try {
+      const json = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      if (json?.eventName === 'v1.avatar.exported' || json?.eventName === 'v2.avatar.exported') {
+        const url = json?.data?.url || json?.url;
+        if (url && memberAvaturnContainer?.style.display === 'block') {
+          window._pendingMemberAvatarUrl = url;
+          if (memberAvaturnContainer) memberAvaturnContainer.style.display = 'none';
+          showToast('🎨 Avatar saved!', 'success');
+          const previewImg = document.querySelector('#open-member-avaturn');
+          if (previewImg) previewImg.textContent = '✅ Avatar saved — Edit Avatar';
+        }
+      }
+    } catch(e) {}
+  };
+  window.removeEventListener('message', window._memberAvatarHandler);
+  window.addEventListener('message', window._memberAvatarHandler);
+
+  // Avatar selectors in member form
+  document.querySelectorAll('[data-hm-skin]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const v = this.getAttribute('data-hm-skin');
+      this.parentElement.querySelectorAll('[data-hm-skin]').forEach(b => b.style.borderColor = 'transparent');
+      this.style.borderColor = 'var(--cyan)';
+      this._selectedSkin = v;
+    });
+  });
+  document.querySelectorAll('[data-hm-hair]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const v = this.getAttribute('data-hm-hair');
+      this.parentElement.querySelectorAll('[data-hm-hair]').forEach(b => {
+        b.style.borderColor = 'var(--border)';
+        b.style.background = 'transparent';
+        b.style.color = 'var(--gray)';
+      });
+      this.style.borderColor = 'var(--cyan)';
+      this.style.background = 'rgba(94,207,219,.15)';
+      this.style.color = 'var(--cyan)';
+    });
+  });
+
   const saveBtn = document.getElementById('hm-save');
   if (saveBtn) saveBtn.addEventListener('click', async function() {
     const name = document.getElementById('hm-name')?.value?.trim();
@@ -979,7 +1107,13 @@ function bindFamilyMembers() {
     const waterOz = ageNum > 0 ? (ageNum < 9 ? 40 : ageNum < 14 ? 56 : ageNum < 18 ? 64 : 80) : 64;
     const emojis = ['🧑','👦','👧','👨','👩','🧒','👴','👵','🧔','👱'];
     const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-    const newMember = { name, age, diet, allergies, avoid, goal, phone, pickyEater, waterGoalOz: waterOz, emoji, addedAt: new Date().toISOString() };
+    const skinBtn = document.querySelector('[data-hm-skin][style*="var(--cyan)"]');
+    const hairBtn = document.querySelector('[data-hm-hair][style*="var(--cyan)"]');
+    const avatarSkin = skinBtn?.getAttribute('data-hm-skin') || 'c68642';
+    const avatarHair = hairBtn?.getAttribute('data-hm-hair') || 'short01';
+    const avatarUrl = window._pendingMemberAvatarUrl || (UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarUrl:'') || '';
+    window._pendingMemberAvatarUrl = null;
+    const newMember = { name, age, diet, allergies, avoid, goal, phone, pickyEater, waterGoalOz: waterOz, emoji, avatarSkin, avatarHair, avatarHairColor: '000000', avatarUrl, addedAt: new Date().toISOString() };
     let hausMembers = [...(currentFamily?.hausMembers||[])];
     if (UI.editingMemberIdx !== null) {
       hausMembers[UI.editingMemberIdx] = { ...hausMembers[UI.editingMemberIdx], ...newMember };
@@ -1666,34 +1800,7 @@ function renderDash() {
 
   <!-- Preppi Greeting Bar -->
   <div id="dash-preppi-bar" style="background:linear-gradient(135deg,rgba(94,207,219,.08),rgba(167,139,250,.06));border:1.5px solid rgba(167,139,250,.25);border-radius:20px;padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
-    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#5ecfdb,#f0195a);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 20px rgba(94,207,219,.4);overflow:hidden">
-      <svg viewBox="0 0 52 52" width="52" height="52" xmlns="http://www.w3.org/2000/svg">
-        <!-- Background -->
-        <circle cx="26" cy="26" r="26" fill="url(#preppiGrad)"/>
-        <defs>
-          <linearGradient id="preppiGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#5ecfdb"/>
-            <stop offset="100%" stop-color="#f0195a"/>
-          </linearGradient>
-        </defs>
-        <!-- Face -->
-        <circle cx="26" cy="22" r="11" fill="#f5c5a3"/>
-        <!-- Hair -->
-        <ellipse cx="26" cy="13" rx="11" ry="7" fill="#2d1b00"/>
-        <!-- Eyes -->
-        <circle cx="22" cy="21" r="1.5" fill="#2d1b00"/>
-        <circle cx="30" cy="21" r="1.5" fill="#2d1b00"/>
-        <!-- Smile -->
-        <path d="M22 25 Q26 28 30 25" stroke="#2d1b00" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-        <!-- Chef hat -->
-        <rect x="18" y="8" width="16" height="5" rx="2" fill="white" opacity="0.95"/>
-        <ellipse cx="26" cy="8" rx="8" ry="4" fill="white" opacity="0.95"/>
-        <!-- Body/outfit -->
-        <path d="M14 40 Q14 33 26 33 Q38 33 38 40 L38 52 L14 52 Z" fill="white" opacity="0.9"/>
-        <!-- Apron detail -->
-        <path d="M20 35 L32 35 L32 45 L20 45 Z" fill="#5ecfdb" opacity="0.6"/>
-      </svg>
-    </div>
+    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--room-preppi),var(--pink));overflow:hidden;flex-shrink:0;box-shadow:0 0 16px rgba(167,139,250,.3)">${getPreppiAvatar(52, daysPlanned>=5?"happy":daysPlanned>0?"neutral":"concerned")}</div>
     <div style="flex:1;min-width:0">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><div style="font-size:11px;font-weight:900;color:var(--room-preppi);font-family:var(--fd)">Preppi</div><div style="font-size:9px;color:var(--gray)">· Your nutrition guide</div></div>
       <div style="font-size:12px;color:var(--white);line-height:1.5">${preppiMsg}</div>
@@ -1726,6 +1833,7 @@ function renderDash() {
             const r=getMemberRings(m.name,m.waterGoal);
             const wc=r.waterPct>=100?'var(--green)':r.waterPct>=50?'var(--cyan)':'var(--pink)';
             const nc=r.nutritionPct>=100?'var(--green)':r.nutritionPct>=50?'var(--room-preppi)':'var(--pink)';
+            const avatarImg = getAvatarImg(m.avatarUrl, 28, m.emoji||'🧑');
             return '<div style="display:flex;align-items:center;gap:7px">'+ringsSVG(r.waterPct,r.nutritionPct,30,'',m.emoji)+'<div><div style="font-size:9px;font-weight:700;color:var(--white)">'+m.name.split(' ')[0]+'</div><div style="font-size:8px"><span style="color:'+wc+'">💧'+r.waterPct+'%</span> <span style="color:'+nc+'">🥗'+r.nutritionPct+'%</span></div></div></div>';
           }).join('');
         })()}
@@ -1790,6 +1898,120 @@ function renderDash() {
   </div>`;
 }
 
+// ── Avaturn Avatar Integration ─────────────────────────────────────
+
+
+
+
+window.saveAvatarUrl = async function(memberName, avatarUrl, isHeadChef) {
+  if (isHeadChef) {
+    // Save to user profile
+    const profile = { ...(userDoc?.profile || {}), avatarUrl };
+    await saveUserDoc({ profile });
+    if (userDoc) userDoc.profile = profile;
+    showToast('🎨 Your avatar is saved! Looking good! ✨', 'success');
+    addXP(25);
+  } else {
+    // Save to household member
+    const hausMembers = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
+    const idx = hausMembers.findIndex(m => m.name === memberName);
+    if (idx !== -1) {
+      hausMembers[idx].avatarUrl = avatarUrl;
+      await saveFamilyDoc({ hausMembers });
+      if (currentFamily) currentFamily.hausMembers = hausMembers;
+      showToast('🎨 ' + memberName + ' avatar saved! +25 XP ✨', 'success');
+      addXP(25);
+    }
+  }
+  renderMain();
+};
+
+window.openAvatarCreator = function(memberName, isHeadChef) {
+  openAvaturnCreator(memberName, isHeadChef);
+};
+
+
+
+
+// ── Phase 6: Avatar System ─────────────────────────────────────────
+
+function getDiceBearUrl(seed, style, skinColor, hairColor, hairType, accessories) {
+  const base = 'https://api.dicebear.com/9.x/';
+  const params = new URLSearchParams({
+    seed: seed || 'default',
+    backgroundColor: 'transparent',
+    radius: '50',
+  });
+  if (skinColor) params.set('skinColor', skinColor);
+  if (hairColor) params.set('hairColor', hairColor);
+  if (hairType) params.set('hair', hairType);
+  if (accessories) params.set('accessories', accessories);
+  return base + (style || 'adventurer') + '/svg?' + params.toString();
+}
+
+function avatarHTML(seed, size, options) {
+  const opts = options || {};
+  const url = getDiceBearUrl(seed, opts.style||'adventurer', opts.skinColor, opts.hairColor, opts.hair, opts.accessories);
+  return '<img src="' + url + '" width="' + size + '" height="' + size + '" style="border-radius:50%;background:linear-gradient(135deg,var(--card2),var(--card));border:2px solid var(--border2)" onerror="this.style.display=\'none\'"/>';
+}
+
+// Skin tone map - DiceBear color codes
+const SKIN_TONES = {
+  light: 'f5d5b0',
+  medium_light: 'e8b88a', 
+  medium: 'c68642',
+  medium_dark: '8d5524',
+  dark: '5c3317',
+  deep: '2d1a0e'
+};
+
+const HAIR_STYLES = {
+  natural: 'afro',
+  locs: 'dreads01',
+  curly: 'curly',
+  straight: 'long01',
+  short: 'short01',
+  fade: 'buzzcut'
+};
+
+
+// ── Avaturn Avatar Creator ─────────────────────────────────────────
+
+
+
+window.createAvatar = async function(memberName) {
+  openAvaturnCreator(memberName, async function(avatarUrl) {
+    if (!memberName || memberName === (userDoc?.profile?.name || 'me')) {
+      // Save to head chef profile
+      const profile = { ...(userDoc?.profile || {}), avatarUrl };
+      await saveUserDoc({ profile });
+      if (userDoc) userDoc.profile = profile;
+      showToast('🎨 Avatar saved! Looking great ' + (profile.name||'') + '!', 'success');
+    } else {
+      // Save to household member
+      const hausMembers = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
+      const idx = hausMembers.findIndex(m => m.name === memberName);
+      if (idx !== -1) {
+        hausMembers[idx].avatarUrl = avatarUrl;
+        await saveFamilyDoc({ hausMembers });
+        if (currentFamily) currentFamily.hausMembers = hausMembers;
+        showToast('🎨 ' + memberName + "'s avatar saved!", 'success');
+      }
+    }
+    renderMain();
+  });
+};
+
+function getAvatarDisplay(avatarUrl, size, fallbackEmoji) {
+  const emoji = fallbackEmoji || "🧑";
+  const fs = Math.round(size * 0.45);
+  const fallback = "<div style=\"width:" + size + "px;height:" + size + "px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));display:flex;align-items:center;justify-content:center;font-size:" + fs + "px;flex-shrink:0\">" + emoji + "</div>";
+  if (!avatarUrl) return fallback;
+  const imgUrl = avatarUrl.replace(".glb", "") + "?size=" + size + "&format=png";
+  return "<img src=\"" + imgUrl + "\" width=\"" + size + "\" height=\"" + size + "\" style=\"border-radius:50%;object-fit:cover;flex-shrink:0\" onerror=\"this.style.display='none'\"/>";
+}
+
+
 // ── Phase 5: Meal Confirmation & Rings ─────────────────────────────
 
 window.confirmMeal = async function(day, type, memberName, status, subMeal) {
@@ -1815,6 +2037,23 @@ window.confirmMeal = async function(day, type, memberName, status, subMeal) {
     addXP(5);
     showToast('🔄 Swap logged! +5 XP', 'success');
   }
+  renderMain();
+};
+
+window.generateAISkin = async function(memberName, style) {
+  const profile = userDoc?.profile || {};
+  if (!profile.isPremium) {
+    showToast('✨ AI Skins are a Premium feature! Upgrade to unlock unlimited AI-generated outfits', 'warn');
+    return;
+  }
+  showToast('🎨 Generating your unique skin...', 'success');
+  // In Phase 9 this will call DALL-E API
+  // For now show coming soon
+  showToast('🔜 AI skin generation coming in Phase 9!', 'warn');
+};
+
+window.openWardobe = function(memberName) {
+  UI.wardrobeOpen = memberName;
   renderMain();
 };
 
@@ -2043,6 +2282,247 @@ For each person give 3 key nutrition priorities based on their age and goal. Kee
   
   const reply = await callAI([{role:'user',content:prompt}], getPreppiSystemPrompt());
   resultsEl.innerHTML = '<div style="font-size:11px;color:var(--white);line-height:1.8;white-space:pre-wrap;background:var(--card2);border-radius:10px;padding:10px;margin-top:4px">'+reply+'</div>';
+};
+
+
+// ── Avaturn Avatar Integration ─────────────────────────────────────
+
+const AVATURN_SUBDOMAIN = 'demo'; // Replace with your Avaturn subdomain after signup at developer.avaturn.me
+
+function openAvaturnCreator(memberName, isHeadChef, callback) {
+  // Remove existing modal if any
+  const existing = document.getElementById('avaturn-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'avaturn-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:1000;display:flex;flex-direction:column';
+
+  modal.innerHTML = 
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#0a0a14;border-bottom:1px solid #22223a">' +
+    '<div style="font-family:var(--fd);font-size:15px;font-weight:800;color:#f2f2ff">🎨 Create ' + memberName + ' Avatar</div>' +
+    '<button id="avaturn-close" style="padding:6px 12px;background:rgba(240,25,90,.15);border:1px solid rgba(240,25,90,.3);border-radius:8px;color:#f0195a;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">✕ Cancel</button>' +
+    '</div>' +
+    '<div style="flex:1;position:relative">' +
+    '<div id="avaturn-loading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">' +
+    '<div style="font-size:36px">🥗</div>' +
+    '<div style="font-size:14px;color:#5ecfdb;font-weight:700">Loading Avatar Creator...</div>' +
+    '<div style="font-size:11px;color:#7070a0">Customize your look — clothes, hair, accessories and more!</div>' +
+    '</div>' +
+    '<iframe id="avaturn-frame" ' +
+    'src="https://' + AVATURN_SUBDOMAIN + '.avaturn.me/avatar?frameApi" ' +
+    'style="width:100%;height:100%;border:none;display:none" ' +
+    'allow="camera *; microphone *; clipboard-write">' +
+    '</iframe>' +
+    '</div>' +
+    '<div style="padding:12px 16px;background:#0a0a14;border-top:1px solid #22223a;text-align:center">' +
+    '<div style="font-size:10px;color:#7070a0">Customize your avatar then tap <strong style="color:#5ecfdb">Done</strong> inside the creator to save</div>' +
+    '</div>';
+
+  document.body.appendChild(modal);
+
+  const frame = document.getElementById('avaturn-frame');
+  const loading = document.getElementById('avaturn-loading');
+
+  // Show frame when loaded
+  frame.addEventListener('load', () => {
+    loading.style.display = 'none';
+    frame.style.display = 'block';
+  });
+
+  // Listen for avatar export
+  window.addEventListener('message', function avaturnHandler(event) {
+    try {
+      const json = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      if (!json || json.source !== 'readyplayerme' && json.source !== 'avaturn') return;
+
+      // Frame ready - subscribe to events
+      if (json.eventName === 'v1.frame.ready') {
+        frame.contentWindow.postMessage(
+          JSON.stringify({ target: 'readyplayerme', type: 'subscribe', eventName: 'v1.**' }), '*'
+        );
+      }
+
+      // Avatar exported
+      if (json.eventName === 'v1.avatar.exported' || json.eventName === 'v2.avatar.exported') {
+        const avatarUrl = json.data?.url || json.url;
+        if (avatarUrl) {
+          if (callback) { callback(avatarUrl); modal.remove(); window.removeEventListener('message', avaturnHandler); }
+          else { window.saveAvatarUrl(memberName, avatarUrl, isHeadChef); modal.remove(); window.removeEventListener('message', avaturnHandler); }
+        }
+      }
+    } catch(e) {}
+  });
+
+  // Close button
+  document.getElementById('avaturn-close').addEventListener('click', () => {
+    modal.remove();
+  });
+}
+
+window.saveAvatarUrl = async function(memberName, avatarUrl, isHeadChef) {
+  if (isHeadChef) {
+    // Save to user profile
+    const profile = { ...(userDoc?.profile || {}), avatarUrl };
+    await saveUserDoc({ profile });
+    if (userDoc) userDoc.profile = profile;
+    showToast('🎨 Your avatar is saved! Looking good! ✨', 'success');
+    addXP(25);
+  } else {
+    // Save to household member
+    const hausMembers = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
+    const idx = hausMembers.findIndex(m => m.name === memberName);
+    if (idx !== -1) {
+      hausMembers[idx].avatarUrl = avatarUrl;
+      await saveFamilyDoc({ hausMembers });
+      if (currentFamily) currentFamily.hausMembers = hausMembers;
+      showToast('🎨 ' + memberName + ' avatar saved! +25 XP ✨', 'success');
+      addXP(25);
+    }
+  }
+  renderMain();
+};
+
+window.openAvatarCreator = function(memberName, isHeadChef) {
+  openAvaturnCreator(memberName, isHeadChef);
+};
+
+function getAvatarImg(avatarUrl, size, fallbackEmoji) {
+  return getAvatarDisplay(avatarUrl, size, fallbackEmoji);
+}
+
+
+// ── Phase 6: Avatar System ──────────────────────────────────────────
+
+function getAvatarUrl(seed, style, options) {
+  style = style || 'adventurer';
+  const base = 'https://api.dicebear.com/7.x/' + style + '/svg';
+  const params = new URLSearchParams({ seed: seed || 'default' });
+  if (options) Object.entries(options).forEach(([k,v]) => params.set(k, v));
+  return base + '?' + params.toString();
+}
+
+function avatarImg(seed, style, size, options) {
+  size = size || 48;
+  const url = getAvatarUrl(seed, style, options);
+  return '<img src="' + url + '" width="' + size + '" height="' + size + '" style="border-radius:50%;background:var(--card2)" onerror="this.style.display=\'none\'">';
+}
+
+function getMemberAvatar(member, size) {
+  const prefs = member.avatarPrefs || {};
+  return avatarImg(
+    member.name + (member.addedAt || ''),
+    prefs.style || 'adventurer',
+    size || 48,
+    {
+      backgroundColor: prefs.bg || 'b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf',
+      skinColor: prefs.skinColor || '',
+      hairColor: prefs.hairColor || '',
+    }
+  );
+}
+
+function getHeadChefAvatar(size) {
+  const profile = userDoc?.profile || {};
+  const prefs = profile.avatarPrefs || {};
+  return avatarImg(
+    profile.name || 'headchef',
+    prefs.style || 'adventurer',
+    size || 48,
+    {
+      backgroundColor: prefs.bg || 'b6e3f4',
+      skinColor: prefs.skinColor || '',
+      hairColor: prefs.hairColor || '',
+    }
+  );
+}
+
+function getPreppiAvatar(size, mood) {
+  const profile = userDoc?.profile || {};
+  const prefs = profile.preppiPrefs || {};
+  // Mood affects seed slightly for expression variation
+  const moodSeed = mood === 'happy' ? 'preppi-happy' : mood === 'concerned' ? 'preppi-sad' : 'preppi-neutral';
+  return avatarImg(
+    prefs.seed || moodSeed,
+    prefs.style || 'adventurer-neutral',
+    size || 48,
+    {
+      backgroundColor: 'transparent',
+      skinColor: prefs.skinColor || 'f2d3b1',
+    }
+  );
+}
+
+function renderAvatarCustomizer(type, currentPrefs, onSaveCallback) {
+  const styles = [
+    {id:'adventurer', label:'Adventurer', desc:'Illustrated, friendly'},
+    {id:'adventurer-neutral', label:'Neutral', desc:'Calm expression'},
+    {id:'notionists', label:'Notionists', desc:'Bold & modern'},
+    {id:'lorelei', label:'Lorelei', desc:'Soft & expressive'},
+    {id:'big-smile', label:'Big Smile', desc:'Fun & energetic'},
+  ];
+  const skinColors = ['f2d3b1','d4a574','c68642','8d5524','5c3317','2d1a0e'];
+  const hairColors = ['0e0e0e','3d2b1f','7c4b00','b8860b','c19a6b','ff6b6b','a78bfa','5ecfdb'];
+  const bgColors = ['b6e3f4','c0aede','d1d4f9','ffd5dc','ffdfbf','d1fae5','fef3c7'];
+  
+  const prefs = currentPrefs || {};
+  const seed = prefs.seed || type;
+  
+  return '<div style="background:var(--card2);border-radius:14px;padding:16px;margin-top:10px">' +
+    '<div style="text-align:center;margin-bottom:14px">' +
+    avatarImg(seed, prefs.style||'adventurer', 80, {backgroundColor: prefs.bg||'b6e3f4', skinColor:prefs.skinColor||'', hairColor:prefs.hairColor||''}) +
+    '</div>' +
+    '<div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">STYLE</div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' +
+    styles.map(s => '<button onclick="window.updateAvatarPref(\'' + type + '\',\'style\',\'' + s.id + '\')" style="padding:5px 10px;background:' + (prefs.style===s.id?'rgba(94,207,219,.15)':'var(--card)') + ';border:1px solid ' + (prefs.style===s.id?'var(--cyan)':'var(--border)') + ';border-radius:8px;color:' + (prefs.style===s.id?'var(--cyan)':'var(--white)') + ';font-size:10px;cursor:pointer;font-family:var(--fb)">' + s.label + '</button>').join('') +
+    '</div>' +
+    '<div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">SKIN TONE</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:12px">' +
+    skinColors.map(c => '<div onclick="window.updateAvatarPref(\'' + type + '\',\'skinColor\',\'' + c + '\')" style="width:28px;height:28px;border-radius:50%;background:#' + c + ';cursor:pointer;border:2px solid ' + (prefs.skinColor===c?'var(--cyan)':'transparent') + '"></div>').join('') +
+    '</div>' +
+    '<div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">BACKGROUND</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:14px">' +
+    bgColors.map(c => '<div onclick="window.updateAvatarPref(\'' + type + '\',\'bg\',\'' + c + '\')" style="width:28px;height:28px;border-radius:8px;background:#' + c + ';cursor:pointer;border:2px solid ' + (prefs.bg===c?'var(--cyan)':'transparent') + '"></div>').join('') +
+    '</div>' +
+    '<button onclick="window.saveAvatarPrefs(\'' + type + '\')" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">Save Avatar</button>' +
+    '</div>';
+}
+
+window.updateAvatarPref = async function(type, key, value) {
+  const profile = userDoc?.profile || {};
+  if (type === 'preppi') {
+    const prefs = { ...(profile.preppiPrefs || {}), [key]: value };
+    await saveUserDoc({ profile: { ...profile, preppiPrefs: prefs } });
+    if (userDoc) userDoc.profile = { ...profile, preppiPrefs: prefs };
+  } else if (type === 'headchef') {
+    const prefs = { ...(profile.avatarPrefs || {}), [key]: value };
+    await saveUserDoc({ profile: { ...profile, avatarPrefs: prefs } });
+    if (userDoc) userDoc.profile = { ...profile, avatarPrefs: prefs };
+  } else {
+    // Member avatar - type is member index
+    const idx = parseInt(type);
+    const hausMembers = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
+    if (hausMembers[idx]) {
+      hausMembers[idx].avatarPrefs = { ...(hausMembers[idx].avatarPrefs || {}), [key]: value };
+      await saveFamilyDoc({ hausMembers });
+      if (currentFamily) currentFamily.hausMembers = hausMembers;
+    }
+  }
+  renderMain();
+};
+
+window.toggleAvatarSection = function() {
+  UI.showAvatarSection = !UI.showAvatarSection;
+  renderMain();
+};
+window.setAvatarTab = function(tab) {
+  UI.avatarTab = tab;
+  renderMain();
+};
+window.saveAvatarPrefs = function(type) {
+  showToast('Avatar saved! 🎉', 'success');
+  addXP(10);
+  renderMain();
 };
 
 
@@ -2765,7 +3245,7 @@ function renderFamily() {
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:10px">👨‍🍳 HEAD CHEF</div>
     <div onclick="window.toggleHC()" style="display:flex;align-items:center;gap:10px;cursor:pointer">
-      <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👨‍🍳</div>
+      <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));overflow:hidden;flex-shrink:0">${getHeadChefAvatar(44)}</div>
       <div style="flex:1">
         <div style="font-size:14px;font-weight:800">${profile.name||currentUser.displayName||"Head Chef"}</div>
         <div style="font-size:10px;color:var(--gray)">${profile.age?"Age "+profile.age+" · ":""}${profile.diet||"Standard"}${profile.goal?" · "+profile.goal:""}</div>
@@ -2777,7 +3257,8 @@ function renderFamily() {
       </div>
     </div>
     <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-      <button onclick="window.editHeadChef()" style="flex:1;padding:8px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit My Profile</button>
+      <button onclick="window.editHeadChef()" style="flex:1;padding:8px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit Profile</button>
+      <button onclick="window.createAvatar('${profile.name||'me'}')" style="flex:1;padding:8px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:8px;color:var(--room-preppi);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🎨 ${profile.avatarUrl?'Edit':'Create'} Avatar</button>
     </div>
     ${UI.expandedMember==="hc"?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
       <div style="margin-bottom:10px">
@@ -2802,6 +3283,36 @@ function renderFamily() {
     </div>`:""}
   </div>
 
+  <!-- Avatar Customizer Section -->
+  <div class="card" style="padding:16px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:800">🎭 Customize Avatars</div>
+      <button onclick="window.toggleAvatarSection()" id="avatar-toggle-btn" style="padding:5px 10px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:8px;color:var(--room-preppi);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">${UI.showAvatarSection?'Hide':'Customize'}</button>
+    </div>
+    <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
+        <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));overflow:hidden">${getHeadChefAvatar(56)}</div>
+        <div style="font-size:9px;color:var(--gray);text-align:center">You</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
+        <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--room-preppi),var(--pink));overflow:hidden">${getPreppiAvatar(56)}</div>
+        <div style="font-size:9px;color:var(--gray);text-align:center">Preppi</div>
+      </div>
+      ${hausMembers.map((m,i) => '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0"><div style="width:56px;height:56px;border-radius:50%;background:var(--card2);overflow:hidden">' + getMemberAvatar(m, 56) + '</div><div style="font-size:9px;color:var(--gray);text-align:center">' + m.name.split(' ')[0] + '</div></div>').join('')}
+    </div>
+    ${UI.showAvatarSection ? `
+    <div style="margin-top:12px">
+      <div style="display:flex;gap:8px;margin-bottom:10px;overflow-x:auto">
+        <button onclick="window.setAvatarTab('headchef')" style="padding:6px 12px;border-radius:8px;border:1px solid ${UI.avatarTab==='headchef'?'var(--cyan)':'var(--border)'};background:${UI.avatarTab==='headchef'?'rgba(94,207,219,.1)':'transparent'};color:${UI.avatarTab==='headchef'?'var(--cyan)':'var(--gray)'};font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap">Your Avatar</button>
+        <button onclick="window.setAvatarTab('preppi')" style="padding:6px 12px;border-radius:8px;border:1px solid ${UI.avatarTab==='preppi'?'var(--room-preppi)':'var(--border)'};background:${UI.avatarTab==='preppi'?'rgba(167,139,250,.1)':'transparent'};color:${UI.avatarTab==='preppi'?'var(--room-preppi)':'var(--gray)'};font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap">Preppi</button>
+        ${hausMembers.map((m,i) => '<button onclick="window.setAvatarTab(\'' + i + '\')" style="padding:6px 12px;border-radius:8px;border:1px solid ' + (UI.avatarTab==i?'var(--green)':'var(--border)') + ';background:' + (UI.avatarTab==i?'rgba(61,214,140,.1)':'transparent') + ';color:' + (UI.avatarTab==i?'var(--green)':'var(--gray)') + ';font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap">' + m.name.split(' ')[0] + '</button>').join('')}
+      </div>
+      ${UI.avatarTab === 'headchef' ? renderAvatarCustomizer('headchef', userDoc?.profile?.avatarPrefs) :
+        UI.avatarTab === 'preppi' ? renderAvatarCustomizer('preppi', userDoc?.profile?.preppiPrefs) :
+        UI.avatarTab !== undefined && !isNaN(UI.avatarTab) ? renderAvatarCustomizer(UI.avatarTab, hausMembers[parseInt(UI.avatarTab)]?.avatarPrefs) : ''}
+    </div>` : ''}
+  </div>
+
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px">🏠 Household Members</div>
@@ -2818,7 +3329,12 @@ function renderFamily() {
         const expanded = (UI.expandedMember === i);
         return `<div style="background:var(--card2);border-radius:14px;overflow:hidden">
           <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer" data-toggle-member="${i}">
-            <div style="font-size:28px">${m.emoji||"🧑"}</div>
+            <div style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--card2)">
+          ${m.avatarUrl ? 
+            '<img src="'+m.avatarUrl+'" width="44" height="44" style="border-radius:50%;object-fit:cover"/>' :
+            '<div style=\"width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:24px\">'+(m.emoji||'🧑')+'</div>'
+          }
+        </div>
             <div style="flex:1">
               <div style="font-size:13px;font-weight:800">${m.name}</div>
               <div style="font-size:10px;color:var(--gray)">${m.age?"Age "+m.age+" · ":""}${m.diet||"Standard"}${m.pickyEater?" · 🙈 Picky":""}${m.goal?" · "+m.goal:""}</div>
@@ -2831,6 +3347,7 @@ function renderFamily() {
           </div>
           <div style="display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
             <button onclick="window.editMember(${i})" style="flex:1;padding:7px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit</button>
+            <button onclick="window.createAvatar('${m.name}')" style="flex:1;padding:7px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:8px;color:var(--room-preppi);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🎨 Avatar</button>
             <button onclick="window.removeMemberByIdx(${i})" style="padding:7px 10px;background:rgba(238,29,82,.1);border:1px solid rgba(238,29,82,.3);border-radius:8px;color:var(--pink);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">× Remove</button>
           </div>
           ${expanded?`<div style="padding:0 14px 14px;border-top:1px solid var(--border)">
@@ -2908,6 +3425,29 @@ function renderFamily() {
           <option value="General health">🌱 General health</option>
           <option value="Brain-friendly">🧠 Brain-friendly eating</option>
         </select>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:8px">🎨 AVATAR</div>
+        ${(UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarUrl:'') ? 
+          `<div style="text-align:center;margin-bottom:8px"><img src="${(UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarUrl:'')}" width="80" height="80" style="border-radius:50%;border:2px solid var(--cyan);object-fit:cover"/></div>` : ''}
+        <button id="open-member-avaturn" style="width:100%;padding:10px;background:linear-gradient(135deg,var(--cyan),var(--room-preppi));border:none;border-radius:10px;color:#000;font-size:12px;font-weight:900;cursor:pointer;font-family:var(--fd)">🎨 ${(UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarUrl:'') ? 'Edit Avatar' : 'Create Avatar'}</button>
+        <div id="member-avaturn-container" style="display:none;position:fixed;inset:0;z-index:1000;background:#000">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#111">
+            <div style="font-size:14px;font-weight:800;color:#fff">Create Member Avatar</div>
+            <button id="close-member-avaturn" style="padding:6px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:12px;cursor:pointer">Done</button>
+          </div>
+          <iframe id="member-avaturn-frame" src="https://neuromeal.avaturn.dev/?frameApi" allow="camera *; microphone *" style="width:100%;height:calc(100% - 50px);border:none"></iframe>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">🎨 SKIN TONE</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          ${Object.entries(SKIN_TONES).map(([k,v]) => `<button data-hm-skin="${v}" style="width:30px;height:30px;border-radius:50%;background:#${v};border:3px solid ${((UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarSkin:'')||'')===v?'var(--cyan)':'transparent'};cursor:pointer"></button>`).join('')}
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">💇 HAIR STYLE</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${Object.entries(HAIR_STYLES).map(([k,v]) => `<button data-hm-hair="${v}" style="padding:5px 10px;border-radius:20px;border:1px solid ${((UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarHair:'')||'')===v?'var(--cyan)':'var(--border)'};background:${((UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarHair:'')||'')===v?'rgba(94,207,219,.15)':'transparent'};color:${((UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarHair:'')||'')===v?'var(--cyan)':'var(--gray)'};font-size:10px;cursor:pointer;font-family:var(--fb)">${k}</button>`).join('')}
+        </div>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">📱 PHONE NUMBER <span style="color:var(--cyan);font-size:10px">(SMS reminders coming soon!)</span></div>
@@ -4007,6 +4547,23 @@ window.logHCWater = async function(amt) {
   showToast('💧 +' + amt + 'oz logged!', 'success');
   renderMain();
 };
+window.generateAISkin = async function(memberName, style) {
+  const profile = userDoc?.profile || {};
+  if (!profile.isPremium) {
+    showToast('✨ AI Skins are a Premium feature! Upgrade to unlock unlimited AI-generated outfits', 'warn');
+    return;
+  }
+  showToast('🎨 Generating your unique skin...', 'success');
+  // In Phase 9 this will call DALL-E API
+  // For now show coming soon
+  showToast('🔜 AI skin generation coming in Phase 9!', 'warn');
+};
+
+window.openWardobe = function(memberName) {
+  UI.wardrobeOpen = memberName;
+  renderMain();
+};
+
 window.showSubModal = function(day, type, memberName) {
   UI.subModal = { day, type, memberName };
   renderMain();

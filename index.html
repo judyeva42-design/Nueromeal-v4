@@ -1506,6 +1506,7 @@ function renderPlan() {
   const subRooms = [
     {id:"calendar", icon:"📅", label:"Calendar"},
     {id:"shopping", icon:"🛒", label:"Shopping"},
+    {id:"nutrients", icon:"🥦", label:"Nutrients"},
   ];
   const sub = UI.planRoom || "calendar";
   
@@ -1521,6 +1522,9 @@ function renderPlan() {
   if (sub === "shopping") {
     const shopContent = renderShop();
     return shopContent.replace('<div class="fu">', `<div class="fu">${subNav}`);
+  }
+  if (sub === "nutrients") {
+    return renderNutrients(subNav);
   }
   return `<div class="fu">${subNav}</div>`;
 }
@@ -1875,6 +1879,171 @@ function ringsSVG(waterPct, nutritionPct, size, name, emoji) {
     '<div style="font-size:9px;font-weight:700;color:var(--gray);text-align:center;max-width:' + size + 'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + name.split(' ')[0] + '</div>' +
     '</div>';
 }
+
+
+function renderNutrients(subNav) {
+  const profile = userDoc?.profile || {};
+  const hausMembers = currentFamily?.hausMembers || [];
+  const weekPlan = currentFamily?.weekPlan || {};
+  const hausSize = hausMembers.length + 1;
+  
+  // Get all planned meals this week
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const types = ["Breakfast","Lunch","Dinner","Snack"];
+  const allMeals = [];
+  days.forEach(d => types.forEach(t => {
+    const m = weekPlan[d]?.[t];
+    if (m) allMeals.push({day:d, type:t, meal:m});
+  }));
+
+  const foodGroups = [
+    {id:"protein", icon:"🥩", label:"Protein", color:"var(--room-preppi)", tip:"Essential for muscle building and repair. Great sources: chicken, fish, eggs, beans, tofu."},
+    {id:"grains", icon:"🌾", label:"Grains & Carbs", color:"var(--yellow)", tip:"Your family's main energy source. Choose whole grains like oats, brown rice, and whole wheat."},
+    {id:"vegetables", icon:"🥦", label:"Vegetables", color:"var(--green)", tip:"Aim for 5 servings per day. Add veggies to every meal — even breakfast counts!"},
+    {id:"fruits", icon:"🍎", label:"Fruits", color:"var(--room-circle)", tip:"Natural sugars plus vitamins. Fresh, frozen, or dried all count toward daily goals."},
+    {id:"dairy", icon:"🥛", label:"Dairy & Calcium", color:"var(--cyan)", tip:"Critical for Aubri and Ksaan's bone growth. Milk, yogurt, cheese, or fortified alternatives."},
+    {id:"fats", icon:"🥑", label:"Healthy Fats", color:"var(--orange)", tip:"Brain food! Avocado, nuts, olive oil, and fatty fish support focus and mood."},
+  ];
+
+  // Build analysis prompt result div
+  return `<div class="fu">
+  ${subNav}
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--room-plan);letter-spacing:-0.5px">🥦 Nutrients</div>
+    <div style="font-size:10px;color:var(--gray)">${allMeals.length} meals planned</div>
+  </div>
+
+  ${allMeals.length === 0 ? `<div style="text-align:center;padding:40px;color:var(--gray)">
+    <div style="font-size:44px;margin-bottom:12px">🥦</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:8px">No meals planned yet</div>
+    <div style="font-size:12px;line-height:1.6">Add meals to your calendar first then Preppi will analyze your nutritional balance!</div>
+  </div>` : `
+
+  <!-- Preppi Analysis Button -->
+  <div style="background:linear-gradient(135deg,rgba(167,139,250,.1),rgba(94,207,219,.06));border:1.5px solid rgba(167,139,250,.25);border-radius:14px;padding:14px;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:800;color:var(--room-preppi);margin-bottom:4px">🥗 Preppi's Nutrition Analysis</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Preppi will analyze all ${allMeals.length} planned meals and score each food group</div>
+    <button onclick="window.analyzeNutrients()" id="analyze-btn" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--room-preppi),var(--cyan));border:none;border-radius:10px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">🥦 Analyze My Week</button>
+    <div id="nutrient-results" style="margin-top:10px"></div>
+  </div>
+
+  <!-- Food Group Cards -->
+  <div style="display:flex;flex-direction:column;gap:8px">
+    ${foodGroups.map(g => `<div style="background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">${g.icon}</span>
+          <div style="font-size:12px;font-weight:800;color:var(--white)">${g.label}</div>
+        </div>
+        <div id="score-${g.id}" style="font-size:10px;color:var(--gray)">Not analyzed</div>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;margin-bottom:6px;overflow:hidden">
+        <div id="bar-${g.id}" style="height:100%;width:0%;background:${g.color};border-radius:3px;transition:width .5s ease"></div>
+      </div>
+      <div style="font-size:10px;color:var(--gray);line-height:1.5">${g.tip}</div>
+    </div>`).join("")}
+  </div>
+
+  <!-- Per Member Targets -->
+  <div style="margin-top:14px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px">
+    <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:10px">👨‍👩‍👧 Per Member Goals</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${[{name:profile.name||'You', goal:profile.goal||'General health', emoji:'👨‍🍳'}, ...hausMembers.map(m=>({name:m.name, goal:m.goal||'General health', emoji:m.emoji||'🧑'}))].map(m => `
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">${m.emoji}</span>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:700;color:var(--white)">${m.name}</div>
+          <div style="font-size:10px;color:var(--gray)">${m.goal}</div>
+        </div>
+      </div>`).join("")}
+    </div>
+    <button onclick="window.getPersonalizedTargets()" style="width:100%;margin-top:12px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">🥗 Get Personalized Targets from Preppi</button>
+    <div id="targets-result" style="margin-top:10px"></div>
+  </div>
+  `}
+  </div>`;
+}
+
+window.analyzeNutrients = async function() {
+  const btn = document.getElementById('analyze-btn');
+  const resultsEl = document.getElementById('nutrient-results');
+  if (!btn || !resultsEl) return;
+  
+  btn.textContent = '🥗 Preppi is analyzing...';
+  btn.disabled = true;
+  
+  const weekPlan = currentFamily?.weekPlan || {};
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const types = ["Breakfast","Lunch","Dinner","Snack"];
+  const meals = [];
+  days.forEach(d => types.forEach(t => { const m = weekPlan[d]?.[t]; if(m) meals.push(t+': '+m); }));
+  
+  const prompt = `Analyze these planned meals for nutritional balance across 6 food groups: ${meals.join(', ')}.
+
+For EACH food group, give a score 0-100 and a one-line specific observation:
+1. Protein (meat, fish, eggs, legumes)
+2. Grains (bread, rice, pasta, oats)
+3. Vegetables (all veggies)
+4. Fruits (all fruits)
+5. Dairy (milk, cheese, yogurt, calcium sources)
+6. Healthy Fats (avocado, nuts, oils, fatty fish)
+
+Reply ONLY as valid JSON:
+{"protein":{"score":75,"note":"Good chicken and fish variety"},"grains":{"score":80,"note":"..."},"vegetables":{"score":40,"note":"..."},"fruits":{"score":30,"note":"..."},"dairy":{"score":60,"note":"..."},"fats":{"score":50,"note":"..."}}`;
+
+  try {
+    const reply = await callAI([{role:'user',content:prompt}], 'You are a nutrition analyst. Reply only with valid JSON.');
+    const clean = reply.replace(/```json|```/g,'').trim();
+    const data = JSON.parse(clean);
+    
+    // Update bars and scores
+    const groupMap = {protein:'protein',grains:'grains',vegetables:'vegetables',fruits:'fruits',dairy:'dairy',fats:'fats'};
+    Object.entries(groupMap).forEach(([key, id]) => {
+      const d = data[key];
+      if (!d) return;
+      const bar = document.getElementById('bar-'+id);
+      const score = document.getElementById('score-'+id);
+      if (bar) {
+        const color = d.score>=80?'var(--green)':d.score>=50?'var(--yellow)':'var(--pink)';
+        bar.style.width = d.score+'%';
+        bar.style.background = color;
+      }
+      if (score) {
+        const label = d.score>=80?'✅ Good':'🔴 Needs work';
+        score.textContent = d.score+'% — '+label;
+        score.style.color = d.score>=80?'var(--green)':d.score>=50?'var(--yellow)':'var(--pink)';
+      }
+    });
+
+    // Show overall summary
+    const avg = Math.round(Object.values(data).reduce((s,d)=>s+(d.score||0),0)/6);
+    const weak = Object.entries(data).filter(([,d])=>d.score<50).map(([k,d])=>d.note);
+    resultsEl.innerHTML = '<div style="background:var(--card2);border-radius:10px;padding:10px;margin-top:4px"><div style="font-size:10px;font-weight:800;color:var(--cyan);margin-bottom:4px">Overall Score: '+avg+'%</div>'+(weak.length>0?'<div style="font-size:10px;color:var(--pink);line-height:1.6">⚠️ Low: '+weak.join(' · ')+'</div>':'<div style="font-size:10px;color:var(--green)">🎉 Great nutritional balance this week!</div>')+'</div>';
+    
+  } catch(e) {
+    resultsEl.innerHTML = '<div style="font-size:11px;color:var(--pink);padding:8px">Could not analyze — try again!</div>';
+  }
+  btn.textContent = '🥦 Re-analyze My Week';
+  btn.disabled = false;
+};
+
+window.getPersonalizedTargets = async function() {
+  const resultsEl = document.getElementById('targets-result');
+  if (!resultsEl) return;
+  resultsEl.innerHTML = '<div style="font-size:11px;color:var(--gray);padding:8px">Preppi is calculating... 🥗</div>';
+  
+  const profile = userDoc?.profile || {};
+  const hausMembers = currentFamily?.hausMembers || [];
+  const members = [{name:profile.name||'You',age:profile.age,goal:profile.goal||'General health'},...hausMembers.map(m=>({name:m.name,age:m.age,goal:m.goal||'General health'}))];
+  
+  const prompt = `Give personalized daily nutrition targets for each family member:
+${members.map(m=>`${m.name} (age ${m.age||'adult'}, goal: ${m.goal})`).join(', ')}
+
+For each person give 3 key nutrition priorities based on their age and goal. Keep it practical and actionable. Format as a simple readable list.`;
+  
+  const reply = await callAI([{role:'user',content:prompt}], getPreppiSystemPrompt());
+  resultsEl.innerHTML = '<div style="font-size:11px;color:var(--white);line-height:1.8;white-space:pre-wrap;background:var(--card2);border-radius:10px;padding:10px;margin-top:4px">'+reply+'</div>';
+};
 
 
 function getDailyTip() {

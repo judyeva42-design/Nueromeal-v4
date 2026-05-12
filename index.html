@@ -1661,7 +1661,7 @@ function renderDash() {
   return `<div class="fu">
 
   <!-- Preppi Greeting Bar -->
-  <div id="dash-preppi-bar" style="background:linear-gradient(135deg,rgba(94,207,219,.08),rgba(167,139,250,.06));border:1.5px solid rgba(167,139,250,.25);border-radius:20px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+  <div id="dash-preppi-bar" style="background:linear-gradient(135deg,rgba(94,207,219,.08),rgba(167,139,250,.06));border:1.5px solid rgba(167,139,250,.25);border-radius:20px;padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
     <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#5ecfdb,#f0195a);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 20px rgba(94,207,219,.4);overflow:hidden">
       <svg viewBox="0 0 52 52" width="52" height="52" xmlns="http://www.w3.org/2000/svg">
         <!-- Background -->
@@ -1712,18 +1712,17 @@ function renderDash() {
       }
     </div>
 
-        <!-- Family Rings -->
-    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:14px" onclick="setTab('family')">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:800;color:var(--white)">Family Rings</div>
-        <div style="font-size:9px;color:var(--gray)">💧water · 🥗meals</div>
-      </div>
-      <div style="display:flex;gap:6px;justify-content:space-around">
+        <!-- Family Rings - compact vertical -->
+    <div onclick="setTab('family')" style="background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:10px;cursor:pointer">
+      <div style="font-size:10px;font-weight:800;color:var(--white);margin-bottom:8px">Family Rings</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
         ${(()=>{
-          const allMembers = [{name:profile.name||firstName,emoji:'👨‍🍳',waterGoal:myWaterGoal}, ...hausMembers.slice(0,3).map(m=>({name:m.name,emoji:m.emoji||'🧑',waterGoal:m.waterGoalOz||64}))];
+          const allMembers = [{name:profile.name||firstName,emoji:'👨\u200d🍳',waterGoal:myWaterGoal},...hausMembers.slice(0,2).map(m=>({name:m.name,emoji:m.emoji||'🧑',waterGoal:m.waterGoalOz||64}))];
           return allMembers.map(m=>{
-            const rings = getMemberRings(m.name, m.waterGoal);
-            return ringsSVG(rings.waterPct, rings.nutritionPct, 62, m.name, m.emoji);
+            const r=getMemberRings(m.name,m.waterGoal);
+            const wc=r.waterPct>=100?'var(--green)':r.waterPct>=50?'var(--cyan)':'var(--pink)';
+            const nc=r.nutritionPct>=100?'var(--green)':r.nutritionPct>=50?'var(--room-preppi)':'var(--pink)';
+            return '<div style="display:flex;align-items:center;gap:7px">'+ringsSVG(r.waterPct,r.nutritionPct,30,'',m.emoji)+'<div><div style="font-size:9px;font-weight:700;color:var(--white)">'+m.name.split(' ')[0]+'</div><div style="font-size:8px"><span style="color:'+wc+'">💧'+r.waterPct+'%</span> <span style="color:'+nc+'">🥗'+r.nutritionPct+'%</span></div></div></div>';
           }).join('');
         })()}
       </div>
@@ -1732,7 +1731,7 @@ function renderDash() {
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
     
     <!-- Plan Card -->
-    <div style="background:var(--card);border:1.5px solid rgba(96,165,250,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('plan')">
+    <div style="background:var(--card);border:1.5px solid rgba(96,165,250,.2);border-radius:16px;padding:11px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('plan')">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-plan)"></div>
       <div style="font-size:20px;margin-bottom:6px">📅</div>
       <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Plan</div>
@@ -1741,7 +1740,7 @@ function renderDash() {
     </div>
 
     <!-- Preppi Card -->
-    <div style="background:var(--card);border:1.5px solid rgba(167,139,250,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('preppi')">
+    <div style="background:var(--card);border:1.5px solid rgba(167,139,250,.2);border-radius:16px;padding:11px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('preppi')">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-preppi)"></div>
       <div style="font-size:20px;margin-bottom:6px">🥗</div>
       <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Preppi</div>
@@ -1750,7 +1749,7 @@ function renderDash() {
     </div>
 
     <!-- Pantry Card -->
-    <div style="background:var(--card);border:1.5px solid rgba(251,191,36,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('pantry')">
+    <div style="background:var(--card);border:1.5px solid rgba(251,191,36,.2);border-radius:16px;padding:11px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('pantry')">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-pantry)"></div>
       <div style="font-size:20px;margin-bottom:6px">🥫</div>
       <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Pantry</div>
@@ -1759,7 +1758,7 @@ function renderDash() {
     </div>
 
     <!-- Family Card -->
-    <div style="background:var(--card);border:1.5px solid rgba(61,214,140,.2);border-radius:16px;padding:14px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('family')">
+    <div style="background:var(--card);border:1.5px solid rgba(61,214,140,.2);border-radius:16px;padding:11px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('family')">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-family)"></div>
       <div style="font-size:20px;margin-bottom:6px">👨‍👩‍👧</div>
       <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Family</div>
@@ -1769,7 +1768,7 @@ function renderDash() {
   </div>
 
   <!-- Circle Card - Full Width -->
-  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="setTab('circle')">
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="setTab('circle')">
     <div style="font-size:28px">🫂</div>
     <div style="flex:1">
       <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:3px">Circle</div>
@@ -1779,7 +1778,7 @@ function renderDash() {
   </div>
 
   <!-- Preppi Tip Card -->
-  <div style="background:linear-gradient(135deg,rgba(94,207,219,.08),rgba(240,25,90,.05));border:1.5px solid rgba(94,207,219,.2);border-radius:16px;padding:14px">
+  <div style="background:linear-gradient(135deg,rgba(94,207,219,.08),rgba(240,25,90,.05));border:1.5px solid rgba(94,207,219,.2);border-radius:16px;padding:11px">
     <div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:6px">💡 PREPPI'S DAILY TIP</div>
     <div style="font-size:12px;color:var(--white);line-height:1.6">${getDailyTip()}</div>
   </div>

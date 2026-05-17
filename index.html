@@ -1277,6 +1277,21 @@ function renderAlerts() {
 function renderPickyFish() {
   return comingSoon("🐟","PickyFish","Your family health companion! PickyFish reflects your wellness goals.\n\n💧 Log water → PickyFish swims faster\n🥦 Eat veggies → PickyFish glows green\n💪 Complete workout → PickyFish spins!");
 }
+function getHeadChefAvatar(size) {
+  var profile = userDoc && userDoc.profile || {};
+  var cfg = profile.avatarConfig || {};
+  return avatar({
+    g: cfg.g || 'female',
+    body: cfg.body || 'curvy',
+    skin: cfg.skin || 'c68642',
+    hair: cfg.hair || 'natural',
+    hc: cfg.hc || '1a0a00',
+    outfit: cfg.outfit || 'casual',
+    acc: cfg.acc || 'none'
+  }, size || 44);
+}
+
+
 function renderProfile() {
   var profile = userDoc && userDoc.profile || {};
   return `<div style="padding:20px">
@@ -1815,7 +1830,7 @@ function renderFitti() {
 
 
 function tile(id, icon, label, color, badge) {
-  return '<div class="tile" onclick="go(\''+id+'\')">'
+  return '<div class="tile" data-go="'+id+'" onclick="go(this.dataset.go)">'
     +'<div class="tc" style="background:'+color+'22;border-color:'+color+'44">'
     +icon
     +(badge?'<div style="position:absolute;top:2px;right:2px;width:20px;height:20px;background:#f0195a;border-radius:50%;font-size:10px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid #080810">'+badge+'</div>':'')
@@ -1920,41 +1935,336 @@ function renderDash() {
 
 
 
-function avatar(size) {
-  var s = size;
-  return '<svg width="'+s+'" height="'+(s*1.3)+'" viewBox="0 0 80 104">'
-  +'<rect x="22" y="76" width="14" height="24" rx="5" fill="#1e2a4a"/>'
-  +'<rect x="44" y="76" width="14" height="24" rx="5" fill="#1e2a4a"/>'
-  +'<rect x="18" y="94" width="18" height="10" rx="4" fill="#f0195a"/>'
-  +'<rect x="44" y="94" width="18" height="10" rx="4" fill="#f0195a"/>'
-  +'<rect x="18" y="40" width="44" height="40" rx="8" fill="#5ecfdb"/>'
-  +'<text x="40" y="65" text-anchor="middle" font-size="11" font-weight="900" fill="#000" font-family="sans-serif">NM</text>'
-  +'<rect x="2" y="42" width="15" height="30" rx="6" fill="#5ecfdb"/>'
-  +'<rect x="63" y="42" width="15" height="30" rx="6" fill="#5ecfdb"/>'
-  +'<circle cx="9" cy="75" r="7" fill="#c68642"/>'
-  +'<circle cx="71" cy="75" r="7" fill="#c68642"/>'
-  +'<rect x="33" y="33" width="14" height="10" rx="4" fill="#c68642"/>'
-  +'<rect x="20" y="6" width="40" height="38" rx="12" fill="#c68642"/>'
-  +'<rect x="18" y="4" width="44" height="14" rx="9" fill="#1a0a00"/>'
-  +'<rect x="12" y="8" width="10" height="18" rx="5" fill="#1a0a00"/>'
-  +'<rect x="58" y="8" width="10" height="18" rx="5" fill="#1a0a00"/>'
-  +'<circle cx="31" cy="22" r="5" fill="white"/>'
-  +'<circle cx="49" cy="22" r="5" fill="white"/>'
-  +'<circle cx="32" cy="23" r="2.5" fill="#1a0a00"/>'
-  +'<circle cx="50" cy="23" r="2.5" fill="#1a0a00"/>'
-  +'<circle cx="33" cy="21" r="1" fill="white"/>'
-  +'<circle cx="51" cy="21" r="1" fill="white"/>'
-  +'<path d="M29 34 Q40 42 51 34" fill="none" stroke="#5c2d0a" stroke-width="2" stroke-linecap="round"/>'
-  +'<circle cx="23" cy="30" r="4" fill="rgba(240,25,90,.15)"/>'
-  +'<circle cx="57" cy="30" r="4" fill="rgba(240,25,90,.15)"/>'
-  +'<ellipse cx="66" cy="88" rx="9" ry="6" fill="#fbbf24"/>'
-  +'<circle cx="71" cy="86" r="2" fill="white"/>'
-  +'<circle cx="71" cy="86" r="1" fill="#1a0a00"/>'
-  +'<path d="M57 88 L51 84 L51 92 Z" fill="#fbbf24"/>'
+function avatar(o, size) {
+  var g=o.g||'female', bt=(o.body||'curvy').toLowerCase();
+  var sk='#'+(o.skin||'c68642'), hc='#'+(o.hc||'1a0a00');
+  var hairStyle=(o.hair||'natural').toLowerCase();
+  var outfit=o.outfit||'casual', acc=o.acc||'none';
+  var s=size||150;
+  var iF=g==='female', iM=g==='male', iC=g==='child';
+
+  // All measurements — pure rectangles
+  // Viewbox: 100 wide, 130 tall
+  var cx=50;
+
+  // HEAD — square-ish, chibi proportions (big head)
+  var hW=iC?32:34, hH=iC?30:32;
+  var hX=cx-hW/2, hY=6;
+
+  // NECK
+  var nW=iM&&bt==='buff'?13:10, nH=6;
+  var nX=cx-nW/2, nY=hY+hH;
+
+  // BODY WIDTHS per type
+  // Female: shoulder width, waist width, hip width
+  // Male: shoulder width, bottom width (tapers from shoulder)
+  var BW={
+    female:{slim:[28,20,26],curvy:[32,18,36],plus:[38,26,42],petite:[26,18,24]},
+    male:{slim:[32,26,26],athletic:[40,28,30],buff:[50,30,32],average:[34,28,28]},
+    child:{girl:[26,20,24],boy:[28,22,24]}
+  };
+  var bw=(BW[g]&&BW[g][bt])||(iM?[40,28,30]:iC?[26,20,24]:[32,18,36]);
+  var shW=bw[0], waW=bw[1], hiW=bw[2];
+
+  // BODY Y positions
+  var bodyY=nY+nH;
+  var bodyH=iC?28:32; // torso height
+  var hipH=iF&&!['dress','glam','formal','beach'].includes(outfit)?10:0; // hip block
+  var legY=bodyY+bodyH+hipH;
+  var legH=iC?20:24;
+  var legW=iC?9:10;
+  var footY=legY+legH;
+
+  // OUTFIT COLORS
+  var OC={
+    casual:  {t:'#5ecfdb',b:'#1e3a5f',sh:'#f0195a'},
+    dress:   {t:'#a78bfa',b:'#a78bfa',sh:'#fbbf24'},
+    athletic:{t:'#f0195a',b:'#1f2937',sh:'#5ecfdb'},
+    chef:    {t:'#f0f0f0',b:'#1e3a5f',sh:'#2d1a0e'},
+    glam:    {t:'#f0195a',b:'#831843',sh:'#fbbf24'},
+    street:  {t:'#1f2937',b:'#374151',sh:'#f2f2ff'},
+    suit:    {t:'#1e2a4a',b:'#1e2a4a',sh:'#2d1a0e'},
+    formal:  {t:'#4a1a6a',b:'#4a1a6a',sh:'#fbbf24'},
+    beach:   {t:'#f0195a',b:'#be185d',sh:'none'},
+    cozy:    {t:'#a78bfa',b:'#6d28d9',sh:'#fbbf24'},
+    hoodie:  {t:'#374151',b:'#1f2937',sh:'#f2f2ff'},
+    jersey:  {t:'#dc2626',b:'#1e3a5f',sh:'#f2f2ff'},
+    school:  {t:'#3b82f6',b:'#1e3a5f',sh:'#2d1a0e'},
+    party:   {t:'#f0195a',b:'#7c3aed',sh:'#fbbf24'},
+  };
+  var oc=OC[outfit]||OC.casual;
+  var tc=oc.t, bc2=oc.b, sc=oc.sh;
+
+  var isDress=iF&&['dress','glam','formal'].includes(outfit);
+
+  // ── BUILD SVG PARTS ───────────────────────────────────────
+
+  // SHADOW
+  var shadow='<ellipse cx="'+cx+'" cy="'+(footY+8)+'" rx="26" ry="4" fill="rgba(0,0,0,.2)"/>';
+
+  // LEGS
+  var legs='';
+  if(!isDress){
+    legs=
+      '<rect x="'+(cx-legW-3)+'" y="'+legY+'" width="'+legW+'" height="'+legH+'" rx="3" fill="'+bc2+'"/>'
+      +'<rect x="'+(cx+3)+'" y="'+legY+'" width="'+legW+'" height="'+legH+'" rx="3" fill="'+bc2+'"/>';
+  } else {
+    // Legs peeking below dress
+    legs=
+      '<rect x="'+(cx-legW-2)+'" y="'+(legY+10)+'" width="'+legW+'" height="'+(legH-10)+'" rx="3" fill="'+sk+'"/>'
+      +'<rect x="'+(cx+2)+'" y="'+(legY+10)+'" width="'+legW+'" height="'+(legH-10)+'" rx="3" fill="'+sk+'"/>';
+  }
+
+  // SHOES
+  var shoes= sc!=='none'
+    ?'<rect x="'+(cx-legW-6)+'" y="'+(footY-3)+'" width="'+(legW+7)+'" height="8" rx="3" fill="'+sc+'"/>'
+     +'<rect x="'+(cx+1)+'" y="'+(footY-3)+'" width="'+(legW+7)+'" height="8" rx="3" fill="'+sc+'"/>'
+    :'';
+
+  // BODY
+  var body='';
+  if(iF){
+    if(isDress){
+      // Bodice (tight at waist) + big skirt block
+      var bodX=cx-waW/2-2, bodW=waW+4;
+      var skirtX=cx-hiW/2-8, skirtW=hiW+16;
+      body=
+        // Shoulder piece (wider)
+        '<rect x="'+(cx-shW/2)+'" y="'+bodyY+'" width="'+shW+'" height="8" rx="3" fill="'+tc+'"/>'
+        // Bodice
+        +'<rect x="'+bodX+'" y="'+(bodyY+6)+'" width="'+bodW+'" height="'+(bodyH-8)+'" rx="3" fill="'+tc+'"/>'
+        // Skirt — wide block
+        +'<rect x="'+skirtX+'" y="'+(bodyY+bodyH-2)+'" width="'+skirtW+'" height="'+(legH+6)+'" rx="4" fill="'+tc+'"/>'
+        // Skirt hem detail
+        +'<rect x="'+skirtX+'" y="'+(bodyY+bodyH+legH)+'" width="'+skirtW+'" height="4" rx="2" fill="rgba(0,0,0,.12)"/>';
+    } else {
+      // Hourglass: three separate blocks
+      // Top block (shoulders) — wider
+      // Middle block (waist) — narrower
+      // Bottom block (hips) — wider again
+      var midH=bodyH*0.35;
+      body=
+        // Shoulders/chest block
+        '<rect x="'+(cx-shW/2)+'" y="'+bodyY+'" width="'+shW+'" height="'+(bodyH*0.45)+'" rx="3" fill="'+tc+'"/>'
+        // Waist block (narrower — creates the hourglass!)
+        +'<rect x="'+(cx-waW/2)+'" y="'+(bodyY+bodyH*0.38)+'" width="'+waW+'" height="'+(bodyH*0.28)+'" rx="2" fill="'+tc+'"/>'
+        // Hip block (wider — pear/coke bottle shape!)
+        +'<rect x="'+(cx-hiW/2)+'" y="'+(bodyY+bodyH*0.55)+'" width="'+hiW+'" height="'+(bodyH*0.5)+'" rx="3" fill="'+bc2+'"/>'
+        // Belt line between waist and hips
+        +'<rect x="'+(cx-hiW/2-1)+'" y="'+(bodyY+bodyH*0.53)+'" width="'+(hiW+2)+'" height="4" rx="2" fill="rgba(0,0,0,.2)"/>';
+    }
+  } else if(iM){
+    // V-shape: wide top, narrow bottom
+    // Two blocks: upper (wide) + lower (narrower)
+    body=
+      '<rect x="'+(cx-shW/2)+'" y="'+bodyY+'" width="'+shW+'" height="'+(bodyH*0.55)+'" rx="3" fill="'+tc+'"/>'
+      +'<rect x="'+(cx-waW/2)+'" y="'+(bodyY+bodyH*0.48)+'" width="'+waW+'" height="'+(bodyH*0.56)+'" rx="3" fill="'+tc+'"/>'
+      // Pants top
+      +'<rect x="'+(cx-hiW/2)+'" y="'+(bodyY+bodyH-2)+'" width="'+hiW+'" height="8" rx="2" fill="'+bc2+'"/>';
+    // Buff muscle lines
+    if(bt==='buff'){
+      body+='<line x1="'+cx+'" y1="'+bodyY+'" x2="'+cx+'" y2="'+(bodyY+bodyH*0.55)+'" stroke="rgba(0,0,0,.12)" stroke-width="2"/>'
+        +'<rect x="'+(cx-shW/4-3)+'" y="'+(bodyY+4)+'" width="'+(shW/4)+'" height="'+(bodyH*0.3)+'" rx="3" fill="rgba(0,0,0,.08)"/>'
+        +'<rect x="'+(cx+3)+'" y="'+(bodyY+4)+'" width="'+(shW/4)+'" height="'+(bodyH*0.3)+'" rx="3" fill="rgba(0,0,0,.08)"/>';
+    }
+  } else {
+    // Child — simple square body
+    body='<rect x="'+(cx-shW/2)+'" y="'+bodyY+'" width="'+shW+'" height="'+bodyH+'" rx="4" fill="'+tc+'"/>'
+      +'<rect x="'+(cx-hiW/2)+'" y="'+(bodyY+bodyH-4)+'" width="'+hiW+'" height="8" rx="2" fill="'+bc2+'"/>';
+  }
+
+  // ARMS — pure rectangles
+  var aW=iM&&bt==='buff'?14:iM?11:iF?9:8;
+  var aH=isDress?bodyH*0.5:bodyH*0.7;
+  var aY=bodyY+4;
+  var a1X=cx-shW/2-aW, a2X=cx+shW/2;
+  var arms=
+    '<rect x="'+a1X+'" y="'+aY+'" width="'+aW+'" height="'+aH+'" rx="'+(aW/2)+'" fill="'+tc+'"/>'
+    +'<rect x="'+a2X+'" y="'+aY+'" width="'+aW+'" height="'+aH+'" rx="'+(aW/2)+'" fill="'+tc+'"/>'
+    // Hands
+    +'<rect x="'+(a1X-1)+'" y="'+(aY+aH-2)+'" width="'+(aW+2)+'" height="10" rx="4" fill="'+sk+'"/>'
+    +'<rect x="'+(a2X-1)+'" y="'+(aY+aH-2)+'" width="'+(aW+2)+'" height="10" rx="4" fill="'+sk+'"/>';
+
+  // NECK
+  var neck='<rect x="'+nX+'" y="'+nY+'" width="'+nW+'" height="'+(nH+2)+'" rx="3" fill="'+sk+'"/>';
+
+  // HEAD — slightly rounded square
+  var head='<rect x="'+hX+'" y="'+hY+'" width="'+hW+'" height="'+hH+'" rx="8" fill="'+sk+'"/>';
+
+  // HAIR
+  function hairSVG(style,c){
+    var r=4; // rect corner radius
+    var H={
+      natural:// Big blocky afro
+        '<rect x="'+(hX-10)+'" y="'+(hY-16)+'" width="'+(hW+20)+'" height="24" rx="12" fill="'+c+'"/>'
+        +'<rect x="'+(hX-13)+'" y="'+(hY+2)+'" width="14" height="18" rx="7" fill="'+c+'"/>'
+        +'<rect x="'+(hX+hW-1)+'" y="'+(hY+2)+'" width="14" height="18" rx="7" fill="'+c+'"/>',
+      locs:
+        '<rect x="'+hX+'" y="'+(hY-8)+'" width="'+hW+'" height="14" rx="6" fill="'+c+'"/>'
+        +[0,1,2,3,4,5].map(function(i){
+          return '<rect x="'+(hX+3+i*(hW-6)/5)+'" y="'+(hY+4)+'" width="5" height="'+(22+i%2*4)+'" rx="3" fill="'+c+'"/>';
+        }).join(''),
+      braids:
+        '<rect x="'+hX+'" y="'+(hY-6)+'" width="'+hW+'" height="13" rx="6" fill="'+c+'"/>'
+        +'<rect x="'+(hX+2)+'" y="'+(hY+5)+'" width="9" height="34" rx="5" fill="'+c+'"/>'
+        +'<rect x="'+(hX+hW/2-4)+'" y="'+(hY+5)+'" width="9" height="38" rx="5" fill="'+c+'"/>'
+        +'<rect x="'+(hX+hW-11)+'" y="'+(hY+5)+'" width="9" height="34" rx="5" fill="'+c+'"/>',
+      curly:
+        '<rect x="'+(hX-8)+'" y="'+(hY-10)+'" width="'+(hW+16)+'" height="18" rx="9" fill="'+c+'"/>'
+        +'<rect x="'+(hX-12)+'" y="'+(hY+2)+'" width="14" height="16" rx="7" fill="'+c+'"/>'
+        +'<rect x="'+(hX+hW-2)+'" y="'+(hY+2)+'" width="14" height="16" rx="7" fill="'+c+'"/>',
+      straight:
+        '<rect x="'+(hX-2)+'" y="'+(hY-6)+'" width="'+(hW+4)+'" height="13" rx="5" fill="'+c+'"/>'
+        +'<rect x="'+(hX-4)+'" y="'+hY+'" width="7" height="44" rx="3" fill="'+c+'"/>'
+        +'<rect x="'+(hX+hW-3)+'" y="'+hY+'" width="7" height="44" rx="3" fill="'+c+'"/>',
+      bob:
+        '<rect x="'+(hX-2)+'" y="'+(hY-6)+'" width="'+(hW+4)+'" height="13" rx="5" fill="'+c+'"/>'
+        +'<rect x="'+(hX-4)+'" y="'+hY+'" width="7" height="20" rx="3" fill="'+c+'"/>'
+        +'<rect x="'+(hX+hW-3)+'" y="'+hY+'" width="7" height="20" rx="3" fill="'+c+'"/>'
+        +'<rect x="'+(hX-4)+'" y="'+(hY+18)+'" width="'+(hW+8)+'" height="5" rx="3" fill="'+c+'"/>',
+      bun:
+        '<rect x="'+hX+'" y="'+(hY-3)+'" width="'+hW+'" height="11" rx="5" fill="'+c+'"/>'
+        +'<rect x="'+(cx-13)+'" y="'+(hY-18)+'" width="26" height="18" rx="9" fill="'+c+'"/>',
+      ponytail:
+        '<rect x="'+hX+'" y="'+(hY-3)+'" width="'+hW+'" height="11" rx="5" fill="'+c+'"/>'
+        +'<rect x="'+(cx+6)+'" y="'+(hY+5)+'" width="10" height="40" rx="5" fill="'+c+'"/>',
+      fade:
+        '<rect x="'+(hX+3)+'" y="'+(hY-2)+'" width="'+(hW-6)+'" height="9" rx="5" fill="'+c+'"/>',
+      short:
+        '<rect x="'+(hX)+'" y="'+(hY-4)+'" width="'+hW+'" height="12" rx="5" fill="'+c+'"/>',
+      buzz:
+        '<rect x="'+(hX+2)+'" y="'+hY+'" width="'+(hW-4)+'" height="6" rx="4" fill="'+c+'"/>',
+      waves:
+        '<rect x="'+hX+'" y="'+(hY-3)+'" width="'+hW+'" height="11" rx="5" fill="'+c+'"/>'
+        +'<rect x="'+(hX-4)+'" y="'+(hY+4)+'" width="8" height="14" rx="4" fill="'+c+'"/>'
+        +'<rect x="'+(hX+hW-4)+'" y="'+(hY+4)+'" width="8" height="14" rx="4" fill="'+c+'"/>',
+    };
+    return H[style]||H.natural;
+  }
+
+  // FACE FEATURES
+  var eY=hY+hH*0.42;
+  var e1x=cx-hW*0.2, e2x=cx+hW*0.2;
+  var eW=iF?8:7, eH=iF?9:8;
+
+  // Eyes — sharp rectangles with rounded corners
+  var eyes=
+    '<rect x="'+(e1x-eW/2)+'" y="'+(eY-eH/2)+'" width="'+eW+'" height="'+eH+'" rx="3" fill="white"/>'
+    +'<rect x="'+(e2x-eW/2)+'" y="'+(eY-eH/2)+'" width="'+eW+'" height="'+eH+'" rx="3" fill="white"/>'
+    // Iris
+    +'<rect x="'+(e1x-eW/2+1)+'" y="'+(eY-eH/2+1)+'" width="'+(eW-2)+'" height="'+(eH-2)+'" rx="2" fill="#1a5276"/>'
+    +'<rect x="'+(e2x-eW/2+1)+'" y="'+(eY-eH/2+1)+'" width="'+(eW-2)+'" height="'+(eH-2)+'" rx="2" fill="#1a5276"/>'
+    // Pupil
+    +'<rect x="'+(e1x-2)+'" y="'+(eY-2)+'" width="4" height="4" rx="1" fill="#040408"/>'
+    +'<rect x="'+(e2x-2)+'" y="'+(eY-2)+'" width="4" height="4" rx="1" fill="#040408"/>'
+    // Shine
+    +'<rect x="'+(e1x+1)+'" y="'+(eY-eH/2+1)+'" width="2" height="2" rx="1" fill="white"/>'
+    +'<rect x="'+(e2x+1)+'" y="'+(eY-eH/2+1)+'" width="2" height="2" rx="1" fill="white"/>'
+    // Female lashes — 3 sharp lines
+    +(iF?
+      '<line x1="'+(e1x-eW/2)+'" y1="'+(eY-eH/2)+'" x2="'+(e1x-eW/2-2)+'" y2="'+(eY-eH/2-4)+'" stroke="'+hc+'" stroke-width="1.5" stroke-linecap="square"/>'
+      +'<line x1="'+e1x+'" y1="'+(eY-eH/2)+'" x2="'+e1x+'" y2="'+(eY-eH/2-4)+'" stroke="'+hc+'" stroke-width="1.5" stroke-linecap="square"/>'
+      +'<line x1="'+(e1x+eW/2)+'" y1="'+(eY-eH/2)+'" x2="'+(e1x+eW/2+2)+'" y2="'+(eY-eH/2-4)+'" stroke="'+hc+'" stroke-width="1.5" stroke-linecap="square"/>'
+      +'<line x1="'+(e2x-eW/2)+'" y1="'+(eY-eH/2)+'" x2="'+(e2x-eW/2-2)+'" y2="'+(eY-eH/2-4)+'" stroke="'+hc+'" stroke-width="1.5" stroke-linecap="square"/>'
+      +'<line x1="'+e2x+'" y1="'+(eY-eH/2)+'" x2="'+e2x+'" y2="'+(eY-eH/2-4)+'" stroke="'+hc+'" stroke-width="1.5" stroke-linecap="square"/>'
+      +'<line x1="'+(e2x+eW/2)+'" y1="'+(eY-eH/2)+'" x2="'+(e2x+eW/2+2)+'" y2="'+(eY-eH/2-4)+'" stroke="'+hc+'" stroke-width="1.5" stroke-linecap="square"/>'
+    :'')
+    // Eyebrows — solid rectangles
+    +'<rect x="'+(e1x-eW/2-1)+'" y="'+(eY-eH/2-6)+'" width="'+(eW+2)+'" height="3" rx="1" fill="'+hc+'"/>'
+    +'<rect x="'+(e2x-eW/2-1)+'" y="'+(eY-eH/2-6)+'" width="'+(eW+2)+'" height="3" rx="1" fill="'+hc+'"/>';
+
+  // Nose
+  var nose=
+    '<rect x="'+(cx-3)+'" y="'+(hY+hH*0.58)+'" width="3" height="3" rx="1" fill="rgba(0,0,0,.12)"/>'
+    +'<rect x="'+(cx+1)+'" y="'+(hY+hH*0.58)+'" width="3" height="3" rx="1" fill="rgba(0,0,0,.12)"/>';
+
+  // Mouth — clean lines
+  var mY=hY+hH*0.74;
+  var mouth= iF
+    ?'<rect x="'+(cx-7)+'" y="'+mY+'" width="14" height="3" rx="2" fill="rgba(180,50,60,.6)"/>'
+     +'<rect x="'+(cx-5)+'" y="'+(mY+3)+'" width="10" height="2" rx="1" fill="rgba(180,50,60,.3)"/>'
+    :'<rect x="'+(cx-6)+'" y="'+mY+'" width="12" height="3" rx="2" fill="rgba(80,40,20,.4)"/>';
+
+  // Blush — subtle rectangles
+  var blush=
+    '<rect x="'+(hX+2)+'" y="'+(eY+eH/2+1)+'" width="9" height="5" rx="3" fill="rgba(240,80,100,.13)"/>'
+    +'<rect x="'+(hX+hW-11)+'" y="'+(eY+eH/2+1)+'" width="9" height="5" rx="3" fill="rgba(240,80,100,.13)"/>';
+
+  // Male stubble
+  var stubble=(!iF&&!iC)
+    ?'<rect x="'+(cx-8)+'" y="'+(hY+hH*0.7)+'" width="16" height="'+(hH*0.2)+'" rx="3" fill="rgba(0,0,0,.07)"/>'
+    :'';
+
+  // ACCESSORIES
+  var accSVG='';
+  if(acc==='glasses')
+    accSVG=
+      '<rect x="'+(e1x-eW/2-2)+'" y="'+(eY-eH/2-2)+'" width="'+(eW+4)+'" height="'+(eH+3)+'" rx="3" fill="none" stroke="#2d1a0e" stroke-width="2"/>'
+      +'<rect x="'+(e2x-eW/2-2)+'" y="'+(eY-eH/2-2)+'" width="'+(eW+4)+'" height="'+(eH+3)+'" rx="3" fill="none" stroke="#2d1a0e" stroke-width="2"/>'
+      +'<line x1="'+(e1x+eW/2+2)+'" y1="'+eY+'" x2="'+(e2x-eW/2-2)+'" y2="'+eY+'" stroke="#2d1a0e" stroke-width="2"/>'
+      +'<line x1="'+(e1x-eW/2-2)+'" y1="'+eY+'" x2="'+(hX+1)+'" y2="'+(eY+1)+'" stroke="#2d1a0e" stroke-width="1.5"/>'
+      +'<line x1="'+(e2x+eW/2+2)+'" y1="'+eY+'" x2="'+(hX+hW-1)+'" y2="'+(eY+1)+'" stroke="#2d1a0e" stroke-width="1.5"/>';
+  if(acc==='earrings')
+    accSVG=
+      '<rect x="'+(hX-5)+'" y="'+(eY+2)+'" width="5" height="8" rx="3" fill="#fbbf24"/>'
+      +'<circle cx="'+(hX-2)+'" cy="'+(eY+12)+'" r="3" fill="#fbbf24"/>'
+      +'<rect x="'+(hX+hW)+'" y="'+(eY+2)+'" width="5" height="8" rx="3" fill="#fbbf24"/>'
+      +'<circle cx="'+(hX+hW+3)+'" cy="'+(eY+12)+'" r="3" fill="#fbbf24"/>';
+  if(acc==='hat')
+    accSVG=
+      '<rect x="'+(cx-22)+'" y="'+(hY+2)+'" width="44" height="6" rx="3" fill="#1e2a4a"/>'
+      +'<rect x="'+(cx-15)+'" y="'+(hY-12)+'" width="30" height="16" rx="5" fill="#1e2a4a"/>';
+  if(acc==='chain')
+    accSVG=
+      '<path d="M'+(cx-14)+','+(nY+10)+' Q'+cx+','+(nY+18)+' '+(cx+14)+','+(nY+10)+'" fill="none" stroke="#fbbf24" stroke-width="2.5"/>'
+      +'<rect x="'+(cx-3)+'" y="'+(nY+15)+'" width="6" height="6" rx="2" fill="#fbbf24"/>';
+  if(acc==='crown')
+    accSVG=
+      '<polygon points="'+(cx-18)+','+(hY+3)+' '+(cx-14)+','+hY+' '+(cx-7)+','+(hY+6)+' '+cx+','+hY+' '+(cx+7)+','+(hY+6)+' '+(cx+14)+','+hY+' '+(cx+18)+','+(hY+3)+' '+(cx+18)+','+(hY+9)+' '+(cx-18)+','+(hY+9)+'" fill="#fbbf24"/>'
+      +'<circle cx="'+cx+'" cy="'+(hY)+'" r="3" fill="#f0195a"/>'
+      +'<circle cx="'+(cx-12)+'" cy="'+(hY+4)+'" r="2" fill="#a78bfa"/>'
+      +'<circle cx="'+(cx+12)+'" cy="'+(hY+4)+'" r="2" fill="#a78bfa"/>';
+
+  // Chef hat
+  var chefH=outfit==='chef'
+    ?'<rect x="'+(cx-17)+'" y="'+(hY-1)+'" width="34" height="7" rx="2" fill="#ddd" stroke="rgba(0,0,0,.1)" stroke-width="1"/>'
+     +'<rect x="'+(cx-12)+'" y="'+(hY-16)+'" width="24" height="18" rx="8" fill="white" stroke="rgba(0,0,0,.08)" stroke-width="1"/>'
+    :'';
+
+  // Outfit details
+  var detail='';
+  if(outfit==='chef')
+    detail='<line x1="'+cx+'" y1="'+bodyY+'" x2="'+cx+'" y2="'+(bodyY+bodyH*0.65)+'" stroke="rgba(0,0,0,.12)" stroke-width="2"/>'
+      +'<rect x="'+(cx-2)+'" y="'+(bodyY+6)+'" width="4" height="4" rx="1" fill="rgba(0,0,0,.2)"/>'
+      +'<rect x="'+(cx-2)+'" y="'+(bodyY+14)+'" width="4" height="4" rx="1" fill="rgba(0,0,0,.2)"/>';
+  if(outfit==='athletic'||outfit==='jersey')
+    detail='<rect x="'+(cx-1)+'" y="'+bodyY+'" width="2" height="'+bodyH+'" rx="1" fill="rgba(255,255,255,.2)"/>';
+  if(outfit==='jersey')
+    detail+='<text x="'+cx+'" y="'+(bodyY+bodyH*0.55)+'" text-anchor="middle" font-size="11" font-weight="900" fill="rgba(255,255,255,.7)" font-family="sans-serif">23</text>';
+  if(outfit==='suit')
+    detail='<polygon points="'+(cx-5)+','+bodyY+' '+cx+','+(bodyY+bodyH*0.45)+' '+(cx+5)+','+bodyY+'" fill="rgba(255,255,255,.35)"/>'
+      +'<rect x="'+(cx-1)+'" y="'+bodyY+'" width="2" height="'+bodyH+'" rx="1" fill="rgba(255,255,255,.1)"/>';
+  if(outfit==='hoodie')
+    detail='<polygon points="'+(cx-7)+','+bodyY+' '+cx+','+(bodyY+bodyH*0.4)+' '+(cx+7)+','+bodyY+'" fill="rgba(0,0,0,.2)"/>';
+  if(outfit==='dress'||outfit==='glam')
+    detail='<rect x="'+(cx-3)+'" y="'+(bodyY+bodyH*0.1)+'" width="6" height="'+(bodyH*0.3)+'" rx="2" fill="rgba(255,255,255,.2)"/>';
+
+  // ── ASSEMBLE ─────────────────────────────────────────────
+  return '<svg width="'+s+'" height="'+(s*1.35)+'" viewBox="0 0 100 135">'
+    +shadow
+    +legs+shoes
+    +body
+    +arms
+    +neck
+    +head
+    +hairSVG(hairStyle,hc)
+    // Redraw face base over hair roots
+    +'<rect x="'+hX+'" y="'+(hY+6)+'" width="'+hW+'" height="'+(hH-4)+'" rx="8" fill="'+sk+'"/>'
+    +eyes+nose+mouth+blush+stubble
+    +accSVG+chefH+detail
   +'</svg>';
 }
 
-// ── PREPPI / FITTI SCREENS ──────────────────────────────────
 function preppiScreen() {
   return chatScreen('preppi','🥗','Preppi','Your nutrition guide','#a78bfa',
     'Hey Judy! 👋 I\'m Preppi — your AI nutrition guide! I can plan your week, find recipes, and make healthy eating fun for your whole family. What can I help you with? 🥗',
@@ -2814,19 +3124,6 @@ function tapMemCard(idx) {
 }
 
 // ── Family ─────────────────────────────────────────────────
-function getHeadChefAvatar(size) {
-  var profile = userDoc && userDoc.profile || {};
-  var cfg = profile.avatarConfig || {};
-  return avatar({
-    g: cfg.g || 'female',
-    body: cfg.body || 'curvy',
-    skin: cfg.skin || 'c68642',
-    hair: cfg.hair || 'natural',
-    hc: cfg.hc || '1a0a00',
-    outfit: cfg.outfit || 'casual',
-    acc: cfg.acc || 'none'
-  }, size || 44);
-}
 
 function getMemberAvatar(member, size) {
   var cfg = member && member.avatarConfig || {};
@@ -4383,8 +4680,8 @@ body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:10
 
 /* ── CIRCLE TILE GRID ─────────────────────────────────────── */
 .tile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0 16px}
-.tile{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
-.tc{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;position:relative;transition:transform .15s;border:2px solid transparent}
+.tile{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0)}
+.tc{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;position:relative;transition:transform .15s;border:2px solid transparent;cursor:pointer}
 .tc:active{transform:scale(.92)}
 .tl{font-family:'Syne',sans-serif;font-size:13px;font-weight:900;color:#f2f2ff;text-align:center;letter-spacing:-0.3px}
 </style>

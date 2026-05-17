@@ -8,6 +8,39 @@
 <title>NeuroMeal v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <script type="module">
+// Avatar helper functions - defined early for global access
+function getHeadChefAvatar(size) {
+  var profile = userDoc && userDoc.profile || {};
+  var cfg = profile.avatarConfig || {};
+  return avatar({
+    g: cfg.g || 'female',
+    body: cfg.body || 'curvy',
+    skin: cfg.skin || 'c68642',
+    hair: cfg.hair || 'natural',
+    hc: cfg.hc || '1a0a00',
+    outfit: cfg.outfit || 'casual',
+    acc: cfg.acc || 'none'
+  }, size || 44);
+}
+
+
+
+function getMemberAvatar(member, size) {
+  var cfg = member && member.avatarConfig || {};
+  var g = cfg.g || (member && member.gender) || 'female';
+  return avatar({
+    g: g,
+    body: cfg.body || (g==='male'?'athletic':'curvy'),
+    skin: cfg.skin || 'c68642',
+    hair: cfg.hair || 'natural',
+    hc: cfg.hc || '1a0a00',
+    outfit: cfg.outfit || 'casual',
+    acc: cfg.acc || 'none'
+  }, size || 44);
+}
+
+
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot,
@@ -183,8 +216,11 @@ let UI = {
 
 // ── Firebase Auth ──────────────────────────────────────────
 function signInWithGoogle() {
-  // Navigate to dedicated sign-in page
-  window.location.href = '/signin.html';
+  var provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(function(e){
+    console.error('Sign in error:', e);
+    alert('Sign in failed. Please try again.');
+  });
 }
 
 async function handleSignOut() {
@@ -1277,20 +1313,6 @@ function renderAlerts() {
 function renderPickyFish() {
   return comingSoon("🐟","PickyFish","Your family health companion! PickyFish reflects your wellness goals.\n\n💧 Log water → PickyFish swims faster\n🥦 Eat veggies → PickyFish glows green\n💪 Complete workout → PickyFish spins!");
 }
-function getHeadChefAvatar(size) {
-  var profile = userDoc && userDoc.profile || {};
-  var cfg = profile.avatarConfig || {};
-  return avatar({
-    g: cfg.g || 'female',
-    body: cfg.body || 'curvy',
-    skin: cfg.skin || 'c68642',
-    hair: cfg.hair || 'natural',
-    hc: cfg.hc || '1a0a00',
-    outfit: cfg.outfit || 'casual',
-    acc: cfg.acc || 'none'
-  }, size || 44);
-}
-
 
 function renderProfile() {
   var profile = userDoc && userDoc.profile || {};
@@ -1830,7 +1852,7 @@ function renderFitti() {
 
 
 function tile(id, icon, label, color, badge) {
-  return '<div class="tile" data-go="'+id+'" onclick="go(this.dataset.go)">'
+  return '<div class="tile" data-tid="'+id+'" onclick="window.goTile(this)">'
     +'<div class="tc" style="background:'+color+'22;border-color:'+color+'44">'
     +icon
     +(badge?'<div style="position:absolute;top:2px;right:2px;width:20px;height:20px;background:#f0195a;border-radius:50%;font-size:10px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid #080810">'+badge+'</div>':'')
@@ -1838,6 +1860,7 @@ function tile(id, icon, label, color, badge) {
     +'<div class="tl">'+label+'</div>'
     +'</div>';
 }
+window.goTile = function(el) { go(el.getAttribute('data-tid')); };
 
 
 function renderDash() {
@@ -1847,7 +1870,7 @@ function renderDash() {
       +'<div style="font-size:32px;font-weight:900;background:linear-gradient(135deg,#5ecfdb,#f0195a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">NeuroMeal</div>'
       +'<div style="font-size:13px;color:#7070a0;margin-bottom:8px;line-height:1.6">Your family health adventure<br>powered by AI</div>'
       +'<div style="display:flex;gap:8px;margin-bottom:28px;font-size:20px">🐟💪👨‍👩‍👧🏆</div>'
-      +'<button onclick="signIn()" style="width:100%;max-width:280px;padding:16px;background:linear-gradient(135deg,#5ecfdb,#f0195a);border:none;border-radius:14px;color:#000;font-size:15px;font-weight:900;cursor:pointer">🚀 Get Started with Google</button>'
+      +'<button onclick="signInWithGoogle()" style="width:100%;max-width:280px;padding:16px;background:linear-gradient(135deg,#5ecfdb,#f0195a);border:none;border-radius:14px;color:#000;font-size:15px;font-weight:900;cursor:pointer">🚀 Get Started with Google</button>'
       +'<div style="font-size:11px;color:#454565;margin-top:12px">Free forever · No credit card needed</div>'
       +'</div>';
   }
@@ -3125,19 +3148,6 @@ function tapMemCard(idx) {
 
 // ── Family ─────────────────────────────────────────────────
 
-function getMemberAvatar(member, size) {
-  var cfg = member && member.avatarConfig || {};
-  var g = cfg.g || (member && member.gender) || 'female';
-  return avatar({
-    g: g,
-    body: cfg.body || (g==='male'?'athletic':'curvy'),
-    skin: cfg.skin || 'c68642',
-    hair: cfg.hair || 'natural',
-    hc: cfg.hc || '1a0a00',
-    outfit: cfg.outfit || 'casual',
-    acc: cfg.acc || 'none'
-  }, size || 44);
-}
 
 function renderFamily() {
   if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">👨‍👩‍👧</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;

@@ -1259,6 +1259,7 @@ function renderMain() {
     dashboard:renderDash,
     plan:renderPlan,
     preppi:renderPreppiRoom,
+    fitti:renderFitti,
     pantry:renderMeals,
     family:renderFamily,
     circle:renderCircle,
@@ -1751,779 +1752,333 @@ function renderCircle() {
 }
 
 
+function renderFitti() {
+  return chatScreen('fitti','💪','Fitti','Your fitness coach','#f0195a',
+    'Hey Judy! 💪 I\'m Fitti — your personal fitness coach! I\'ll build workout plans and keep your whole family moving. Tell me your fitness goals and I\'ll create a plan just for you! 🏃‍♀️',
+    ['🏃 Build workout plan','💪 Lose belly fat','🧘 Beginner workout','👨‍👩‍👧 Family fitness']);
+}
+
+
+
+
+
+
+function tile(id, icon, label, color, badge) {
+  return '<div class="tile" onclick="go(\''+id+'\')">'
+    +'<div class="tc" style="background:'+color+'22;border-color:'+color+'44">'
+    +icon
+    +(badge?'<div style="position:absolute;top:2px;right:2px;width:20px;height:20px;background:#f0195a;border-radius:50%;font-size:10px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid #080810">'+badge+'</div>':'')
+    +'</div>'
+    +'<div class="tl">'+label+'</div>'
+    +'</div>';
+}
+
+
 function renderDash() {
   if (!currentUser) {
-    return `<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center">
-      <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#5ecfdb,#f0195a);display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:20px;box-shadow:0 0 40px rgba(94,207,219,.3)">🥗</div>
-      <div style="font-family:var(--fd);font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:8px;background:linear-gradient(135deg,#5ecfdb,#f0195a);-webkit-background-clip:text;-webkit-text-fill-color:transparent">NeuroMeal</div>
-      <div style="font-size:14px;color:var(--gray);margin-bottom:32px;line-height:1.6">AI-powered family meal planning<br>with your personal nutrition guide</div>
-      <button onclick="signInWithGoogle()" style="padding:16px 32px;background:linear-gradient(135deg,#5ecfdb,#f0195a);border:none;border-radius:16px;color:#000;font-weight:900;font-size:16px;cursor:pointer;font-family:var(--fd);box-shadow:0 4px 24px rgba(94,207,219,.3);width:100%;max-width:280px">Get Started with Google</button>
-    </div>`;
+    return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center">'
+      +'<div style="font-size:64px;margin-bottom:16px">🥗</div>'
+      +'<div style="font-size:32px;font-weight:900;background:linear-gradient(135deg,#5ecfdb,#f0195a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">NeuroMeal</div>'
+      +'<div style="font-size:13px;color:#7070a0;margin-bottom:8px;line-height:1.6">Your family health adventure<br>powered by AI</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:28px;font-size:20px">🐟💪👨‍👩‍👧🏆</div>'
+      +'<button onclick="signIn()" style="width:100%;max-width:280px;padding:16px;background:linear-gradient(135deg,#5ecfdb,#f0195a);border:none;border-radius:14px;color:#000;font-size:15px;font-weight:900;cursor:pointer">🚀 Get Started with Google</button>'
+      +'<div style="font-size:11px;color:#454565;margin-top:12px">Free forever · No credit card needed</div>'
+      +'</div>';
   }
-
-  const profile = userDoc?.profile || {};
-  const hausMembers = currentFamily?.hausMembers || [];
-  const weekPlan = currentFamily?.weekPlan || {};
-  const today = UI.selDay || "Mon";
-  const todayMeals = weekPlan[today] || {};
-  const budget = currentFamily?.weeklyBudget || 0;
-  const shoppingList = currentFamily?.shoppingList;
-  const firstName = profile.name ? profile.name.split(' ')[0] : 'there';
+  var today = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+  var judy = family.members[0] || {name:'Head Chef',waterGoal:80,emoji:'👨‍🍳'};
+  var wPct = Math.min(100,Math.round((waterLog[judy.name]||0)/(judy.waterGoal||80)*100));
+  var nPct = 45;
   
-  // Days planned count
-  const daysPlanned = Object.keys(weekPlan).filter(d => Object.values(weekPlan[d]||{}).some(Boolean)).length;
-  
-  // Budget spent estimate from shopping list
-  const budgetLeft = budget > 0 ? budget : 0;
-
-  // Water data
-  const todayStr = new Date().toDateString();
-  const waterLog = currentFamily?.waterLog || {};
-  const myWaterGoal = profile.waterGoalOz || 64;
-  const myWaterLogged = waterLog[todayStr]?.["me"] || waterLog[todayStr]?.[profile.name] || 0;
-
-  // Meal types for today display
-  const mealTypes = ["Breakfast","Lunch","Dinner","Snack"];
-  const mealEmojis = {"Breakfast":"🌅","Lunch":"☀️","Dinner":"🌙","Snack":"🍎"};
-
-  // Preppi greeting
-  const hour = new Date().getHours();
-  const timeGreet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const pickyOnes = hausMembers.filter(m=>m.pickyEater).map(m=>m.name);
-  let preppiMsg = timeGreet + ", " + firstName + "! ";
-  if (daysPlanned === 0) preppiMsg += "Your week is wide open — tap Plan to start building your meals! 📅";
-  else if (daysPlanned < 5) preppiMsg += "You have " + daysPlanned + " days planned. Tap Plan to fill in the rest! 💪";
-  else if (pickyOnes.length > 0) preppiMsg += "All meals are planned! Remember " + pickyOnes[0] + " might need a simple swap today 🙈";
-  else preppiMsg += "Your week looks great! Tap any card to dive deeper 🎉";
-
-  return `<div class="fu">
-
-  <!-- Preppi Greeting Bar -->
-  <div id="dash-preppi-bar" style="background:linear-gradient(135deg,rgba(94,207,219,.08),rgba(167,139,250,.06));border:1.5px solid rgba(167,139,250,.25);border-radius:20px;padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
-    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--room-preppi),var(--pink));overflow:hidden;flex-shrink:0;box-shadow:0 0 16px rgba(167,139,250,.3)">${getPreppiAvatar(52, daysPlanned>=5?"happy":daysPlanned>0?"neutral":"concerned")}</div>
-    <div style="flex:1;min-width:0">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><div style="font-size:11px;font-weight:900;color:var(--room-preppi);font-family:var(--fd)">Preppi</div><div style="font-size:9px;color:var(--gray)">· Your nutrition guide</div></div>
-      <div style="font-size:12px;color:var(--white);line-height:1.5">${preppiMsg}</div>
-    </div>
-  </div>
-
-  <!-- Row 1: Today's Meals + Family Water -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-    
-    <!-- Today's Meals -->
-    <div id="dash-meals-card" onclick="setTab('plan')" style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:14px;cursor:pointer;transition:border-color .2s" onmouseenter="this.style.borderColor='var(--cyan)'" onmouseleave="this.style.borderColor='var(--border)'">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-        <div style="font-size:20px">🍽️</div>
-        <div style="font-size:8px;color:var(--cyan);font-weight:700">Open →</div>
-      </div>
-      <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:8px">Today's Meals</div>
-      ${mealTypes.filter(t=>todayMeals[t]).length === 0 
-        ? `<div style="font-size:10px;color:var(--gray);line-height:1.6">Nothing planned<br>for today yet</div><div style="margin-top:8px;font-size:9px;color:var(--cyan);font-weight:700">+ Add meals →</div>`
-        : `<div style="display:flex;flex-direction:column;gap:4px">${mealTypes.filter(t=>todayMeals[t]).map(t=>`<div style="font-size:10px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${mealEmojis[t]} ${todayMeals[t]}</div>`).join("")}</div>`
-      }
-    </div>
-
-        <!-- Family Rings - compact vertical -->
-    <div onclick="setTab('family')" style="background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:10px;cursor:pointer">
-      <div style="font-size:10px;font-weight:800;color:var(--white);margin-bottom:8px">Family Rings</div>
-      <div style="display:flex;flex-direction:column;gap:7px">
-        ${(()=>{
-          const allMembers = [{name:profile.name||firstName,emoji:'👨\u200d🍳',waterGoal:myWaterGoal},...hausMembers.slice(0,2).map(m=>({name:m.name,emoji:m.emoji||'🧑',waterGoal:m.waterGoalOz||64}))];
-          return allMembers.map(m=>{
-            const r=getMemberRings(m.name,m.waterGoal);
-            const wc=r.waterPct>=100?'var(--green)':r.waterPct>=50?'var(--cyan)':'var(--pink)';
-            const nc=r.nutritionPct>=100?'var(--green)':r.nutritionPct>=50?'var(--room-preppi)':'var(--pink)';
-            const avatarImg = getAvatarImg(m.avatarUrl, 28, m.emoji||'🧑');
-            return '<div style="display:flex;align-items:center;gap:7px">'+ringsSVG(r.waterPct,r.nutritionPct,30,'',m.emoji)+'<div><div style="font-size:9px;font-weight:700;color:var(--white)">'+m.name.split(' ')[0]+'</div><div style="font-size:8px"><span style="color:'+wc+'">💧'+r.waterPct+'%</span> <span style="color:'+nc+'">🥗'+r.nutritionPct+'%</span></div></div></div>';
-          }).join('');
-        })()}
-      </div>
-    </div>
-    <!-- Row 2: Space Cards 2x2 grid -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-    
-    <!-- Plan Card -->
-    <div style="background:var(--card);border:1.5px solid rgba(96,165,250,.2);border-radius:16px;padding:11px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('plan')">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-plan)"></div>
-      <div style="font-size:20px;margin-bottom:6px">📅</div>
-      <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Plan</div>
-      <div style="font-size:10px;color:var(--gray);line-height:1.6">${daysPlanned} of 7 days<br>planned</div>
-      <div style="margin-top:8px;font-size:9px;color:var(--room-plan);font-weight:700">Open →</div>
-    </div>
-
-    <!-- Preppi Card -->
-    <div style="background:var(--card);border:1.5px solid rgba(167,139,250,.2);border-radius:16px;padding:11px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('preppi')">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-preppi)"></div>
-      <div style="font-size:20px;margin-bottom:6px">🥗</div>
-      <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Preppi</div>
-      <div style="font-size:10px;color:var(--gray);line-height:1.6">Your nutrition<br>guide & chef</div>
-      <div style="margin-top:8px;font-size:9px;color:var(--room-preppi);font-weight:700">Chat →</div>
-    </div>
-
-    <!-- Pantry Card -->
-    <div style="background:var(--card);border:1.5px solid rgba(251,191,36,.2);border-radius:16px;padding:11px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('pantry')">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-pantry)"></div>
-      <div style="font-size:20px;margin-bottom:6px">🥫</div>
-      <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Pantry</div>
-      <div style="font-size:10px;color:var(--gray);line-height:1.6">${budget > 0 ? '$' + budgetLeft + ' budget<br>this week' : 'Set your weekly<br>budget'}</div>
-      <div style="margin-top:8px;font-size:9px;color:var(--room-pantry);font-weight:700">${budget > 0 ? 'On track ✓' : 'Set budget →'}</div>
-    </div>
-
-    <!-- Family Card -->
-    <div style="background:var(--card);border:1.5px solid rgba(61,214,140,.2);border-radius:16px;padding:11px;cursor:pointer;position:relative;overflow:hidden" onclick="setTab('family')">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--room-family)"></div>
-      <div style="font-size:20px;margin-bottom:6px">👨‍👩‍👧</div>
-      <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">Family</div>
-      <div style="font-size:10px;color:var(--gray);line-height:1.6">${hausMembers.length + 1} member${hausMembers.length > 0 ? 's' : ''}<br>${hausMembers.length > 0 ? hausMembers.map(m=>m.name).join(', ') : 'Just you'}</div>
-      <div style="margin-top:8px;font-size:9px;color:var(--room-family);font-weight:700">View →</div>
-    </div>
-  </div>
-
-  <!-- Circle Card - Slim -->
-  <div style="background:var(--card);border:1.5px solid rgba(240,25,90,.2);border-radius:14px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="setTab('circle')">
-    <div style="font-size:18px">🫂</div>
-    <div style="flex:1">
-      <div style="font-size:10px;font-weight:800;color:var(--white)">Circle</div>
-      <div style="font-size:9px;color:var(--gray)">Chat, games, challenges</div>
-    </div>
-    <div style="font-size:8px;font-weight:800;padding:3px 8px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:6px;color:var(--yellow);white-space:nowrap;flex-shrink:0">🔜 Soon</div>
-  </div>
-
-  <!-- Preppi Tip Card -->
-  <div style="background:linear-gradient(135deg,rgba(94,207,219,.08),rgba(240,25,90,.05));border:1.5px solid rgba(94,207,219,.2);border-radius:14px;padding:9px 12px">
-    <div style="font-size:9px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:6px">💡 PREPPI'S DAILY TIP</div>
-    <div style="font-size:12px;color:var(--white);line-height:1.6">${getDailyTip()}</div>
-  </div>
-
-  </div>`;
-}
-
-// ── Avaturn Avatar Integration ─────────────────────────────────────
-
-
-
-
-window.saveAvatarUrl = async function(memberName, avatarUrl, isHeadChef) {
-  if (isHeadChef) {
-    // Save to user profile
-    const profile = { ...(userDoc?.profile || {}), avatarUrl };
-    await saveUserDoc({ profile });
-    if (userDoc) userDoc.profile = profile;
-    showToast('🎨 Your avatar is saved! Looking good! ✨', 'success');
-    addXP(25);
-  } else {
-    // Save to household member
-    const hausMembers = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
-    const idx = hausMembers.findIndex(m => m.name === memberName);
-    if (idx !== -1) {
-      hausMembers[idx].avatarUrl = avatarUrl;
-      await saveFamilyDoc({ hausMembers });
-      if (currentFamily) currentFamily.hausMembers = hausMembers;
-      showToast('🎨 ' + memberName + ' avatar saved! +25 XP ✨', 'success');
-      addXP(25);
-    }
-  }
-  renderMain();
-};
-
-window.openAvatarCreator = function(memberName, isHeadChef) {
-  openAvaturnCreator(memberName, isHeadChef);
-};
-
-
-
-
-// ── Phase 6: Avatar System ─────────────────────────────────────────
-
-function getDiceBearUrl(seed, style, skinColor, hairColor, hairType, accessories) {
-  const base = 'https://api.dicebear.com/9.x/';
-  const params = new URLSearchParams({
-    seed: seed || 'default',
-    backgroundColor: 'transparent',
-    radius: '50',
-  });
-  if (skinColor) params.set('skinColor', skinColor);
-  if (hairColor) params.set('hairColor', hairColor);
-  if (hairType) params.set('hair', hairType);
-  if (accessories) params.set('accessories', accessories);
-  return base + (style || 'adventurer') + '/svg?' + params.toString();
-}
-
-function avatarHTML(seed, size, options) {
-  const opts = options || {};
-  const url = getDiceBearUrl(seed, opts.style||'adventurer', opts.skinColor, opts.hairColor, opts.hair, opts.accessories);
-  return '<img src="' + url + '" width="' + size + '" height="' + size + '" style="border-radius:50%;background:linear-gradient(135deg,var(--card2),var(--card));border:2px solid var(--border2)" onerror="this.style.display=\'none\'"/>';
-}
-
-// Skin tone map - DiceBear color codes
-const SKIN_TONES = {
-  light: 'f5d5b0',
-  medium_light: 'e8b88a', 
-  medium: 'c68642',
-  medium_dark: '8d5524',
-  dark: '5c3317',
-  deep: '2d1a0e'
-};
-
-const HAIR_STYLES = {
-  natural: 'afro',
-  locs: 'dreads01',
-  curly: 'curly',
-  straight: 'long01',
-  short: 'short01',
-  fade: 'buzzcut'
-};
-
-
-// ── Avaturn Avatar Creator ─────────────────────────────────────────
-
-
-
-window.createAvatar = async function(memberName) {
-  openAvaturnCreator(memberName, async function(avatarUrl) {
-    if (!memberName || memberName === (userDoc?.profile?.name || 'me')) {
-      // Save to head chef profile
-      const profile = { ...(userDoc?.profile || {}), avatarUrl };
-      await saveUserDoc({ profile });
-      if (userDoc) userDoc.profile = profile;
-      showToast('🎨 Avatar saved! Looking great ' + (profile.name||'') + '!', 'success');
-    } else {
-      // Save to household member
-      const hausMembers = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
-      const idx = hausMembers.findIndex(m => m.name === memberName);
-      if (idx !== -1) {
-        hausMembers[idx].avatarUrl = avatarUrl;
-        await saveFamilyDoc({ hausMembers });
-        if (currentFamily) currentFamily.hausMembers = hausMembers;
-        showToast('🎨 ' + memberName + "'s avatar saved!", 'success');
-      }
-    }
-    renderMain();
-  });
-};
-
-function getAvatarDisplay(avatarUrl, size, fallbackEmoji) {
-  const emoji = fallbackEmoji || "🧑";
-  const fs = Math.round(size * 0.45);
-  const fallback = "<div style=\"width:" + size + "px;height:" + size + "px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));display:flex;align-items:center;justify-content:center;font-size:" + fs + "px;flex-shrink:0\">" + emoji + "</div>";
-  if (!avatarUrl) return fallback;
-  const imgUrl = avatarUrl.replace(".glb", "") + "?size=" + size + "&format=png";
-  return "<img src=\"" + imgUrl + "\" width=\"" + size + "\" height=\"" + size + "\" style=\"border-radius:50%;object-fit:cover;flex-shrink:0\" onerror=\"this.style.display='none'\"/>";
-}
-
-
-// ── Phase 5: Meal Confirmation & Rings ─────────────────────────────
-
-window.confirmMeal = async function(day, type, memberName, status, subMeal) {
-  if (!currentFamily) return;
-  const today = new Date().toDateString();
-  const mealLog = JSON.parse(JSON.stringify(currentFamily?.mealLog || {}));
-  if (!mealLog[today]) mealLog[today] = {};
-  if (!mealLog[today][memberName]) mealLog[today][memberName] = {};
-  const meal = subMeal || currentFamily?.weekPlan?.[day]?.[type] || 'Unknown meal';
-  mealLog[today][memberName][type] = { status, meal, time: new Date().toISOString() };
-  await saveFamilyDoc({ mealLog });
-  if (currentFamily) currentFamily.mealLog = mealLog;
-  
-  // XP rewards
-  if (status === 'eaten') {
-    addXP(5);
-    showToast('✅ ' + meal + ' confirmed! +5 XP 🎉', 'success');
-    // Check if all meals eaten today
-    const todayLog = mealLog[today][memberName] || {};
-    const eaten = Object.values(todayLog).filter(m => m.status === 'eaten').length;
-    if (eaten >= 3) { addXP(20); showToast('🌟 Amazing! All meals logged today! +20 XP', 'success'); }
-  } else if (status === 'subbed') {
-    addXP(5);
-    showToast('🔄 Swap logged! +5 XP', 'success');
-  }
-  renderMain();
-};
-
-window.generateAISkin = async function(memberName, style) {
-  const profile = userDoc?.profile || {};
-  if (!profile.isPremium) {
-    showToast('✨ AI Skins are a Premium feature! Upgrade to unlock unlimited AI-generated outfits', 'warn');
-    return;
-  }
-  showToast('🎨 Generating your unique skin...', 'success');
-  // In Phase 9 this will call DALL-E API
-  // For now show coming soon
-  showToast('🔜 AI skin generation coming in Phase 9!', 'warn');
-};
-
-window.openWardobe = function(memberName) {
-  UI.wardrobeOpen = memberName;
-  renderMain();
-};
-
-window.showSubModal = function(day, type, memberName) {
-  UI.subModal = { day, type, memberName };
-  renderMain();
-};
-
-function getMemberRings(memberName, waterGoal, isHeadChef) {
-  const today = new Date().toDateString();
-  const waterLog = currentFamily?.waterLog || {};
-  const mealLog = currentFamily?.mealLog || {};
-  
+  return '<div style="padding:0 0 20px">'
+  // Avatar + Rings
+  +'<div style="text-align:center;padding:20px 16px 8px">'
+  +'<div class="rings-wrap" onclick="window.openAvatarBuilder(this.dataset.name)" data-name="Judy Evans" style="cursor:pointer" title="Tap to customize avatar">'
+  +'<svg width="180" height="180" viewBox="0 0 180 180">'
+  // Ring tracks
+  +'<circle cx="90" cy="90" r="82" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="7"/>'
+  +'<circle cx="90" cy="90" r="68" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="6"/>'
   // Water ring
-  const waterLogged = waterLog[today]?.[memberName] || 0;
-  const waterPct = Math.min(100, Math.round((waterLogged / waterGoal) * 100));
+  +'<circle cx="90" cy="90" r="82" fill="none" stroke="#5ecfdb" stroke-width="7" stroke-dasharray="'+(2*Math.PI*82)+'" stroke-dashoffset="'+(2*Math.PI*82*(1-wPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
+  // Nutrition ring
+  +'<circle cx="90" cy="90" r="68" fill="none" stroke="#a78bfa" stroke-width="6" stroke-dasharray="'+(2*Math.PI*68)+'" stroke-dashoffset="'+(2*Math.PI*68*(1-nPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
+  +'</svg>'
+  +'<div class="avatar-center">'
+  +avatar(80)
+  +'</div></div>'
+  +'<div style="font-size:15px;font-weight:800;margin-top:6px">Judy Evans 👨‍🍳</div>'
+  +'<div style="font-size:11px;color:#5ecfdb;margin-top:2px">💧'+wPct+'% · 🥗'+nPct+'% · ⚡ LVL 7</div>'
+  +'</div>'
   
-  // Nutrition ring - based on confirmed meals today
-  const todayMeals = mealLog[today]?.[memberName] || {};
-  const confirmedMeals = Object.values(todayMeals).filter(m => m.status === 'eaten' || m.status === 'subbed').length;
-  const plannedMeals = Object.values(currentFamily?.weekPlan?.[UI.selDay] || {}).filter(Boolean).length;
-  const nutritionPct = plannedMeals > 0 ? Math.min(100, Math.round((confirmedMeals / Math.max(plannedMeals, 3)) * 100)) : 0;
+  // Calendar strip
+  +'<div style="margin:0 16px 16px;background:#111120;border:1.5px solid #22223a;border-radius:16px;padding:12px 14px">'
+  +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+  +'<div style="font-size:12px;font-weight:800">📅 This Week</div>'
+  +'<button onclick="go(\'calendar\')" style="font-size:10px;color:#5ecfdb;font-weight:700;background:none;border:none;cursor:pointer">View full →</button>'
+  +'</div>'
+  +'<div style="display:flex;justify-content:space-between;gap:4px">'
+  +['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d){
+    var hasMeal = Object.values(family.weekPlan[d]||{}).some(Boolean);
+    var isToday = d===today;
+    var bg = isToday?'linear-gradient(135deg,#5ecfdb,#f0195a)':hasMeal?'rgba(94,207,219,.1)':'rgba(255,255,255,.04)';
+    var color = isToday?'#000':hasMeal?'#5ecfdb':'#454565';
+    var icon = isToday?'✦':hasMeal?'🍽':'+';
+    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">'
+      +'<div style="font-size:8px;font-weight:800;color:#7070a0">'+d.toUpperCase()+'</div>'
+      +'<div onclick="go(\'calendar\')" style="width:30px;height:30px;border-radius:50%;background:'+bg+';color:'+color+';display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">'+icon+'</div>'
+      +'</div>';
+  }).join('')
+  +'</div></div>'
   
-  return { waterPct, nutritionPct, waterLogged, waterGoal, confirmedMeals };
+  // Grid label
+  +'<div style="font-size:10px;font-weight:800;color:#454565;letter-spacing:2px;padding:0 16px;margin-bottom:12px">YOUR SPACES</div>'
+  
+  // Tile grid
+  +'<div class="grid">'
+  +tile('preppi','🥗','Preppi','#a78bfa')
+  +tile('fitti','💪','Fitti','#f0195a')
+  +tile('water','💧','Water','#5ecfdb',wPct<50?'!':'')
+  +tile('meals','🍽️','Meals','#fbbf24')
+  +tile('recipes','📖','Recipes','#fb923c')
+  +tile('pantry','🥫','Pantry','#fbbf24')
+  +tile('family','👨‍👩‍👧','Family','#3dd68c')
+  +tile('circle','🫂','Circle','#60a5fa')
+  +tile('challenges','🏆','Challenges','#fbbf24')
+  +tile('games','🎮','Games','#a78bfa')
+  +tile('shopping','🛒','Shopping','#3dd68c')
+  +tile('settings','⚙️','Settings','#7070a0')
+  +'</div>'
+  +'<div style="height:20px"></div>'
+  +'</div>';
 }
 
-function ringsSVG(waterPct, nutritionPct, size, name, emoji) {
-  const cx = size / 2;
-  const cy = size / 2;
-  const outerR = (size / 2) - 6;
-  const innerR = outerR - 10;
-  const stroke = 8;
-  
-  function arcPath(r, pct) {
-    if (pct <= 0) return '';
-    const angle = (pct / 100) * 360 - 0.01;
-    const rad = (angle - 90) * Math.PI / 180;
-    const startX = cx + r * Math.cos(-Math.PI / 2);
-    const startY = cy + r * Math.sin(-Math.PI / 2);
-    const endX = cx + r * Math.cos(rad - Math.PI / 2);
-    const endY = cy + r * Math.sin(rad - Math.PI / 2);
-    const large = angle > 180 ? 1 : 0;
-    return 'M ' + startX + ' ' + startY + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + endX + ' ' + endY;
-  }
-  
-  const wColor = waterPct >= 100 ? '#3dd68c' : waterPct >= 80 ? '#5ecfdb' : waterPct >= 50 ? '#fbbf24' : '#f0195a';
-  const nColor = nutritionPct >= 100 ? '#3dd68c' : nutritionPct >= 80 ? '#a78bfa' : nutritionPct >= 50 ? '#fbbf24' : '#f0195a';
-  const pulse = (waterPct >= 100 && nutritionPct >= 100) ? 'animation:pulse 1.5s ease infinite' : '';
-  
-  return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">' +
-    '<svg width="' + size + '" height="' + size + '" style="' + pulse + '">' +
-    // Track circles
-    '<circle cx="' + cx + '" cy="' + cy + '" r="' + outerR + '" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="' + stroke + '"/>' +
-    '<circle cx="' + cx + '" cy="' + cy + '" r="' + innerR + '" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="' + (stroke-2) + '"/>' +
-    // Water ring (outer)
-    (waterPct > 0 ? '<path d="' + arcPath(outerR, waterPct) + '" fill="none" stroke="' + wColor + '" stroke-width="' + stroke + '" stroke-linecap="round"/>' : '') +
-    // Nutrition ring (inner)  
-    (nutritionPct > 0 ? '<path d="' + arcPath(innerR, nutritionPct) + '" fill="none" stroke="' + nColor + '" stroke-width="' + (stroke-2) + '" stroke-linecap="round"/>' : '') +
-    // Emoji center
-    '<text x="' + cx + '" y="' + (cy+5) + '" text-anchor="middle" font-size="' + (size*0.28) + '">' + emoji + '</text>' +
-    '</svg>' +
-    '<div style="font-size:9px;font-weight:700;color:var(--gray);text-align:center;max-width:' + size + 'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + name.split(' ')[0] + '</div>' +
-    '</div>';
+
+
+function avatar(size) {
+  var s = size;
+  return '<svg width="'+s+'" height="'+(s*1.3)+'" viewBox="0 0 80 104">'
+  +'<rect x="22" y="76" width="14" height="24" rx="5" fill="#1e2a4a"/>'
+  +'<rect x="44" y="76" width="14" height="24" rx="5" fill="#1e2a4a"/>'
+  +'<rect x="18" y="94" width="18" height="10" rx="4" fill="#f0195a"/>'
+  +'<rect x="44" y="94" width="18" height="10" rx="4" fill="#f0195a"/>'
+  +'<rect x="18" y="40" width="44" height="40" rx="8" fill="#5ecfdb"/>'
+  +'<text x="40" y="65" text-anchor="middle" font-size="11" font-weight="900" fill="#000" font-family="sans-serif">NM</text>'
+  +'<rect x="2" y="42" width="15" height="30" rx="6" fill="#5ecfdb"/>'
+  +'<rect x="63" y="42" width="15" height="30" rx="6" fill="#5ecfdb"/>'
+  +'<circle cx="9" cy="75" r="7" fill="#c68642"/>'
+  +'<circle cx="71" cy="75" r="7" fill="#c68642"/>'
+  +'<rect x="33" y="33" width="14" height="10" rx="4" fill="#c68642"/>'
+  +'<rect x="20" y="6" width="40" height="38" rx="12" fill="#c68642"/>'
+  +'<rect x="18" y="4" width="44" height="14" rx="9" fill="#1a0a00"/>'
+  +'<rect x="12" y="8" width="10" height="18" rx="5" fill="#1a0a00"/>'
+  +'<rect x="58" y="8" width="10" height="18" rx="5" fill="#1a0a00"/>'
+  +'<circle cx="31" cy="22" r="5" fill="white"/>'
+  +'<circle cx="49" cy="22" r="5" fill="white"/>'
+  +'<circle cx="32" cy="23" r="2.5" fill="#1a0a00"/>'
+  +'<circle cx="50" cy="23" r="2.5" fill="#1a0a00"/>'
+  +'<circle cx="33" cy="21" r="1" fill="white"/>'
+  +'<circle cx="51" cy="21" r="1" fill="white"/>'
+  +'<path d="M29 34 Q40 42 51 34" fill="none" stroke="#5c2d0a" stroke-width="2" stroke-linecap="round"/>'
+  +'<circle cx="23" cy="30" r="4" fill="rgba(240,25,90,.15)"/>'
+  +'<circle cx="57" cy="30" r="4" fill="rgba(240,25,90,.15)"/>'
+  +'<ellipse cx="66" cy="88" rx="9" ry="6" fill="#fbbf24"/>'
+  +'<circle cx="71" cy="86" r="2" fill="white"/>'
+  +'<circle cx="71" cy="86" r="1" fill="#1a0a00"/>'
+  +'<path d="M57 88 L51 84 L51 92 Z" fill="#fbbf24"/>'
+  +'</svg>';
 }
 
-
-function renderNutrients(subNav) {
-  const profile = userDoc?.profile || {};
-  const hausMembers = currentFamily?.hausMembers || [];
-  const weekPlan = currentFamily?.weekPlan || {};
-  const hausSize = hausMembers.length + 1;
-  
-  // Get all planned meals this week
-  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  const types = ["Breakfast","Lunch","Dinner","Snack"];
-  const allMeals = [];
-  days.forEach(d => types.forEach(t => {
-    const m = weekPlan[d]?.[t];
-    if (m) allMeals.push({day:d, type:t, meal:m});
-  }));
-
-  const foodGroups = [
-    {id:"protein", icon:"🥩", label:"Protein", color:"var(--room-preppi)", tip:"Essential for muscle building and repair. Great sources: chicken, fish, eggs, beans, tofu."},
-    {id:"grains", icon:"🌾", label:"Grains & Carbs", color:"var(--yellow)", tip:"Your family's main energy source. Choose whole grains like oats, brown rice, and whole wheat."},
-    {id:"vegetables", icon:"🥦", label:"Vegetables", color:"var(--green)", tip:"Aim for 5 servings per day. Add veggies to every meal — even breakfast counts!"},
-    {id:"fruits", icon:"🍎", label:"Fruits", color:"var(--room-circle)", tip:"Natural sugars plus vitamins. Fresh, frozen, or dried all count toward daily goals."},
-    {id:"dairy", icon:"🥛", label:"Dairy & Calcium", color:"var(--cyan)", tip:"Critical for Aubri and Ksaan's bone growth. Milk, yogurt, cheese, or fortified alternatives."},
-    {id:"fats", icon:"🥑", label:"Healthy Fats", color:"var(--orange)", tip:"Brain food! Avocado, nuts, olive oil, and fatty fish support focus and mood."},
-  ];
-
-  // Build analysis prompt result div
-  return `<div class="fu">
-  ${subNav}
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--room-plan);letter-spacing:-0.5px">🥦 Nutrients</div>
-    <div style="font-size:10px;color:var(--gray)">${allMeals.length} meals planned</div>
-  </div>
-
-  ${allMeals.length === 0 ? `<div style="text-align:center;padding:40px;color:var(--gray)">
-    <div style="font-size:44px;margin-bottom:12px">🥦</div>
-    <div style="font-size:14px;font-weight:700;margin-bottom:8px">No meals planned yet</div>
-    <div style="font-size:12px;line-height:1.6">Add meals to your calendar first then Preppi will analyze your nutritional balance!</div>
-  </div>` : `
-
-  <!-- Preppi Analysis Button -->
-  <div style="background:linear-gradient(135deg,rgba(167,139,250,.1),rgba(94,207,219,.06));border:1.5px solid rgba(167,139,250,.25);border-radius:14px;padding:14px;margin-bottom:14px">
-    <div style="font-size:11px;font-weight:800;color:var(--room-preppi);margin-bottom:4px">🥗 Preppi's Nutrition Analysis</div>
-    <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Preppi will analyze all ${allMeals.length} planned meals and score each food group</div>
-    <button onclick="window.analyzeNutrients()" id="analyze-btn" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--room-preppi),var(--cyan));border:none;border-radius:10px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">🥦 Analyze My Week</button>
-    <div id="nutrient-results" style="margin-top:10px"></div>
-  </div>
-
-  <!-- Food Group Cards -->
-  <div style="display:flex;flex-direction:column;gap:8px">
-    ${foodGroups.map(g => `<div style="background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">${g.icon}</span>
-          <div style="font-size:12px;font-weight:800;color:var(--white)">${g.label}</div>
-        </div>
-        <div id="score-${g.id}" style="font-size:10px;color:var(--gray)">Not analyzed</div>
-      </div>
-      <div style="height:6px;background:var(--border);border-radius:3px;margin-bottom:6px;overflow:hidden">
-        <div id="bar-${g.id}" style="height:100%;width:0%;background:${g.color};border-radius:3px;transition:width .5s ease"></div>
-      </div>
-      <div style="font-size:10px;color:var(--gray);line-height:1.5">${g.tip}</div>
-    </div>`).join("")}
-  </div>
-
-  <!-- Per Member Targets -->
-  <div style="margin-top:14px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px">
-    <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:10px">👨‍👩‍👧 Per Member Goals</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      ${[{name:profile.name||'You', goal:profile.goal||'General health', emoji:'👨‍🍳'}, ...hausMembers.map(m=>({name:m.name, goal:m.goal||'General health', emoji:m.emoji||'🧑'}))].map(m => `
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:18px">${m.emoji}</span>
-        <div style="flex:1">
-          <div style="font-size:11px;font-weight:700;color:var(--white)">${m.name}</div>
-          <div style="font-size:10px;color:var(--gray)">${m.goal}</div>
-        </div>
-      </div>`).join("")}
-    </div>
-    <button onclick="window.getPersonalizedTargets()" style="width:100%;margin-top:12px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">🥗 Get Personalized Targets from Preppi</button>
-    <div id="targets-result" style="margin-top:10px"></div>
-  </div>
-  `}
-  </div>`;
+// ── PREPPI / FITTI SCREENS ──────────────────────────────────
+function preppiScreen() {
+  return chatScreen('preppi','🥗','Preppi','Your nutrition guide','#a78bfa',
+    'Hey Judy! 👋 I\'m Preppi — your AI nutrition guide! I can plan your week, find recipes, and make healthy eating fun for your whole family. What can I help you with? 🥗',
+    ['📅 Plan my week','🍽️ Get a recipe','🥦 Analyze nutrition','💡 Meal ideas']);
 }
 
-window.analyzeNutrients = async function() {
-  const btn = document.getElementById('analyze-btn');
-  const resultsEl = document.getElementById('nutrient-results');
-  if (!btn || !resultsEl) return;
-  
-  btn.textContent = '🥗 Preppi is analyzing...';
-  btn.disabled = true;
-  
-  const weekPlan = currentFamily?.weekPlan || {};
-  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  const types = ["Breakfast","Lunch","Dinner","Snack"];
-  const meals = [];
-  days.forEach(d => types.forEach(t => { const m = weekPlan[d]?.[t]; if(m) meals.push(t+': '+m); }));
-  
-  const prompt = `Analyze these planned meals for nutritional balance across 6 food groups: ${meals.join(', ')}.
+function fittiScreen() {
+  return chatScreen('fitti','💪','Fitti','Your fitness coach','#f0195a',
+    'Hey Judy! 💪 I\'m Fitti — your personal fitness coach! I\'ll build workout plans and keep your whole family moving. Tell me your fitness goals and I\'ll create a plan just for you! 🏃‍♀️',
+    ['🏃 Build workout plan','💪 Lose belly fat','🧘 Beginner workout','👨‍👩‍👧 Family fitness']);
+}
 
-For EACH food group, give a score 0-100 and a one-line specific observation:
-1. Protein (meat, fish, eggs, legumes)
-2. Grains (bread, rice, pasta, oats)
-3. Vegetables (all veggies)
-4. Fruits (all fruits)
-5. Dairy (milk, cheese, yogurt, calcium sources)
-6. Healthy Fats (avocado, nuts, oils, fatty fish)
+function chatScreen(id, icon, name, sub, color, greeting, quickies) {
+  var msgs = chatMsgs[id]||[];
+  return '<div>'
+  +'<div style="display:flex;align-items:center;gap:12px;padding:16px">'
+  +'<button onclick="go(\'home\')" style="width:36px;height:36px;border-radius:50%;background:#181828;border:1px solid #22223a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>'
+  +'<div><div style="font-size:20px;font-weight:900;color:'+color+'">'+icon+' '+name+'</div>'
+  +'<div style="font-size:10px;color:#7070a0">'+sub+'</div></div>'
+  +'</div>'
+  +'<div class="chat-wrap">'
+  +'<div class="chat-msgs" id="cm">'
+  +'<div class="cb ai">'+greeting+'</div>'
+  +msgs.map(function(m){ return '<div class="cb '+(m.r==='u'?'me':'ai')+'">'+m.t+'</div>'; }).join('')
+  +'</div>'
+  +'<div style="padding:8px 16px">'
+  +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'
+  +quickies.map(function(q){ return '<button onclick="quickMsg(\''+id+'\',\''+q+'\')" style="padding:6px 12px;background:'+color+'18;border:1px solid '+color+'33;border-radius:20px;font-size:11px;color:'+color+';font-weight:700;cursor:pointer">'+q+'</button>'; }).join('')
+  +'</div></div>'
+  +'<div class="chat-bar">'
+  +'<input class="ci" id="ci" placeholder="Ask '+name+'..." data-ai="'+id+'"/>'
+  +'<button class="cs" id="cs">↑</button>'
+  +'</div></div></div>';
+}
 
-Reply ONLY as valid JSON:
-{"protein":{"score":75,"note":"Good chicken and fish variety"},"grains":{"score":80,"note":"..."},"vegetables":{"score":40,"note":"..."},"fruits":{"score":30,"note":"..."},"dairy":{"score":60,"note":"..."},"fats":{"score":50,"note":"..."}}`;
+function quickMsg(ai, msg) {
+  var ci = document.getElementById('ci');
+  if(ci){ ci.value = msg; sendMsg(); }
+}
 
+async function sendMsg() {
+  var ci = document.getElementById('ci');
+  var cm = document.getElementById('cm');
+  if(!ci||!ci.value.trim()) return;
+  var msg = ci.value.trim();
+  var ai = ci.getAttribute('data-ai')||'preppi';
+  ci.value = '';
+  
+  var ub = document.createElement('div');
+  ub.className = 'cb me';
+  ub.textContent = msg;
+  cm.appendChild(ub);
+  
+  var tb = document.createElement('div');
+  tb.className = 'cb ai';
+  tb.innerHTML = '<em style="opacity:.5">thinking...</em>';
+  cm.appendChild(tb);
+  cm.scrollTop = cm.scrollHeight;
+  
+  chatMsgs[ai] = chatMsgs[ai]||[];
+  chatMsgs[ai].push({r:'u',t:msg});
+  
   try {
-    const reply = await callAI([{role:'user',content:prompt}], 'You are a nutrition analyst. Reply only with valid JSON.');
-    const clean = reply.replace(/```json|```/g,'').trim();
-    const data = JSON.parse(clean);
+    var sys = ai==='fitti'
+      ? 'You are Fitti, an energetic AI fitness coach for families. Be motivating, specific and fun. Keep responses concise.'
+      : 'You are Preppi, a warm AI nutrition guide for families with 4 members including 2 picky teen eaters. Be warm, specific and helpful. Keep responses concise.';
     
-    // Update bars and scores
-    const groupMap = {protein:'protein',grains:'grains',vegetables:'vegetables',fruits:'fruits',dairy:'dairy',fats:'fats'};
-    Object.entries(groupMap).forEach(([key, id]) => {
-      const d = data[key];
-      if (!d) return;
-      const bar = document.getElementById('bar-'+id);
-      const score = document.getElementById('score-'+id);
-      if (bar) {
-        const color = d.score>=80?'var(--green)':d.score>=50?'var(--yellow)':'var(--pink)';
-        bar.style.width = d.score+'%';
-        bar.style.background = color;
-      }
-      if (score) {
-        const label = d.score>=80?'✅ Good':'🔴 Needs work';
-        score.textContent = d.score+'% — '+label;
-        score.style.color = d.score>=80?'var(--green)':d.score>=50?'var(--yellow)':'var(--pink)';
-      }
+    var res = await fetch('/api/ai',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:chatMsgs[ai].slice(-8).map(function(m){return{role:m.r==='u'?'user':'assistant',content:m.t}}),system:sys})
     });
-
-    // Show overall summary
-    const avg = Math.round(Object.values(data).reduce((s,d)=>s+(d.score||0),0)/6);
-    const weak = Object.entries(data).filter(([,d])=>d.score<50).map(([k,d])=>d.note);
-    resultsEl.innerHTML = '<div style="background:var(--card2);border-radius:10px;padding:10px;margin-top:4px"><div style="font-size:10px;font-weight:800;color:var(--cyan);margin-bottom:4px">Overall Score: '+avg+'%</div>'+(weak.length>0?'<div style="font-size:10px;color:var(--pink);line-height:1.6">⚠️ Low: '+weak.join(' · ')+'</div>':'<div style="font-size:10px;color:var(--green)">🎉 Great nutritional balance this week!</div>')+'</div>';
-    
+    var data = await res.json();
+    var reply = data.content&&data.content[0]&&data.content[0].text||'Sorry, try again!';
+    chatMsgs[ai].push({r:'a',t:reply});
+    tb.textContent = reply;
   } catch(e) {
-    resultsEl.innerHTML = '<div style="font-size:11px;color:var(--pink);padding:8px">Could not analyze — try again!</div>';
+    tb.textContent = 'Preview mode — AI chat works on the live app! 🥗';
   }
-  btn.textContent = '🥦 Re-analyze My Week';
-  btn.disabled = false;
-};
-
-window.getPersonalizedTargets = async function() {
-  const resultsEl = document.getElementById('targets-result');
-  if (!resultsEl) return;
-  resultsEl.innerHTML = '<div style="font-size:11px;color:var(--gray);padding:8px">Preppi is calculating... 🥗</div>';
-  
-  const profile = userDoc?.profile || {};
-  const hausMembers = currentFamily?.hausMembers || [];
-  const members = [{name:profile.name||'You',age:profile.age,goal:profile.goal||'General health'},...hausMembers.map(m=>({name:m.name,age:m.age,goal:m.goal||'General health'}))];
-  
-  const prompt = `Give personalized daily nutrition targets for each family member:
-${members.map(m=>`${m.name} (age ${m.age||'adult'}, goal: ${m.goal})`).join(', ')}
-
-For each person give 3 key nutrition priorities based on their age and goal. Keep it practical and actionable. Format as a simple readable list.`;
-  
-  const reply = await callAI([{role:'user',content:prompt}], getPreppiSystemPrompt());
-  resultsEl.innerHTML = '<div style="font-size:11px;color:var(--white);line-height:1.8;white-space:pre-wrap;background:var(--card2);border-radius:10px;padding:10px;margin-top:4px">'+reply+'</div>';
-};
-
-
-// ── Avaturn Avatar Integration ─────────────────────────────────────
-
-const AVATURN_SUBDOMAIN = 'demo'; // Replace with your Avaturn subdomain after signup at developer.avaturn.me
-
-function openAvaturnCreator(memberName, isHeadChef, callback) {
-  // Remove existing modal if any
-  const existing = document.getElementById('avaturn-modal');
-  if (existing) existing.remove();
-
-  const modal = document.createElement('div');
-  modal.id = 'avaturn-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:1000;display:flex;flex-direction:column';
-
-  modal.innerHTML = 
-    '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#0a0a14;border-bottom:1px solid #22223a">' +
-    '<div style="font-family:var(--fd);font-size:15px;font-weight:800;color:#f2f2ff">🎨 Create ' + memberName + ' Avatar</div>' +
-    '<button id="avaturn-close" style="padding:6px 12px;background:rgba(240,25,90,.15);border:1px solid rgba(240,25,90,.3);border-radius:8px;color:#f0195a;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--fb)">✕ Cancel</button>' +
-    '</div>' +
-    '<div style="flex:1;position:relative">' +
-    '<div id="avaturn-loading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">' +
-    '<div style="font-size:36px">🥗</div>' +
-    '<div style="font-size:14px;color:#5ecfdb;font-weight:700">Loading Avatar Creator...</div>' +
-    '<div style="font-size:11px;color:#7070a0">Customize your look — clothes, hair, accessories and more!</div>' +
-    '</div>' +
-    '<iframe id="avaturn-frame" ' +
-    'src="https://' + AVATURN_SUBDOMAIN + '.avaturn.me/avatar?frameApi" ' +
-    'style="width:100%;height:100%;border:none;display:none" ' +
-    'allow="camera *; microphone *; clipboard-write">' +
-    '</iframe>' +
-    '</div>' +
-    '<div style="padding:12px 16px;background:#0a0a14;border-top:1px solid #22223a;text-align:center">' +
-    '<div style="font-size:10px;color:#7070a0">Customize your avatar then tap <strong style="color:#5ecfdb">Done</strong> inside the creator to save</div>' +
-    '</div>';
-
-  document.body.appendChild(modal);
-
-  const frame = document.getElementById('avaturn-frame');
-  const loading = document.getElementById('avaturn-loading');
-
-  // Show frame when loaded
-  frame.addEventListener('load', () => {
-    loading.style.display = 'none';
-    frame.style.display = 'block';
-  });
-
-  // Listen for avatar export
-  window.addEventListener('message', function avaturnHandler(event) {
-    try {
-      const json = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-      if (!json || json.source !== 'readyplayerme' && json.source !== 'avaturn') return;
-
-      // Frame ready - subscribe to events
-      if (json.eventName === 'v1.frame.ready') {
-        frame.contentWindow.postMessage(
-          JSON.stringify({ target: 'readyplayerme', type: 'subscribe', eventName: 'v1.**' }), '*'
-        );
-      }
-
-      // Avatar exported
-      if (json.eventName === 'v1.avatar.exported' || json.eventName === 'v2.avatar.exported') {
-        const avatarUrl = json.data?.url || json.url;
-        if (avatarUrl) {
-          if (callback) { callback(avatarUrl); modal.remove(); window.removeEventListener('message', avaturnHandler); }
-          else { window.saveAvatarUrl(memberName, avatarUrl, isHeadChef); modal.remove(); window.removeEventListener('message', avaturnHandler); }
-        }
-      }
-    } catch(e) {}
-  });
-
-  // Close button
-  document.getElementById('avaturn-close').addEventListener('click', () => {
-    modal.remove();
-  });
+  cm.scrollTop = cm.scrollHeight;
 }
 
-window.saveAvatarUrl = async function(memberName, avatarUrl, isHeadChef) {
-  if (isHeadChef) {
-    // Save to user profile
-    const profile = { ...(userDoc?.profile || {}), avatarUrl };
-    await saveUserDoc({ profile });
-    if (userDoc) userDoc.profile = profile;
-    showToast('🎨 Your avatar is saved! Looking good! ✨', 'success');
-    addXP(25);
-  } else {
-    // Save to household member
-    const hausMembers = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
-    const idx = hausMembers.findIndex(m => m.name === memberName);
-    if (idx !== -1) {
-      hausMembers[idx].avatarUrl = avatarUrl;
-      await saveFamilyDoc({ hausMembers });
-      if (currentFamily) currentFamily.hausMembers = hausMembers;
-      showToast('🎨 ' + memberName + ' avatar saved! +25 XP ✨', 'success');
-      addXP(25);
-    }
-  }
-  renderMain();
-};
-
-window.openAvatarCreator = function(memberName, isHeadChef) {
-  openAvaturnCreator(memberName, isHeadChef);
-};
-
-function getAvatarImg(avatarUrl, size, fallbackEmoji) {
-  return getAvatarDisplay(avatarUrl, size, fallbackEmoji);
+// ── WATER SCREEN ─────────────────────────────────────────────
+function waterScreen() {
+  return '<div style="padding:16px">'
+  +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+  +'<button onclick="go(\'home\')" style="width:36px;height:36px;border-radius:50%;background:#181828;border:1px solid #22223a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>'
+  +'<div style="font-size:20px;font-weight:900;color:#5ecfdb">💧 Water Tracker</div>'
+  +'</div>'
+  +family.members.map(function(m){
+    var logged = waterLog[m.name]||0;
+    var pct = Math.min(100,Math.round(logged/m.waterGoal*100));
+    var color = pct>=100?'#3dd68c':pct>=60?'#5ecfdb':'#f0195a';
+    return '<div style="background:#111120;border:1.5px solid #22223a;border-radius:16px;padding:16px;margin-bottom:12px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +'<span style="font-size:24px">'+m.emoji+'</span>'
+    +'<div><div style="font-size:13px;font-weight:800">'+m.name+'</div>'
+    +'<div style="font-size:10px;color:#7070a0">'+logged+' of '+m.waterGoal+'oz</div></div>'
+    +'</div>'
+    +'<div style="font-size:20px;font-weight:900;color:'+color+'">'+pct+'%</div>'
+    +'</div>'
+    +'<div style="height:8px;background:#22223a;border-radius:4px;overflow:hidden;margin-bottom:12px">'
+    +'<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:4px;transition:width .4s"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +[8,16,32].map(function(amt){
+      return '<button data-water="'+amt+'" data-who="'+m.name+'" style="flex:1;padding:10px;background:rgba(94,207,219,.1);border:1px solid rgba(94,207,219,.25);border-radius:10px;color:#5ecfdb;font-size:12px;font-weight:800;cursor:pointer">+'+amt+'oz</button>';
+    }).join('')
+    +'</div></div>';
+  }).join('')
+  +'</div>';
 }
 
-
-// ── Phase 6: Avatar System ──────────────────────────────────────────
-
-function getAvatarUrl(seed, style, options) {
-  style = style || 'adventurer';
-  const base = 'https://api.dicebear.com/7.x/' + style + '/svg';
-  const params = new URLSearchParams({ seed: seed || 'default' });
-  if (options) Object.entries(options).forEach(([k,v]) => params.set(k, v));
-  return base + '?' + params.toString();
+// ── FAMILY SCREEN ─────────────────────────────────────────────
+function familyScreen() {
+  return '<div style="padding:16px">'
+  +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+  +'<button onclick="go(\'home\')" style="width:36px;height:36px;border-radius:50%;background:#181828;border:1px solid #22223a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>'
+  +'<div style="font-size:20px;font-weight:900;color:#3dd68c">👨‍👩‍👧 Family</div>'
+  +'</div>'
+  +family.members.map(function(m){
+    var logged = waterLog[m.name]||0;
+    var pct = Math.min(100,Math.round(logged/(m.waterGoal||64)*100));
+    var color = pct>=100?'#3dd68c':pct>=60?'#5ecfdb':'#f0195a';
+    return '<div style="background:#111120;border:1.5px solid #22223a;border-radius:16px;padding:14px;margin-bottom:10px">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<span style="font-size:28px">'+m.emoji+'</span>'
+    +'<div style="flex:1">'
+    +'<div style="font-size:13px;font-weight:800">'+m.name+(m.isHC?' 👨‍🍳':'')+'</div>'
+    +'<div style="font-size:10px;color:#7070a0">'+m.goal+'</div>'
+    +'<div style="display:flex;align-items:center;gap:6px;margin-top:4px">'
+    +'<div style="flex:1;height:4px;background:#22223a;border-radius:2px"><div style="width:'+pct+'%;height:100%;background:'+color+';border-radius:2px"></div></div>'
+    +'<div style="font-size:9px;color:'+color+'">'+pct+'%</div>'
+    +'</div></div>'
+    +'<div style="font-size:10px;color:#5ecfdb;font-weight:700">💧'+logged+'oz</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid #22223a">'
+    +'<button style="flex:1;padding:7px;background:rgba(94,207,219,.1);border:1px solid rgba(94,207,219,.25);border-radius:8px;color:#5ecfdb;font-size:11px;font-weight:700;cursor:pointer">✏️ Edit</button>'
+    +'<button onclick="window.openAvatarBuilder(this.dataset.n)" data-n="'+m.name+'" style="flex:1;padding:7px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">🎨 Avatar</button>'
+    +'</div></div>';
+  }).join('')
+  +'</div>';
 }
 
-function avatarImg(seed, style, size, options) {
-  size = size || 48;
-  const url = getAvatarUrl(seed, style, options);
-  return '<img src="' + url + '" width="' + size + '" height="' + size + '" style="border-radius:50%;background:var(--card2)" onerror="this.style.display=\'none\'">';
+// ── CALENDAR SCREEN ───────────────────────────────────────────
+function calendarScreen() {
+  var today = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+  return '<div style="padding:16px">'
+  +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+  +'<button onclick="go(\'home\')" style="width:36px;height:36px;border-radius:50%;background:#181828;border:1px solid #22223a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>'
+  +'<div style="font-size:20px;font-weight:900;color:#5ecfdb">📅 This Week</div>'
+  +'</div>'
+  +['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d){
+    var meals = family.weekPlan[d]||{};
+    var isToday = d===today;
+    return '<div style="background:#111120;border:1.5px solid '+(isToday?'rgba(94,207,219,.4)':'#22223a')+';border-radius:16px;padding:14px;margin-bottom:10px">'
+    +'<div style="font-size:12px;font-weight:900;color:'+(isToday?'#5ecfdb':'#f2f2ff')+';margin-bottom:10px">'+d+(isToday?' — Today':'')+' '+(isToday?'⭐':'')+' </div>'
+    +(['Breakfast','Lunch','Dinner','Snack'].map(function(t){
+      var meal = meals[t];
+      var emojis = {Breakfast:'🌅',Lunch:'☀️',Dinner:'🌙',Snack:'🍎'};
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #22223a">'
+      +'<div><div style="font-size:10px;color:#7070a0">'+emojis[t]+' '+t+'</div>'
+      +(meal?'<div style="font-size:12px;color:#f2f2ff;margin-top:2px">'+meal+'</div>':'<div style="font-size:11px;color:#454565;margin-top:2px">Not planned</div>')
+      +'</div>'
+      +(meal?'<div style="display:flex;gap:4px">'
+        +'<button style="padding:4px 8px;background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.3);border-radius:6px;color:#3dd68c;font-size:9px;font-weight:700;cursor:pointer">✅ Ate it</button>'
+        +'<button style="padding:4px 8px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:6px;color:#fbbf24;font-size:9px;font-weight:700;cursor:pointer">🔄 Swap</button>'
+        +'</div>':'')
+      +'</div>';
+    }).join(''))
+    +'</div>';
+  }).join('')
+  +'</div>';
 }
 
-function getMemberAvatar(member, size) {
-  const prefs = member.avatarPrefs || {};
-  return avatarImg(
-    member.name + (member.addedAt || ''),
-    prefs.style || 'adventurer',
-    size || 48,
-    {
-      backgroundColor: prefs.bg || 'b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf',
-      skinColor: prefs.skinColor || '',
-      hairColor: prefs.hairColor || '',
-    }
-  );
+// ── PLACEHOLDER SCREENS ───────────────────────────────────────
+function comingSoon(icon, name, desc) {
+  return '<div style="padding:16px">'
+  +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+  +'<button onclick="go(\'home\')" style="width:36px;height:36px;border-radius:50%;background:#181828;border:1px solid #22223a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>'
+  +'<div style="font-size:20px;font-weight:900;color:#f2f2ff">'+icon+' '+name+'</div>'
+  +'</div>'
+  +'<div style="text-align:center;padding:60px 20px">'
+  +'<div style="font-size:64px;margin-bottom:16px">'+icon+'</div>'
+  +'<div style="font-size:18px;font-weight:800;margin-bottom:8px">'+name+'</div>'
+  +'<div style="font-size:13px;color:#7070a0;line-height:1.7;margin-bottom:20px">'+desc+'</div>'
+  +'<div style="display:inline-block;padding:6px 16px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:20px;font-size:11px;font-weight:800;color:#fbbf24">🔜 Coming Soon</div>'
+  +'</div></div>';
 }
-
-function getHeadChefAvatar(size) {
-  const profile = userDoc?.profile || {};
-  const prefs = profile.avatarPrefs || {};
-  return avatarImg(
-    profile.name || 'headchef',
-    prefs.style || 'adventurer',
-    size || 48,
-    {
-      backgroundColor: prefs.bg || 'b6e3f4',
-      skinColor: prefs.skinColor || '',
-      hairColor: prefs.hairColor || '',
-    }
-  );
-}
-
-function getPreppiAvatar(size, mood) {
-  const profile = userDoc?.profile || {};
-  const prefs = profile.preppiPrefs || {};
-  // Mood affects seed slightly for expression variation
-  const moodSeed = mood === 'happy' ? 'preppi-happy' : mood === 'concerned' ? 'preppi-sad' : 'preppi-neutral';
-  return avatarImg(
-    prefs.seed || moodSeed,
-    prefs.style || 'adventurer-neutral',
-    size || 48,
-    {
-      backgroundColor: 'transparent',
-      skinColor: prefs.skinColor || 'f2d3b1',
-    }
-  );
-}
-
-function renderAvatarCustomizer(type, currentPrefs, onSaveCallback) {
-  const styles = [
-    {id:'adventurer', label:'Adventurer', desc:'Illustrated, friendly'},
-    {id:'adventurer-neutral', label:'Neutral', desc:'Calm expression'},
-    {id:'notionists', label:'Notionists', desc:'Bold & modern'},
-    {id:'lorelei', label:'Lorelei', desc:'Soft & expressive'},
-    {id:'big-smile', label:'Big Smile', desc:'Fun & energetic'},
-  ];
-  const skinColors = ['f2d3b1','d4a574','c68642','8d5524','5c3317','2d1a0e'];
-  const hairColors = ['0e0e0e','3d2b1f','7c4b00','b8860b','c19a6b','ff6b6b','a78bfa','5ecfdb'];
-  const bgColors = ['b6e3f4','c0aede','d1d4f9','ffd5dc','ffdfbf','d1fae5','fef3c7'];
-  
-  const prefs = currentPrefs || {};
-  const seed = prefs.seed || type;
-  
-  return '<div style="background:var(--card2);border-radius:14px;padding:16px;margin-top:10px">' +
-    '<div style="text-align:center;margin-bottom:14px">' +
-    avatarImg(seed, prefs.style||'adventurer', 80, {backgroundColor: prefs.bg||'b6e3f4', skinColor:prefs.skinColor||'', hairColor:prefs.hairColor||''}) +
-    '</div>' +
-    '<div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">STYLE</div>' +
-    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' +
-    styles.map(s => '<button onclick="window.updateAvatarPref(\'' + type + '\',\'style\',\'' + s.id + '\')" style="padding:5px 10px;background:' + (prefs.style===s.id?'rgba(94,207,219,.15)':'var(--card)') + ';border:1px solid ' + (prefs.style===s.id?'var(--cyan)':'var(--border)') + ';border-radius:8px;color:' + (prefs.style===s.id?'var(--cyan)':'var(--white)') + ';font-size:10px;cursor:pointer;font-family:var(--fb)">' + s.label + '</button>').join('') +
-    '</div>' +
-    '<div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">SKIN TONE</div>' +
-    '<div style="display:flex;gap:8px;margin-bottom:12px">' +
-    skinColors.map(c => '<div onclick="window.updateAvatarPref(\'' + type + '\',\'skinColor\',\'' + c + '\')" style="width:28px;height:28px;border-radius:50%;background:#' + c + ';cursor:pointer;border:2px solid ' + (prefs.skinColor===c?'var(--cyan)':'transparent') + '"></div>').join('') +
-    '</div>' +
-    '<div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">BACKGROUND</div>' +
-    '<div style="display:flex;gap:8px;margin-bottom:14px">' +
-    bgColors.map(c => '<div onclick="window.updateAvatarPref(\'' + type + '\',\'bg\',\'' + c + '\')" style="width:28px;height:28px;border-radius:8px;background:#' + c + ';cursor:pointer;border:2px solid ' + (prefs.bg===c?'var(--cyan)':'transparent') + '"></div>').join('') +
-    '</div>' +
-    '<button onclick="window.saveAvatarPrefs(\'' + type + '\')" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--fd)">Save Avatar</button>' +
-    '</div>';
-}
-
-window.updateAvatarPref = async function(type, key, value) {
-  const profile = userDoc?.profile || {};
-  if (type === 'preppi') {
-    const prefs = { ...(profile.preppiPrefs || {}), [key]: value };
-    await saveUserDoc({ profile: { ...profile, preppiPrefs: prefs } });
-    if (userDoc) userDoc.profile = { ...profile, preppiPrefs: prefs };
-  } else if (type === 'headchef') {
-    const prefs = { ...(profile.avatarPrefs || {}), [key]: value };
-    await saveUserDoc({ profile: { ...profile, avatarPrefs: prefs } });
-    if (userDoc) userDoc.profile = { ...profile, avatarPrefs: prefs };
-  } else {
-    // Member avatar - type is member index
-    const idx = parseInt(type);
-    const hausMembers = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
-    if (hausMembers[idx]) {
-      hausMembers[idx].avatarPrefs = { ...(hausMembers[idx].avatarPrefs || {}), [key]: value };
-      await saveFamilyDoc({ hausMembers });
-      if (currentFamily) currentFamily.hausMembers = hausMembers;
-    }
-  }
-  renderMain();
-};
-
-window.toggleAvatarSection = function() {
-  UI.showAvatarSection = !UI.showAvatarSection;
-  renderMain();
-};
-window.setAvatarTab = function(tab) {
-  UI.avatarTab = tab;
-  renderMain();
-};
-window.saveAvatarPrefs = function(type) {
-  showToast('Avatar saved! 🎉', 'success');
-  addXP(10);
-  renderMain();
-};
 
 
 function getDailyTip() {
@@ -3258,6 +2813,7 @@ function renderFamily() {
     </div>
     <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
       <button onclick="window.editHeadChef()" style="flex:1;padding:8px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit Profile</button>
+      <button onclick="window.openAvatarBuilder(profile.name||'me')" style="flex:1;padding:8px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:8px;color:var(--purple);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🎨 Avatar</button>
       <button onclick="window.createAvatar('${profile.name||'me'}')" style="flex:1;padding:8px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:8px;color:var(--room-preppi);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🎨 ${profile.avatarUrl?'Edit':'Create'} Avatar</button>
     </div>
     ${UI.expandedMember==="hc"?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
@@ -3347,6 +2903,7 @@ function renderFamily() {
           </div>
           <div style="display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
             <button onclick="window.editMember(${i})" style="flex:1;padding:7px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:8px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit</button>
+            <button onclick="window.openAvatarBuilder('${m.name}')" style="flex:1;padding:7px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:8px;color:var(--purple);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🎨 Avatar</button>
             <button onclick="window.createAvatar('${m.name}')" style="flex:1;padding:7px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:8px;color:var(--room-preppi);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">🎨 Avatar</button>
             <button onclick="window.removeMemberByIdx(${i})" style="padding:7px 10px;background:rgba(238,29,82,.1);border:1px solid rgba(238,29,82,.3);border-radius:8px;color:var(--pink);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb)">× Remove</button>
           </div>

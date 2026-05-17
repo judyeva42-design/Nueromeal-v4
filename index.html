@@ -678,6 +678,11 @@ function renderNav() {
   }).join("")}</div>`;
 }
 
+// ── go() bridges new tile grid to old setTab navigation ──
+function go(id) {
+  setTab(id);
+}
+
 function setTab(t) {
   UI.tab = t;
   UI.showAriaCalModal = false;
@@ -691,6 +696,17 @@ function setTab(t) {
   if (t === "chat") { UI.tab = "circle"; UI.circleRoom = "chat"; }
   if (t === "shopping") { UI.tab = "plan"; UI.planRoom = "shopping"; }
   if (t === "meals") UI.tab = "pantry";
+  // New tile grid mappings
+  if (t === "fitti") { UI.tab = "fitti"; }
+  if (t === "water") { UI.tab = "family"; UI.familyRoom = "water"; }
+  if (t === "recipes") { UI.tab = "preppi"; UI.preppiRoom = "cookbook"; }
+  if (t === "pantry") { UI.tab = "pantry"; }
+  if (t === "challenges") { UI.tab = "circle"; UI.circleRoom = "challenges"; }
+  if (t === "games") { UI.tab = "circle"; UI.circleRoom = "games"; }
+  if (t === "settings") { UI.tab = "settings"; }
+  if (t === "alerts") { UI.tab = "alerts"; }
+  if (t === "pickyfish") { UI.tab = "pickyfish"; }
+  if (t === "profile") { UI.tab = "profile"; }
   renderNav();
   renderMain();
   // Show Preppi tip
@@ -1252,6 +1268,37 @@ function ariaFix(group, msg) {
   setTab("ai");
 }
 
+function renderSettings() {
+  return comingSoon("⚙️","Settings","App preferences, notification settings, neuro profile and more!");
+}
+function renderAlerts() {
+  return comingSoon("🔔","Alerts","Preppi and Fitti will notify you here about goals, streaks and achievements!");
+}
+function renderPickyFish() {
+  return comingSoon("🐟","PickyFish","Your family health companion! PickyFish reflects your wellness goals.\n\n💧 Log water → PickyFish swims faster\n🥦 Eat veggies → PickyFish glows green\n💪 Complete workout → PickyFish spins!");
+}
+function renderProfile() {
+  var profile = userDoc && userDoc.profile || {};
+  return `<div style="padding:20px">
+    <div style="text-align:center;margin-bottom:20px">
+      ${getHeadChefAvatar(80)}
+      <div style="font-size:16px;font-weight:800;margin-top:8px">${profile.name||'Head Chef'}</div>
+      <div style="font-size:11px;color:var(--gray)">Head Chef · Level ${profile.level||1} · ${profile.xp||0} XP</div>
+    </div>
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px">
+      ${[['Name',profile.name||'Not set'],['Age',profile.age||'Not set'],['Diet',profile.diet||'Standard'],['Goal',profile.goal||'General health'],['Water Goal',(profile.waterGoalOz||64)+'oz/day']].map(([k,v])=>`
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--gray)">${k}</span>
+          <span style="font-size:12px;font-weight:700">${v}</span>
+        </div>`).join('')}
+    </div>
+    <button onclick="window.editHeadChef&&window.editHeadChef()" style="width:100%;padding:13px;background:var(--card2);border:1px solid var(--border2);border-radius:10px;color:var(--white);font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px">✏️ Edit Profile</button>
+    <button onclick="window.handleSignOut&&window.handleSignOut()" style="width:100%;padding:13px;background:rgba(240,25,90,.1);border:1px solid rgba(240,25,90,.3);border-radius:10px;color:#f0195a;font-size:14px;font-weight:800;cursor:pointer">Sign Out</button>
+  </div>`;
+}
+
+
+
 function renderMain() {
   if (!document.getElementById("mi")) return;
   const el = document.getElementById("mi");
@@ -1263,6 +1310,10 @@ function renderMain() {
     pantry:renderMeals,
     family:renderFamily,
     circle:renderCircle,
+    settings:renderSettings,
+    alerts:renderAlerts,
+    pickyfish:renderPickyFish,
+    profile:renderProfile,
     // Legacy routes still work
     calendar:renderCal, meals:renderMeals, ai:renderAI, tips:renderTips,
     shopping:renderShop, wellness:renderWellness, game:renderGame,
@@ -2763,6 +2814,34 @@ function tapMemCard(idx) {
 }
 
 // ── Family ─────────────────────────────────────────────────
+function getHeadChefAvatar(size) {
+  var profile = userDoc && userDoc.profile || {};
+  var cfg = profile.avatarConfig || {};
+  return avatar({
+    g: cfg.g || 'female',
+    body: cfg.body || 'curvy',
+    skin: cfg.skin || 'c68642',
+    hair: cfg.hair || 'natural',
+    hc: cfg.hc || '1a0a00',
+    outfit: cfg.outfit || 'casual',
+    acc: cfg.acc || 'none'
+  }, size || 44);
+}
+
+function getMemberAvatar(member, size) {
+  var cfg = member && member.avatarConfig || {};
+  var g = cfg.g || (member && member.gender) || 'female';
+  return avatar({
+    g: g,
+    body: cfg.body || (g==='male'?'athletic':'curvy'),
+    skin: cfg.skin || 'c68642',
+    hair: cfg.hair || 'natural',
+    hc: cfg.hc || '1a0a00',
+    outfit: cfg.outfit || 'casual',
+    acc: cfg.acc || 'none'
+  }, size || 44);
+}
+
 function renderFamily() {
   if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">👨‍👩‍👧</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;
   // Declare early so Head Chef card can use them

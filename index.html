@@ -1786,9 +1786,24 @@ function renderDash() {
       +'</div>';
   }
   var today = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
-  var judy = family.members[0] || {name:'Head Chef',waterGoal:80,emoji:'👨‍🍳'};
-  var wPct = Math.min(100,Math.round((waterLog[judy.name]||0)/(judy.waterGoal||80)*100));
+  var profile = userDoc?.profile || {};
+  var hausMembers = currentFamily?.hausMembers || [];
+  var weekPlan = currentFamily?.weekPlan || {};
+  var firstName = profile.name ? profile.name.split(' ')[0] : 'there';
+  var myWaterGoal = profile.waterGoalOz || 64;
+  var todayStr = new Date().toDateString();
+  var wLog = currentFamily?.waterLog || {};
+  var myWaterLogged = wLog[todayStr]?.[profile.name||'me'] || 0;
+  var wPct = Math.min(100,Math.round((myWaterLogged/myWaterGoal)*100));
   var nPct = 45;
+  // Build family array for rings
+  var family = {
+    members: [{name:profile.name||firstName,emoji:'👨‍🍳',goal:'Head Chef',waterGoal:myWaterGoal,isHC:true,avatarConfig:profile.avatarConfig},
+      ...hausMembers.map(function(m){return {name:m.name,emoji:m.emoji||'🧑',goal:m.goal||'',waterGoal:m.waterGoalOz||64,avatarConfig:m.avatarConfig};})],
+    weekPlan: weekPlan
+  };
+  var judy = family.members[0];
+  var waterLog = wLog[todayStr] || {};
   
   return '<div style="padding:0 0 20px">'
   // Avatar + Rings
@@ -1818,7 +1833,7 @@ function renderDash() {
   +'</div>'
   +'<div style="display:flex;justify-content:space-between;gap:4px">'
   +['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d){
-    var hasMeal = Object.values(family.weekPlan[d]||{}).some(Boolean);
+    var hasMeal = Object.values(weekPlan[d]||{}).some(Boolean);
     var isToday = d===today;
     var bg = isToday?'linear-gradient(135deg,#5ecfdb,#f0195a)':hasMeal?'rgba(94,207,219,.1)':'rgba(255,255,255,.04)';
     var color = isToday?'#000':hasMeal?'#5ecfdb':'#454565';
@@ -2043,7 +2058,7 @@ function calendarScreen() {
   +'<div style="font-size:20px;font-weight:900;color:#5ecfdb">📅 This Week</div>'
   +'</div>'
   +['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d){
-    var meals = family.weekPlan[d]||{};
+    var meals = weekPlan[d]||{};
     var isToday = d===today;
     return '<div style="background:#111120;border:1.5px solid '+(isToday?'rgba(94,207,219,.4)':'#22223a')+';border-radius:16px;padding:14px;margin-bottom:10px">'
     +'<div style="font-size:12px;font-weight:900;color:'+(isToday?'#5ecfdb':'#f2f2ff')+';margin-bottom:10px">'+d+(isToday?' — Today':'')+' '+(isToday?'⭐':'')+' </div>'

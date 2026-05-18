@@ -12,6 +12,11 @@
 function getHeadChefAvatar(size) {
   var profile = userDoc && userDoc.profile || {};
   var cfg = profile.avatarConfig || {};
+  var s = size || 44;
+  if (cfg.body) {
+    var skinFilter = cfg.skinFilter || 'none';
+    return '<div style="position:relative;width:'+s+'px;height:'+s+'px;overflow:hidden;border-radius:50%"><img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/'+cfg.body+'_ISOLATED.png" style="width:100%;height:130%;object-fit:cover;object-position:top;filter:'+skinFilter+'" onerror="this.style.display:none"/></div>';
+  }
   return avatar({
     g: cfg.g || 'female',
     body: cfg.body || 'curvy',
@@ -20,7 +25,7 @@ function getHeadChefAvatar(size) {
     hc: cfg.hc || '1a0a00',
     outfit: cfg.outfit || 'casual',
     acc: cfg.acc || 'none'
-  }, size || 44);
+  }, s);
 }
 
 
@@ -28,6 +33,11 @@ function getHeadChefAvatar(size) {
 function getMemberAvatar(member, size) {
   var cfg = member && member.avatarConfig || {};
   var g = cfg.g || (member && member.gender) || 'female';
+  var s = size || 44;
+  if (cfg.body) {
+    var skinFilter = cfg.skinFilter || 'none';
+    return '<div style="position:relative;width:'+s+'px;height:'+s+'px;overflow:hidden;border-radius:50%"><img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/'+cfg.body+'_ISOLATED.png" style="width:100%;height:130%;object-fit:cover;object-position:top;filter:'+skinFilter+'" onerror="this.style.display:none"/></div>';
+  }
   return avatar({
     g: g,
     body: cfg.body || (g==='male'?'athletic':'curvy'),
@@ -36,7 +46,7 @@ function getMemberAvatar(member, size) {
     hc: cfg.hc || '1a0a00',
     outfit: cfg.outfit || 'casual',
     acc: cfg.acc || 'none'
-  }, size || 44);
+  }, s);
 }
 
 function getPreppiAvatar(size) {
@@ -2050,7 +2060,7 @@ function renderDash() {
   +'<circle cx="90" cy="90" r="68" fill="none" stroke="#a78bfa" stroke-width="6" stroke-dasharray="'+(2*Math.PI*68)+'" stroke-dashoffset="'+(2*Math.PI*68*(1-nPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
   +'</svg>'
   +'<div class="avatar-center">'
-  +avatar(80)
+  +getHeadChefAvatar(80)
   +'</div></div>'
   +'<div style="font-size:15px;font-weight:800;margin-top:6px">Judy Evans 👨‍🍳</div>'
   +'<div style="font-size:11px;color:#5ecfdb;margin-top:2px">💧'+wPct+'% · 🥗'+nPct+'% · ⚡ LVL 7</div>'
@@ -4603,6 +4613,128 @@ window.signInWithGoogle = signInWithGoogle;
 
 // ── Avatar Builder Functions ────────────────────────────────
 window.avTab = 0;
+
+// ── Avatar Modal & Family Avatar Functions ─────────────────
+window.openAvatarBuilder = function(memberName) {
+  // Open avatar builder modal for a specific member
+  UI.avatarBuilderTarget = memberName;
+  UI.showAvatarModal = true;
+  renderApp();
+};
+
+window.createAvatar = function(memberName) {
+  UI.avatarBuilderTarget = memberName;
+  UI.showAvatarModal = true;
+  renderApp();
+};
+
+window.closeAvatarModal = function() {
+  UI.showAvatarModal = false;
+  UI.avatarBuilderTarget = null;
+  renderApp();
+};
+
+window.toggleAvatarSection = function() {
+  UI.showAvatarSection = !UI.showAvatarSection;
+  renderApp();
+};
+
+window.setAvatarTab = function(tab) {
+  UI.avatarTab = tab;
+  renderApp();
+};
+
+window.renderAvatarCustomizer = function(target, prefs) {
+  return renderAvatarCustomizer(target, prefs);
+};
+
+function renderAvatarCustomizer(target, prefs) {
+  const isHC = target === 'headchef';
+  const cfg = isHC ? (userDoc?.profile?.avatarConfig || {}) : 
+    (typeof target === 'number' ? ((currentFamily?.hausMembers||[])[target]?.avatarConfig || {}) : {});
+  const memberName = isHC ? (userDoc?.profile?.name || 'You') :
+    (typeof target === 'number' ? ((currentFamily?.hausMembers||[])[target]?.name || 'Member') : target);
+
+  const bodies = ['adult_woman','adult_man','teen_girl','teen_boy','preteen_girl','preteen_boy','child_girl','child_boy'];
+  const skinTones = [
+    {label:'Deep',filter:'brightness(0.55) saturate(1.2)',color:'#3d1f0d'},
+    {label:'Dark',filter:'brightness(0.7) saturate(1.1)',color:'#6b3a1f'},
+    {label:'Medium',filter:'brightness(0.9) saturate(1.0)',color:'#c68642'},
+    {label:'Tan',filter:'brightness(1.0) saturate(0.95)',color:'#d4956a'},
+    {label:'Light',filter:'brightness(1.1) saturate(0.85)',color:'#e8b89a'},
+    {label:'Fair',filter:'brightness(1.25) saturate(0.7)',color:'#f5d5c0'},
+  ];
+  const hairStyles = ['Natural Afro 🌿','Box Braids 🔗','Locs 🌀','Curly 〰️','Straight ↕️','Low Cut ✂️','TWA 🌸','Puffs 🫧','Waves 🌊'];
+  const outfits = [
+    {id:'casual',label:'Casual 👕'},
+    {id:'sporty',label:'Sporty 🏃'},
+    {id:'streetwear',label:'Streetwear 🧢'},
+    {id:'business',label:'Business 💼'},
+    {id:'cozy',label:'Cozy 🧸'},
+    {id:'glam',label:'Glam ✨'},
+  ];
+
+  return `<div style="padding:12px 0">
+    <div style="font-size:13px;font-weight:800;color:var(--cyan);margin-bottom:12px">✏️ Editing: ${memberName}</div>
+    
+    <!-- Preview -->
+    <div style="text-align:center;background:var(--card2);border-radius:12px;padding:16px;margin-bottom:12px;height:160px;display:flex;align-items:center;justify-content:center">
+      ${cfg.body ? `<img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/${cfg.body}_ISOLATED.png" style="height:140px;object-fit:contain;filter:${cfg.skinFilter||'none'}"/>` : '<div style="font-size:40px">👤</div>'}
+    </div>
+
+    <!-- Body -->
+    <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">BODY TYPE</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
+      ${bodies.map(b => `<div onclick="window.saveAvatarPart('${target}','body','${b}')" style="border:2px solid ${cfg.body===b?'var(--cyan)':'var(--border)'};border-radius:8px;padding:4px;cursor:pointer;text-align:center;background:${cfg.body===b?'rgba(94,207,219,.1)':'var(--card2)'}">
+        <img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/${b}_ISOLATED.png" style="width:36px;height:54px;object-fit:contain"/>
+        <div style="font-size:7px;color:var(--gray);text-transform:capitalize;margin-top:2px">${b.replace(/_/g,' ')}</div>
+      </div>`).join('')}
+    </div>
+
+    <!-- Skin -->
+    <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">SKIN TONE</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      ${skinTones.map(sk => `<div onclick="window.saveAvatarPart('${target}','skin','${sk.filter}')" style="cursor:pointer;text-align:center">
+        <div style="width:36px;height:36px;border-radius:50%;background:${sk.color};border:3px solid ${cfg.skinFilter===sk.filter?'var(--cyan)':'transparent'}"></div>
+        <div style="font-size:8px;color:var(--gray);margin-top:2px">${sk.label}</div>
+      </div>`).join('')}
+    </div>
+
+    <!-- Hair -->
+    <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">HAIR STYLE</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+      ${hairStyles.map(h => `<button onclick="window.saveAvatarPart('${target}','hair','${h}')" style="padding:6px 8px;border:2px solid ${cfg.hair===h?'var(--cyan)':'var(--border)'};border-radius:8px;background:${cfg.hair===h?'rgba(94,207,219,.1)':'var(--card2)'};color:var(--white);font-size:10px;font-weight:700;cursor:pointer">${h}</button>`).join('')}
+    </div>
+
+    <!-- Outfit -->
+    <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">OUTFIT</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+      ${outfits.map(o => `<button onclick="window.saveAvatarPart('${target}','outfit','${o.id}')" style="padding:8px 4px;border:2px solid ${cfg.outfit===o.id?'var(--cyan)':'var(--border)'};border-radius:8px;background:${cfg.outfit===o.id?'rgba(94,207,219,.1)':'var(--card2)'};color:var(--white);font-size:10px;font-weight:700;cursor:pointer">${o.label}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
+window.saveAvatarPart = async function(target, part, value) {
+  try {
+    if (target === 'headchef') {
+      const cfg = userDoc?.profile?.avatarConfig || {};
+      if (part === 'skin') cfg.skinFilter = value;
+      else cfg[part] = value;
+      await saveUserDoc({ profile: { ...userDoc.profile, avatarConfig: cfg }});
+      userDoc.profile.avatarConfig = cfg;
+    } else if (typeof target === 'number' || !isNaN(target)) {
+      const idx = parseInt(target);
+      const members = currentFamily?.hausMembers || [];
+      if (members[idx]) {
+        if (!members[idx].avatarConfig) members[idx].avatarConfig = {};
+        if (part === 'skin') members[idx].avatarConfig.skinFilter = value;
+        else members[idx].avatarConfig[part] = value;
+        await saveUserDoc({ hausMembers: members });
+      }
+    }
+    renderApp();
+  } catch(e) { console.error('saveAvatarPart error:', e); }
+};
 
 window.setAvBody = function(body) {
   if (!UI.onboardData.avatarConfig) UI.onboardData.avatarConfig = {};

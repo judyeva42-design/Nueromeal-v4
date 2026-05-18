@@ -861,29 +861,122 @@ function renderOnboard() {
             <input id="ob-weight" value="${UI.onboardData.weight||''}" placeholder="e.g. 165 lbs" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-size:14px;font-family:var(--fb);outline:none;box-sizing:border-box"/>
           </div>
         </div>` : ''}
-        ${s.type === 'avatar' ? `<div style="display:flex;flex-direction:column;gap:12px">
-          ${UI.onboardData.avatarUrl ? `
-          <div style="text-align:center">
-            <img src="${UI.onboardData.avatarUrl}" width="120" height="120" style="border-radius:50%;border:3px solid var(--cyan);background:var(--card2)"/>
-            <div style="font-size:11px;color:var(--green);margin-top:8px;font-weight:700">✅ Avatar saved!</div>
-          </div>
-          <button id="edit-avatar-btn" style="width:100%;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--white);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb)">✏️ Edit Avatar</button>
-          ` : `
-          <div style="background:rgba(94,207,219,.06);border:1.5px solid rgba(94,207,219,.2);border-radius:14px;padding:14px;text-align:center;margin-bottom:4px">
-            <div style="font-size:32px;margin-bottom:8px">🎨</div>
-            <div style="font-size:13px;font-weight:800;color:var(--white);margin-bottom:6px">Create Your Avatar</div>
-            <div style="font-size:11px;color:var(--gray);line-height:1.6;margin-bottom:12px">Upload a selfie or build from scratch. Choose your body type, skin tone, hair, clothes and accessories!</div>
-            <button id="open-avaturn-btn" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--room-preppi));border:none;border-radius:12px;color:#000;font-size:14px;font-weight:900;cursor:pointer;font-family:var(--fd)">🎨 Create My Avatar</button>
-          </div>
-          <div style="font-size:10px;color:var(--gray);text-align:center">Powered by Avaturn · Free · 10,000+ customization options</div>
-          `}
-          <div id="avaturn-container" style="display:none;position:fixed;inset:0;z-index:1000;background:#000">
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#111">
-              <div style="font-size:14px;font-weight:800;color:#fff">Create Your Avatar</div>
-              <button id="close-avaturn" style="padding:6px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:12px;cursor:pointer">Close</button>
+        ${s.type === 'avatar' ? `<div style="display:flex;flex-direction:column;gap:12px" id="avatar-builder">
+          <!-- AVATAR PREVIEW -->
+          <div style="text-align:center;position:relative;height:220px;background:var(--card2);border-radius:16px;overflow:hidden;margin-bottom:4px">
+            <div id="av-preview" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
+              ${UI.onboardData.avatarConfig ? `
+                <div style="position:relative;width:160px;height:200px">
+                  <img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/${UI.onboardData.avatarConfig.body}_ISOLATED.png" style="width:100%;height:100%;object-fit:contain;filter:${UI.onboardData.avatarConfig.skinFilter||'none'}"/>
+                  ${UI.onboardData.avatarConfig.outfit ? `<img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/outfits/${UI.onboardData.avatarConfig.outfit}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'"/>` : ''}
+                </div>
+              ` : `<div style="font-size:48px">👤</div><div style="font-size:12px;color:var(--gray);position:absolute;bottom:16px">Build your avatar below!</div>`}
             </div>
-            <iframe id="avaturn-frame" src="https://neuromeal.avaturn.dev/?frameApi" allow="camera *; microphone *" style="width:100%;height:calc(100% - 50px);border:none"></iframe>
           </div>
+
+          <!-- STEP TABS -->
+          <div style="display:flex;gap:6px;background:var(--card2);border-radius:10px;padding:4px" id="av-tabs">
+            ${['👤 Body','🎨 Skin','💇 Hair','👗 Outfit'].map((tab,i) => `
+              <button onclick="window.avTab=${i};document.querySelectorAll('[data-av-panel]').forEach((p,pi)=>{p.style.display=pi===${i}?'block':'none'});document.querySelectorAll('[data-av-tab]').forEach((t,ti)=>{t.style.background=ti===${i}?'rgba(94,207,219,.2)':'transparent';t.style.color=ti===${i}?'var(--cyan)':'var(--gray)'})" data-av-tab="${i}" style="flex:1;padding:7px 2px;border:none;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer;font-family:var(--fd);background:${i===0?'rgba(94,207,219,.2)':'transparent'};color:${i===0?'var(--cyan)':'var(--gray)'};transition:all .2s">${tab}</button>
+            `).join('')}
+          </div>
+
+          <!-- BODY PANEL -->
+          <div data-av-panel="0" style="display:block">
+            <div style="font-size:11px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:10px">CHOOSE BODY TYPE</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              ${(()=>{
+                const sex = (UI.onboardData.sex||'').toLowerCase();
+                const age = parseInt(UI.onboardData.age||'25');
+                const isMale = sex.includes('male') && !sex.includes('female') && !sex.includes('non');
+                let bodies = [];
+                if(age < 10) bodies = isMale ? ['child_boy'] : ['child_girl'];
+                else if(age < 13) bodies = isMale ? ['preteen_boy'] : ['preteen_girl'];
+                else if(age < 18) bodies = isMale ? ['teen_boy'] : ['teen_girl'];
+                else bodies = isMale ? ['adult_man'] : ['adult_woman'];
+                // Always show at least 2 options
+                if(bodies.length < 2) {
+                  if(isMale) bodies = [...new Set([...bodies,'adult_man','teen_boy'])];
+                  else bodies = [...new Set([...bodies,'adult_woman','teen_girl'])];
+                }
+                return bodies.map(b => {
+                  const label = b.replace('_ISOLATED','').replace(/_/g,' ');
+                  const sel = UI.onboardData.avatarConfig?.body === b;
+                  return `<div onclick="window.setAvBody('${b}')" style="border:2px solid ${sel?'var(--cyan)':'var(--border)'};border-radius:12px;padding:8px;cursor:pointer;text-align:center;background:${sel?'rgba(94,207,219,.1)':'var(--card2)'};transition:all .2s">
+                    <img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/${b}_ISOLATED.png" style="width:60px;height:90px;object-fit:contain"/>
+                    <div style="font-size:9px;color:var(--gray);margin-top:4px;text-transform:capitalize">${label}</div>
+                  </div>`;
+                }).join('');
+              })()}
+            </div>
+          </div>
+
+          <!-- SKIN PANEL -->
+          <div data-av-panel="1" style="display:none">
+            <div style="font-size:11px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:10px">CHOOSE SKIN TONE</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+              ${[
+                {label:'Deep',color:'#3d1f0d',filter:'brightness(0.55) saturate(1.2)'},
+                {label:'Dark',color:'#6b3a1f',filter:'brightness(0.7) saturate(1.1)'},
+                {label:'Medium',color:'#c68642',filter:'brightness(0.9) saturate(1.0)'},
+                {label:'Tan',color:'#d4956a',filter:'brightness(1.0) saturate(0.95)'},
+                {label:'Light',color:'#e8b89a',filter:'brightness(1.1) saturate(0.85)'},
+                {label:'Fair',color:'#f5d5c0',filter:'brightness(1.25) saturate(0.7)'},
+                {label:'Pale',color:'#fce8dc',filter:'brightness(1.4) saturate(0.5)'},
+                {label:'Porcelain',color:'#fff0e8',filter:'brightness(1.5) saturate(0.3)'},
+              ].map(sk => {
+                const sel = UI.onboardData.avatarConfig?.skinFilter === sk.filter;
+                return `<div onclick="window.setAvSkin('${sk.filter}','${sk.color}')" style="cursor:pointer;text-align:center">
+                  <div style="width:44px;height:44px;border-radius:50%;background:${sk.color};margin:0 auto;border:3px solid ${sel?'var(--cyan)':'transparent'};transition:all .2s"></div>
+                  <div style="font-size:9px;color:var(--gray);margin-top:4px">${sk.label}</div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- HAIR PANEL -->
+          <div data-av-panel="2" style="display:none">
+            <div style="font-size:11px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:10px">CHOOSE HAIR STYLE</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              ${['Natural Afro 🌿','Box Braids 🔗','Locs 🌀','Curly 〰️','Straight ↕️','Low Cut ✂️','TWA 🌸','Puffs 🫧','Waves 🌊'].map(h => {
+                const sel = UI.onboardData.avatarConfig?.hair === h;
+                return `<button onclick="window.setAvHair('${h}')" style="padding:10px 6px;border:2px solid ${sel?'var(--cyan)':'var(--border)'};border-radius:10px;background:${sel?'rgba(94,207,219,.1)':'var(--card2)'};color:var(--white);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fb);transition:all .2s">${h}</button>`;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- OUTFIT PANEL -->
+          <div data-av-panel="3" style="display:none">
+            <div style="font-size:11px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:10px">CHOOSE STARTER OUTFIT</div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+              ${[
+                {id:'casual',label:'Casual Fit 👕',desc:'Everyday comfort',color:'#5ecfdb'},
+                {id:'sporty',label:'Sporty 🏃',desc:'Active & ready',color:'#f0195a'},
+                {id:'streetwear',label:'Streetwear 🧢',desc:'Fresh & fly',color:'#a78bfa'},
+                {id:'business',label:'Business 💼',desc:'Professional',color:'#f59e0b'},
+                {id:'cozy',label:'Cozy Mode 🧸',desc:'Chill vibes',color:'#34d399'},
+                {id:'glam',label:'Glam ✨',desc:'Dressed up',color:'#f472b6'},
+              ].map(o => {
+                const sel = UI.onboardData.avatarConfig?.outfit === o.id;
+                return `<div onclick="window.setAvOutfit('${o.id}')" style="border:2px solid ${sel?o.color:'var(--border)'};border-radius:12px;padding:12px;cursor:pointer;background:${sel?`rgba(94,207,219,.08)`:'var(--card2)'};transition:all .2s">
+                  <div style="font-size:18px;margin-bottom:4px">${o.label.split(' ').pop()}</div>
+                  <div style="font-size:12px;font-weight:800;color:var(--white);font-family:var(--fd)">${o.label.split(' ').slice(0,-1).join(' ')}</div>
+                  <div style="font-size:10px;color:var(--gray)">${o.desc}</div>
+                  ${sel?`<div style="font-size:9px;color:${o.color};font-weight:800;margin-top:4px">✓ Selected</div>`:''}
+                </div>`;
+              }).join('')}
+            </div>
+            <div style="margin-top:10px;padding:10px;background:rgba(94,207,219,.06);border:1px solid rgba(94,207,219,.2);border-radius:10px;text-align:center">
+              <div style="font-size:10px;color:var(--cyan);font-weight:800">🛍️ More outfits in My Peeps Outlet!</div>
+              <div style="font-size:9px;color:var(--gray);margin-top:2px">Earn points to unlock free styles or shop premium brands</div>
+            </div>
+          </div>
+
+          ${UI.onboardData.avatarConfig?.body ? `
+            <div style="padding:10px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:10px;text-align:center">
+              <div style="font-size:11px;color:var(--green);font-weight:800">✅ Avatar looking good! Tap Next when ready.</div>
+            </div>
+          ` : ''}
         </div>` : ''}
         ${s.type === 'double2' ? `<div style="display:flex;flex-direction:column;gap:10px">
           <div>
@@ -1004,8 +1097,10 @@ function bindOnboard() {
           targetWeight: UI.onboardData.targetWeight || '',
           phone: UI.onboardData.phone || '',
           waterGoalOz: UI.onboardData.age ? (parseInt(UI.onboardData.age) < 9 ? 40 : parseInt(UI.onboardData.age) < 14 ? 56 : parseInt(UI.onboardData.age) < 18 ? 64 : 80) : 64,
-          avatarUrl: UI.onboardData.avatarUrl || null,
           avatarUrl: UI.onboardData.avatarUrl || '',
+          avatarConfig: UI.onboardData.avatarConfig || {},
+          closet: ['casual','sporty','streetwear'],
+          peepsPoints: 100,
           isPremium: false,
         };
         await saveUserDoc({ profileComplete: true, profile, name: profile.name });
@@ -4505,6 +4600,34 @@ document.addEventListener("DOMContentLoaded", () => {
 window.toggleVideoForm = toggleVideoForm;
 window.saveVideo = saveVideo;
 window.signInWithGoogle = signInWithGoogle;
+
+// ── Avatar Builder Functions ────────────────────────────────
+window.avTab = 0;
+
+window.setAvBody = function(body) {
+  if (!UI.onboardData.avatarConfig) UI.onboardData.avatarConfig = {};
+  UI.onboardData.avatarConfig.body = body;
+  renderOnboard();
+};
+
+window.setAvSkin = function(filter, color) {
+  if (!UI.onboardData.avatarConfig) UI.onboardData.avatarConfig = {};
+  UI.onboardData.avatarConfig.skinFilter = filter;
+  UI.onboardData.avatarConfig.skinColor = color;
+  renderOnboard();
+};
+
+window.setAvHair = function(hair) {
+  if (!UI.onboardData.avatarConfig) UI.onboardData.avatarConfig = {};
+  UI.onboardData.avatarConfig.hair = hair;
+  renderOnboard();
+};
+
+window.setAvOutfit = function(outfit) {
+  if (!UI.onboardData.avatarConfig) UI.onboardData.avatarConfig = {};
+  UI.onboardData.avatarConfig.outfit = outfit;
+  renderOnboard();
+};
 window.handleSignOut = handleSignOut;
 window.showGetActiveModal = showGetActiveModal;
 window.setTab = setTab;

@@ -39,6 +39,18 @@ function getMemberAvatar(member, size) {
   }, size || 44);
 }
 
+function getPreppiAvatar(size) {
+  var s = size || 44;
+  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="${s/2}" cy="${s/2}" r="${s/2}" fill="url(#preppiGrad)"/>
+    <defs><linearGradient id="preppiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5ecfdb"/>
+      <stop offset="100%" style="stop-color:#f0195a"/>
+    </linearGradient></defs>
+    <text x="${s/2}" y="${s/2+s*0.13}" text-anchor="middle" fill="white" font-size="${s*0.4}" font-weight="900" font-family="sans-serif">P</text>
+  </svg>`;
+}
+
 
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1752,6 +1764,41 @@ function renderPlan() {
   return `<div class="fu">${subNav}</div>`;
 }
 
+
+function renderNutrients(subNav) {
+  if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">🥗</div><div style="font-size:15px;margin-bottom:16px">Get Active to track nutrients!</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;
+  const goals = userDoc?.nutritionGoals || {};
+  const today = userDoc?.todayNutrition || {};
+  const items = [
+    {label:'Calories', icon:'🔥', current: today.calories||0, goal: goals.calories||2000, unit:'kcal', color:'#f0195a'},
+    {label:'Protein',  icon:'💪', current: today.protein||0,  goal: goals.protein||150,   unit:'g',    color:'#5ecfdb'},
+    {label:'Carbs',    icon:'🌾', current: today.carbs||0,    goal: goals.carbs||250,     unit:'g',    color:'#f59e0b'},
+    {label:'Fat',      icon:'🥑', current: today.fat||0,      goal: goals.fat||65,        unit:'g',    color:'#a78bfa'},
+    {label:'Fiber',    icon:'🥦', current: today.fiber||0,    goal: goals.fiber||25,      unit:'g',    color:'#34d399'},
+    {label:'Water',    icon:'💧', current: today.water||0,    goal: goals.water||8,       unit:'cups', color:'#60a5fa'},
+  ];
+  return `<div class="fu">${subNav||''}
+    <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--cyan);margin-bottom:16px;letter-spacing:-0.5px">🥗 Nutrients</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      ${items.map(item => {
+        const pct = Math.min(100, Math.round((item.current/item.goal)*100));
+        return `<div class="card" style="padding:16px">
+          <div style="font-size:22px;margin-bottom:4px">${item.icon}</div>
+          <div style="font-size:12px;font-weight:800;color:var(--text);font-family:var(--fd)">${item.label}</div>
+          <div style="font-size:18px;font-weight:900;color:${item.color};font-family:var(--fd)">${item.current}<span style="font-size:10px;color:var(--gray)">/${item.goal}${item.unit}</span></div>
+          <div style="height:6px;background:var(--card2);border-radius:3px;margin-top:8px">
+            <div style="height:6px;width:${pct}%;background:${item.color};border-radius:3px;transition:width .3s"></div>
+          </div>
+          <div style="font-size:10px;color:var(--gray);margin-top:4px">${pct}% of goal</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="card" style="padding:16px;margin-top:12px;text-align:center;color:var(--gray);font-size:13px">
+      <div style="font-size:24px;margin-bottom:8px">🚧</div>
+      Full nutrient tracking coming soon! Log meals in the Plan tab to see your daily totals here.
+    </div>
+  </div>`;
+}
 
 function renderPreppiRoom() {
   const subRooms = [

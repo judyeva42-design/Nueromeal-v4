@@ -15,7 +15,7 @@ function getHeadChefAvatar(size) {
   var s = size || 44;
   if (cfg.body) {
     var skinFilter = cfg.skinFilter || 'none';
-    return '<div style="position:relative;width:'+s+'px;height:'+s+'px;overflow:hidden;border-radius:50%"><img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/'+cfg.body+'_ISOLATED.png" style="width:100%;height:130%;object-fit:cover;object-position:top;filter:'+skinFilter+'" onerror="this.style.display:none"/></div>';
+    return '<img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/'+cfg.body+'_ISOLATED.png" style="width:'+s+'px;height:'+s+'px;object-fit:contain;filter:'+skinFilter+'" onerror="this.style.opacity=0"/>';
   }
   return avatar({
     g: cfg.g || 'female',
@@ -36,7 +36,7 @@ function getMemberAvatar(member, size) {
   var s = size || 44;
   if (cfg.body) {
     var skinFilter = cfg.skinFilter || 'none';
-    return '<div style="position:relative;width:'+s+'px;height:'+s+'px;overflow:hidden;border-radius:50%"><img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/'+cfg.body+'_ISOLATED.png" style="width:100%;height:130%;object-fit:cover;object-position:top;filter:'+skinFilter+'" onerror="this.style.display:none"/></div>';
+    return '<img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/'+cfg.body+'_ISOLATED.png" style="width:'+s+'px;height:'+s+'px;object-fit:contain;filter:'+skinFilter+'" onerror="this.style.opacity=0"/>';
   }
   return avatar({
     g: g,
@@ -2049,19 +2049,18 @@ function renderDash() {
   return '<div style="padding:0 0 20px">'
   // Avatar + Rings
   +'<div style="text-align:center;padding:20px 16px 8px">'
-  +'<div class="rings-wrap" onclick="window.openAvatarBuilder(this.dataset.name)" data-name="Judy Evans" style="cursor:pointer" title="Tap to customize avatar">'
-  +'<svg width="180" height="180" viewBox="0 0 180 180">'
-  // Ring tracks
+  +'<div onclick="window.openAvatarBuilder(\'headchef\')" style="cursor:pointer;position:relative;width:180px;height:180px;margin:0 auto" title="Tap to edit avatar">'
+  +'<svg width="180" height="180" viewBox="0 0 180 180" style="position:absolute;top:0;left:0">'
   +'<circle cx="90" cy="90" r="82" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="7"/>'
   +'<circle cx="90" cy="90" r="68" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="6"/>'
-  // Water ring
   +'<circle cx="90" cy="90" r="82" fill="none" stroke="#5ecfdb" stroke-width="7" stroke-dasharray="'+(2*Math.PI*82)+'" stroke-dashoffset="'+(2*Math.PI*82*(1-wPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
-  // Nutrition ring
   +'<circle cx="90" cy="90" r="68" fill="none" stroke="#a78bfa" stroke-width="6" stroke-dasharray="'+(2*Math.PI*68)+'" stroke-dashoffset="'+(2*Math.PI*68*(1-nPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
   +'</svg>'
-  +'<div class="avatar-center">'
-  +getHeadChefAvatar(80)
-  +'</div></div>'
+  +'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:120px;height:150px;overflow:hidden">'
+  +getHeadChefAvatar(120)
+  +'</div>'
+  +'<div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.6);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px">✏️</div>'
+  +'</div>'
   +'<div style="font-size:15px;font-weight:800;margin-top:6px">Judy Evans 👨‍🍳</div>'
   +'<div style="font-size:11px;color:#5ecfdb;margin-top:2px">💧'+wPct+'% · 🥗'+nPct+'% · ⚡ LVL 7</div>'
   +'</div>'
@@ -3552,11 +3551,19 @@ function renderFamily() {
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">🎨 SKIN TONE</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-          ${Object.entries(SKIN_TONES).map(([k,v]) => `<button data-hm-skin="${v}" style="width:30px;height:30px;border-radius:50%;background:#${v};border:3px solid ${((UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarSkin:'')||'')===v?'var(--cyan)':'transparent'};cursor:pointer"></button>`).join('')}
+          ${[{l:'Deep',f:'brightness(0.55) saturate(1.2)',c:'#3d1f0d'},{l:'Dark',f:'brightness(0.7) saturate(1.1)',c:'#6b3a1f'},{l:'Medium',f:'brightness(0.9)',c:'#c68642'},{l:'Tan',f:'brightness(1.0)',c:'#d4956a'},{l:'Light',f:'brightness(1.1)',c:'#e8b89a'},{l:'Fair',f:'brightness(1.25)',c:'#f5d5c0'}].map(sk => {
+            const idx = UI.editingMemberIdx;
+            const cur = idx !== null ? ((currentFamily?.hausMembers||[])[idx]?.avatarConfig?.skinFilter||'') : '';
+            return '<div onclick="window.saveAvatarPart('+idx+',\'skin\',\''+sk.f+'\')" style="cursor:pointer;text-align:center"><div style="width:30px;height:30px;border-radius:50%;background:'+sk.c+';border:3px solid '+(cur===sk.f?'var(--cyan)':'transparent')+';"></div><div style="font-size:8px;color:var(--gray)">'+sk.l+'</div></div>';
+          }).join('')}
         </div>
         <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">💇 HAIR STYLE</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${Object.entries(HAIR_STYLES).map(([k,v]) => `<button data-hm-hair="${v}" style="padding:5px 10px;border-radius:20px;border:1px solid ${((UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarHair:'')||'')===v?'var(--cyan)':'var(--border)'};background:${((UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarHair:'')||'')===v?'rgba(94,207,219,.15)':'transparent'};color:${((UI.editingMemberIdx!==null?(currentFamily?.hausMembers||[])[UI.editingMemberIdx]?.avatarHair:'')||'')===v?'var(--cyan)':'var(--gray)'};font-size:10px;cursor:pointer;font-family:var(--fb)">${k}</button>`).join('')}
+          ${['Natural Afro 🌿','Box Braids 🔗','Locs 🌀','Curly 〰️','Straight ↕️','Low Cut ✂️','TWA 🌸','Puffs 🫧','Waves 🌊'].map(h => {
+            const idx = UI.editingMemberIdx;
+            const cur = idx !== null ? ((currentFamily?.hausMembers||[])[idx]?.avatarConfig?.hair||'') : '';
+            return '<button onclick="window.saveAvatarPart('+idx+',\'hair\',\''+h+'\')" style="padding:5px 10px;border-radius:20px;border:1px solid '+(cur===h?'var(--cyan)':'var(--border)')+';background:'+(cur===h?'rgba(94,207,219,.15)':'transparent')+';color:'+(cur===h?'var(--cyan)':'var(--gray)')+';font-size:10px;cursor:pointer;font-family:var(--fb)">'+h+'</button>';
+          }).join('')}
         </div>
       </div>
       <div>
@@ -4716,24 +4723,34 @@ function renderAvatarCustomizer(target, prefs) {
 
 window.saveAvatarPart = async function(target, part, value) {
   try {
-    if (target === 'headchef') {
-      const cfg = userDoc?.profile?.avatarConfig || {};
+    if (target === 'headchef' || target === 'me') {
+      const profile = userDoc?.profile || {};
+      const cfg = { ...(profile.avatarConfig || {}) };
       if (part === 'skin') cfg.skinFilter = value;
       else cfg[part] = value;
-      await saveUserDoc({ profile: { ...userDoc.profile, avatarConfig: cfg }});
+      const updatedProfile = { ...profile, avatarConfig: cfg };
+      await saveUserDoc({ profile: updatedProfile });
+      if (!userDoc) userDoc = {};
+      if (!userDoc.profile) userDoc.profile = {};
       userDoc.profile.avatarConfig = cfg;
-    } else if (typeof target === 'number' || !isNaN(target)) {
+      showToast('Avatar updated! ✨', 'success');
+    } else if (target !== null && target !== undefined && !isNaN(parseInt(target))) {
       const idx = parseInt(target);
-      const members = currentFamily?.hausMembers || [];
+      const members = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
       if (members[idx]) {
         if (!members[idx].avatarConfig) members[idx].avatarConfig = {};
         if (part === 'skin') members[idx].avatarConfig.skinFilter = value;
         else members[idx].avatarConfig[part] = value;
         await saveUserDoc({ hausMembers: members });
+        if (currentFamily) currentFamily.hausMembers = members;
+        showToast('Avatar updated! ✨', 'success');
       }
     }
     renderApp();
-  } catch(e) { console.error('saveAvatarPart error:', e); }
+  } catch(e) { 
+    console.error('saveAvatarPart error:', e); 
+    showToast('Error saving avatar', 'error');
+  }
 };
 
 window.setAvBody = function(body) {

@@ -42,7 +42,7 @@ function getMemberAvatar(member, size) {
 
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot,
   collection, addDoc, query, where, getDocs, arrayUnion, arrayRemove,
   serverTimestamp, deleteDoc, orderBy, limit }
@@ -216,8 +216,8 @@ let UI = {
 
 // ── Firebase Auth ──────────────────────────────────────────
 function signInWithGoogle() {
-  var provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(function(e){
+  const provider = new GoogleAuthProvider();
+  signInWithPopup(auth, provider).catch(function(e){
     console.error('Sign in error:', e);
     alert('Sign in failed. Please try again.');
   });

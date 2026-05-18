@@ -15,7 +15,11 @@ function getHeadChefAvatar(size) {
   var s = size || 44;
   if (cfg.body) {
     var skinFilter = cfg.skinFilter || 'none';
-    return '<img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/'+cfg.body+'_ISOLATED.png" style="width:auto;height:'+s+'px;object-fit:contain;object-position:top center;filter:'+skinFilter+' drop-shadow(0 0 0 transparent);background:transparent" onerror="this.style.opacity=0"/>';
+    // For home screen (large size >= 150) show face close up, otherwise show full body
+    if (s >= 150) {
+      return '<img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/'+cfg.body+'_ISOLATED.png" style="width:'+(s*1.2)+'px;height:'+(s*2.4)+'px;object-fit:cover;object-position:top center;margin-left:-'+(s*0.1)+'px;filter:'+skinFilter+'" onerror="this.style.opacity=0"/>';
+    }
+    return '<img src="https://raw.githubusercontent.com/judyeva42-design/Nueromeal-v4/main/'+cfg.body+'_ISOLATED.png" style="width:'+s+'px;height:'+(s*1.5)+'px;object-fit:cover;object-position:top center;filter:'+skinFilter+'" onerror="this.style.opacity=0"/>';
   }
   return avatar({
     g: cfg.g || 'female',
@@ -645,7 +649,7 @@ function renderAvatarModal() {
     <div style="width:100%;max-width:420px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--cyan)">🎨 Your Avatar</div>
-        <button id="av-modal-close" style="padding:6px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:12px;cursor:pointer;font-family:var(--fb)">✕ Close</button>
+        <button onclick="window.closeAvatarModal()" style="padding:6px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:12px;cursor:pointer;font-family:var(--fb)">✕ Close</button>
       </div>
       <!-- Full body preview -->
       <div style="text-align:center;background:var(--card2);border-radius:16px;padding:20px;margin-bottom:16px">
@@ -655,9 +659,7 @@ function renderAvatarModal() {
       ${renderAvatarCustomizer('headchef', cfg)}
     </div>`;
   document.body.appendChild(modal);
-  // Wire up close button after DOM insert
-  const closeBtn = document.getElementById('av-modal-close');
-  if (closeBtn) closeBtn.addEventListener('click', function() { window.closeAvatarModal(); });
+  // Close button uses onclick directly
 }
 
 function renderFamilySetup() {
@@ -2084,8 +2086,8 @@ function renderDash() {
   +'<circle cx="90" cy="90" r="82" fill="none" stroke="#5ecfdb" stroke-width="7" stroke-dasharray="'+(2*Math.PI*82)+'" stroke-dashoffset="'+(2*Math.PI*82*(1-wPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
   +'<circle cx="90" cy="90" r="68" fill="none" stroke="#a78bfa" stroke-width="6" stroke-dasharray="'+(2*Math.PI*68)+'" stroke-dashoffset="'+(2*Math.PI*68*(1-nPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
   +'</svg>'
-  +'<div style="position:absolute;top:0;left:0;width:180px;height:180px;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;border-radius:50%;background:var(--card2)">'
-  +getHeadChefAvatar(220)
+  +'<div style="position:absolute;top:0;left:0;width:180px;height:180px;overflow:hidden;border-radius:50%;background:var(--card2)">'
+  +getHeadChefAvatar(180)
   +'</div>'
   +'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px">✏️</div>'
   +'</div>'
@@ -4666,7 +4668,8 @@ window.createAvatar = function(memberName) {
 window.closeAvatarModal = function() {
   UI.showAvatarModal = false;
   UI.avatarBuilderTarget = null;
-  renderApp();
+  const modal = document.getElementById('avatar-modal');
+  if (modal) modal.remove();
 };
 
 window.toggleAvatarSection = function() {
@@ -4774,10 +4777,17 @@ window.saveAvatarPart = async function(target, part, value) {
         showToast('Avatar updated! ✨', 'success');
       }
     }
-    renderApp();
+    // Remove and re-render modal to show updated selection
+    const existingModal = document.getElementById('avatar-modal');
+    if (existingModal) {
+      existingModal.remove();
+      renderAvatarModal();
+    } else {
+      renderApp();
+    }
   } catch(e) { 
     console.error('saveAvatarPart error:', e); 
-    showToast('Error saving avatar', 'error');
+    showToast('Error saving - try again', 'error');
   }
 };
 

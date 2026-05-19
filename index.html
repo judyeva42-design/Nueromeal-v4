@@ -729,9 +729,7 @@ function renderHeader() {
       <div class="xptr"><div class="xpfl" style="width:${pr}%"></div></div>
     </div>
     <div class="hdr-right">
-      <img src="${currentUser?.photoURL||''}" onerror="this.style.display='none'" style="width:30px;height:30px;border-radius:50%;border:2px solid var(--cyan)"/>
-      <div style="display:flex;gap:4px">${(currentFamily?.members||[]).map(m=>renderAvatarBadge(m,24)).join("")}</div>
-      <button onclick="setTab('game')" style="background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.2);border-radius:8px;padding:3px 10px;font-size:10px;font-weight:800;color:var(--yellow);cursor:pointer;font-family:var(--fb)">🎮 ${gameMins}m</button>
+      <div style="font-size:10px;color:var(--gray);font-family:var(--fb)">${currentUser?.displayName?.split(' ')[0]||''}</div>
     </div>
     ` : `
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px">

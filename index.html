@@ -817,7 +817,7 @@ function showPreppiTip(msg) {
 
 // ── Onboarding ─────────────────────────────────────────────
 const ONBOARD_STEPS = [
-  { type:'welcome', emoji:'🧠✨', preppi:"Well HELLO there, superstar!! I'm Preppi — your FamiliAr nutrition guide! I'm about to ask you a few questions so Preppi can make this app feel like it was built JUST for you. Ready to make some magic? ✨" },
+  { type:'welcome', emoji:'🧬💪', preppi:"ALERT! ALERT! New human detected!!" },
   { type:'text', field:'name', preppi:"First things first — what do we call you? Not just 'hey you' 😄", label:'YOUR NAME', placeholder:"What's your name?" },
   { type:'number', field:'age', preppi:"How many trips around the sun have you taken? 🌍 Preppi just wants to make sure your meal portions are on point!", label:'YOUR AGE', placeholder:'Enter your age' },
   { type:'choice', field:'sex', preppi:"Which best describes you? This helps Preppi nail your nutrition targets! 💪", label:'', options:['Female 👩','Male 👨','Non-binary 🌈','Prefer not to say 🤐'] },
@@ -880,10 +880,53 @@ function renderOnboard() {
           </div>
         </div>
 
-        ${s.type === 'welcome' ? `<div style="text-align:center;padding:10px 0">
-          <div style="font-size:56px;margin-bottom:12px">${s.emoji}</div>
-          <div style="font-family:var(--fd);font-size:22px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">Welcome to FamiliAr!</div>
-          <div style="font-size:13px;color:var(--gray);line-height:1.6">Built for every brain. Powered by AI. Designed to make feeding your family feel less overwhelming and way more fun! 🔥</div>
+        ${s.type === 'welcome' ? `<div style="display:flex;flex-direction:column;gap:0">
+
+          <!-- STORY BUBBLES -->
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+
+            <!-- PrePii bubble 1 -->
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="font-size:32px;flex-shrink:0;animation:bounce 1s infinite">🧬</div>
+              <div style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:0 16px 16px 16px;padding:12px 14px;flex:1">
+                <div style="font-size:10px;font-weight:900;color:#a78bfa;letter-spacing:1px;margin-bottom:4px">PrePii · Chief Nutrition Scientist</div>
+                <div style="font-size:13px;line-height:1.6;color:var(--white)">Hi!! I'm PrePii — Chief Nutrition Scientist at FamiliAr headquarters!</div>
+              </div>
+            </div>
+
+            <!-- PrePii bubble 2 -->
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="font-size:32px;flex-shrink:0">🧬</div>
+              <div style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:0 16px 16px 16px;padding:12px 14px;flex:1">
+                <div style="font-size:13px;line-height:1.6;color:var(--white)">Somewhere between <em>'I'll eat healthy tomorrow'</em> and <em>'why is there cereal for dinner again'</em> — life loses the plot. Meals become chaos. Kids eat beige food only. Adults forget to drink water. Nobody agrees on ANYTHING.</div>
+              </div>
+            </div>
+
+            <!-- PrePii bubble 3 -->
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="font-size:32px;flex-shrink:0">🧬</div>
+              <div style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:0 16px 16px 16px;padding:12px 14px;flex:1">
+                <div style="font-size:13px;line-height:1.6;color:var(--white)">That's exactly why I'm here. With me, you get <strong style="color:#a78bfa">LiTii!!</strong> 🧪✨</div>
+              </div>
+            </div>
+
+            <!-- FiTii bubble -->
+            <div style="display:flex;gap:10px;align-items:flex-start;flex-direction:row-reverse">
+              <div style="font-size:32px;flex-shrink:0;animation:bounce 1s infinite 0.3s">💪</div>
+              <div style="background:rgba(240,25,90,.15);border:1px solid rgba(240,25,90,.3);border-radius:16px 0 16px 16px;padding:12px 14px;flex:1">
+                <div style="font-size:10px;font-weight:900;color:#f0195a;letter-spacing:1px;margin-bottom:4px;text-align:right">FiTii · Wellness Champion</div>
+                <div style="font-size:14px;line-height:1.6;color:var(--white);font-weight:800;text-align:right">WITH ME YOU GET FiTii!! 💪🔥</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Tour or Skip buttons -->
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+            <button onclick="window.startTour()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a78bfa,#5ecfdb);border:none;border-radius:12px;color:#000;font-size:14px;font-weight:900;cursor:pointer;font-family:var(--fd)">🗺️ Give me the tour!!</button>
+            <button onclick="window.skipTour()" style="width:100%;padding:13px;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--white);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb)">✅ Let's just get started!!</button>
+          </div>
+
         </div>` : ''}
 
         ${s.type === 'text' || s.type === 'number' ? `<div>
@@ -2124,7 +2167,7 @@ function renderDash() {
   +tile('fitti','💪','FiTii','#f0195a')
   +tile('water','💧','HydratEii','#5ecfdb',wPct<50?'!':'')
   +tile('meals','🍽️','MeaLii','#fbbf24')
-  +tile('recipes','📖','Recipes','#fb923c')
+  +tile('recipes','📖','RecipEii','#fb923c')
   +tile('pantry','🥫','GroceRii','#fbbf24')
   +tile('family','👨‍👩‍👧','FamLii','#3dd68c')
   +tile('circle','🫂','SociaLii','#60a5fa')
@@ -4665,6 +4708,20 @@ window.createAvatar = function(memberName) {
   renderApp();
 };
 
+// Tour functions
+window.startTour = function() {
+  // Move to next onboard step but flag tour mode
+  UI.tourMode = true;
+  UI.onboardStep = (UI.onboardStep || 0) + 1;
+  renderApp();
+};
+
+window.skipTour = function() {
+  UI.tourMode = false;
+  UI.onboardStep = (UI.onboardStep || 0) + 1;
+  renderApp();
+};
+
 window.closeAvatarModal = function() {
   UI.showAvatarModal = false;
   UI.avatarBuilderTarget = null;
@@ -5051,6 +5108,10 @@ body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:10
 .tc{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;position:relative;transition:transform .15s;border:2px solid transparent;cursor:pointer}
 .tc:active{transform:scale(.92)}
 .tl{font-family:'Syne',sans-serif;font-size:13px;font-weight:900;color:#f2f2ff;text-align:center;letter-spacing:-0.3px}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
 </style>
 </body>
 </html>

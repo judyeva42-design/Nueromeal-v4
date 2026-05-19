@@ -161,18 +161,16 @@ const AV_TONES = [
   {label:"Dark", mod:"\u{1F3FF}", swatch:"#4A2912"},
 ];
 const AV_HAIR = [
-  {id:"straight",emoji:"\u{1F471}",label:"Straight",stages:["adult","teen"]},
-  {id:"curly",emoji:"\u{1F9B1}",label:"Curly",stages:["adult","teen","child"]},
-  {id:"coily",emoji:"\u{1F9B1}",label:"Coily/Natural",stages:["adult","teen","child"]},
-  {id:"locs",emoji:"\u{1F9B1}",label:"Locs",stages:["adult","teen"]},
-  {id:"short",emoji:"\u{1F9B2}",label:"Short/Shaved",stages:["adult","teen"]},
-  {id:"long",emoji:"\u{1F9B0}",label:"Long",stages:["adult","teen","child"]},
-  {id:"braids",emoji:"\u{1F9B1}",label:"Braids",stages:["adult","teen","child"]},
-  {id:"ponytail",emoji:"\u{1F487}",label:"Ponytail",stages:["adult","teen","child"]},
-  {id:"headwrap",emoji:"\u{1F9D5}",label:"Head Wrap",stages:["adult","teen"]},
-  {id:"hijab",emoji:"\u{1F9D5}",label:"Hijab",stages:["adult","teen"]},
-  {id:"pigtails",emoji:"\u{1F467}",label:"Pigtails",stages:["child"]},
-  {id:"afropuffs",emoji:"\u{1F9B1}",label:"Afro Puffs",stages:["child","teen"]},
+  {id:"hair_wavy_medium",emoji:"🌊",label:"Wavy Medium",png:"hair_wavy_medium.PNG",stages:["adult","teen"]},
+  {id:"hair_short_brushed",emoji:"✂️",label:"Short Brushed",png:"hair_short_brushed.PNG",stages:["adult","teen"]},
+  {id:"hair_long_shaggy",emoji:"🌿",label:"Long Shaggy",png:"hair_long_shaggy.PNG",stages:["adult","teen"]},
+  {id:"hair_bob_straight",emoji:"💇",label:"Bob Straight",png:"hair_bob_straight.PNG",stages:["adult","teen"]},
+  {id:"hair_taper_straight",emoji:"🪒",label:"Taper Straight",png:"hair_taper_straight.PNG",stages:["adult","teen"]},
+  {id:"hair_locs_long",emoji:"🌀",label:"Locs Long",png:"hair_locs_long.PNG",stages:["adult","teen"]},
+  {id:"hair_curly_updo",emoji:"🌸",label:"Curly Updo",png:"hair_curly_updo.PNG",stages:["adult","teen"]},
+  {id:"hair_taper_textured",emoji:"🔥",label:"Taper Textured",png:"hair_taper_textured.PNG",stages:["adult","teen"]},
+  {id:"hair_cornrows",emoji:"⚡",label:"Cornrows",png:"hair_cornrows.PNG",stages:["adult","teen"]},
+  {id:"hair_box_braids_long",emoji:"🔗",label:"Box Braids",png:"hair_box_braids_long.PNG",stages:["adult","teen"]},
 ];
 const AV_OUTFITS = [
   {id:"casual",emoji:"\u{1F455}",label:"Casual Tee",stages:["adult","teen","child"],unlock:"starter",unlockDesc:"Welcome gift!"},
@@ -651,7 +649,10 @@ function renderAvatarModal() {
       </div>
       <!-- Full body preview -->
       <div style="text-align:center;background:var(--card2);border-radius:16px;padding:20px;margin-bottom:16px">
-        ${cfg.body ? `<img src="https://nueromeal.netlify.app/${cfg.body}_isolated.png" style="height:220px;object-fit:contain;filter:${cfg.skinFilter||'none'}" onerror="this.style.opacity=0"/>` : '<div style="font-size:64px;padding:20px">👤</div>'}
+        ${cfg.body ? `<div style="position:relative;display:inline-block;height:220px">
+  <img src="https://nueromeal.netlify.app/${cfg.body}_isolated.png" style="height:220px;object-fit:contain;filter:${cfg.skinFilter||'none'}" onerror="this.style.opacity=0"/>
+  ${cfg.hair ? `<img src="https://nueromeal.netlify.app/${AV_HAIR.find(h=>h.id===cfg.hair)?.png||''}" style="position:absolute;top:0;left:50%;transform:translateX(-50%);height:220px;object-fit:contain;mix-blend-mode:multiply" onerror="this.style.display='none'"/>` : ''}
+</div>` : '<div style="font-size:64px;padding:20px">👤</div>'}
         <div style="font-size:11px;color:var(--gray);margin-top:8px">${cfg.hair||'No hair selected'} · ${cfg.outfit||'No outfit'}</div>
       </div>
       ${renderAvatarCustomizer('headchef', cfg)}
@@ -973,6 +974,7 @@ function renderOnboard() {
               ${UI.onboardData.avatarConfig ? `
                 <div style="position:relative;width:160px;height:200px">
                   <img src="https://nueromeal.netlify.app/${UI.onboardData.avatarConfig.body}_isolated.png" style="width:100%;height:100%;object-fit:contain;filter:${UI.onboardData.avatarConfig.skinFilter||'none'}"/>
+                  ${UI.onboardData.avatarConfig.hair ? `<img src="https://nueromeal.netlify.app/${AV_HAIR.find(h=>h.id===UI.onboardData.avatarConfig.hair)?.png||''}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply" onerror="this.style.display='none'"/>` : ''}
                   ${UI.onboardData.avatarConfig.outfit ? `<img src="https://nueromeal.netlify.app/outfits/${UI.onboardData.avatarConfig.outfit}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'"/>` : ''}
                 </div>
               ` : `<div style="font-size:48px">👤</div><div style="font-size:12px;color:var(--gray);position:absolute;bottom:16px">Build your avatar below!</div>`}
@@ -4796,7 +4798,10 @@ function renderAvatarCustomizer(target, prefs) {
     
     <!-- Preview -->
     <div style="text-align:center;background:var(--card2);border-radius:12px;padding:16px;margin-bottom:12px;height:160px;display:flex;align-items:center;justify-content:center">
-      ${cfg.body ? `<img src="https://nueromeal.netlify.app/${cfg.body}_isolated.png" style="height:140px;object-fit:contain;filter:${cfg.skinFilter||'none'}"/>` : '<div style="font-size:40px">👤</div>'}
+      ${cfg.body ? `<div style="position:relative;display:inline-block;height:140px">
+  <img src="https://nueromeal.netlify.app/${cfg.body}_isolated.png" style="height:140px;object-fit:contain;filter:${cfg.skinFilter||'none'}"/>
+  ${cfg.hair ? `<img src="https://nueromeal.netlify.app/${AV_HAIR.find(h=>h.id===cfg.hair)?.png||''}" style="position:absolute;top:0;left:50%;transform:translateX(-50%);height:140px;object-fit:contain;mix-blend-mode:multiply" onerror="this.style.display='none'"/>` : ''}
+</div>` : '<div style="font-size:40px">👤</div>'}
     </div>
 
     <!-- Body -->
@@ -4820,7 +4825,10 @@ function renderAvatarCustomizer(target, prefs) {
     <!-- Hair -->
     <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">HAIR STYLE</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
-      ${hairStyles.map(h => `<button onclick="window.saveAvatarPart('${target}','hair','${h}')" style="padding:6px 8px;border:2px solid ${cfg.hair===h?'var(--cyan)':'var(--border)'};border-radius:8px;background:${cfg.hair===h?'rgba(94,207,219,.1)':'var(--card2)'};color:var(--white);font-size:10px;font-weight:700;cursor:pointer">${h}</button>`).join('')}
+      ${AV_HAIR.map(h => `<button onclick="window.saveAvatarPart('${target}','hair','${h.id}')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 8px;border:2px solid ${cfg.hair===h.id?'var(--cyan)':'var(--border)'};border-radius:8px;background:${cfg.hair===h.id?'rgba(94,207,219,.1)':'var(--card2)'};color:var(--white);font-size:10px;font-weight:700;cursor:pointer">
+  <img src="https://nueromeal.netlify.app/${h.png}" style="width:40px;height:40px;object-fit:cover;object-position:top center;border-radius:4px" onerror="this.style.display='none'"/>
+  <span>${h.label}</span>
+</button>`).join('')}
     </div>
 
     <!-- Outfit -->

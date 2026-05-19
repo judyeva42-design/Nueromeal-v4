@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="theme-color" content="#0a0a0f"/>
-<title>NeuroMeal v4</title>
+<title>FamiliAr v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <script type="module">
 // Avatar helper functions - defined early for global access
@@ -136,14 +136,14 @@ const TRIVIA_Q = [
 
 // Preppi - Guide Character Messages
 const PREPPI_TIPS = [
-  {tab:"dashboard", msg:"Hey! I'm Preppi 🥗 Your NeuroMeal guide! Check your meals for today and see how your week is shaping up!"},
+  {tab:"dashboard", msg:"Hey! I'm Preppi 🥗 Your FamiliAr guide! Check your meals for today and see how your week is shaping up!"},
   {tab:"calendar", msg:"This is your meal playground! Tap any + to drop a meal into that slot. Mix it up!"},
   {tab:"meals", msg:"Swipe between recipe view and grocery list! The toggle at the top flips between them."},
   {tab:"nutrition", msg:"Those colorful bars show how your food groups are doing. Green means you're crushing it!"},
   {tab:"shopping", msg:"Your shopping list auto-builds from whatever meals you've planned. Magic!"},
   {tab:"wellness", msg:"How are you feeling today? Your wellness check-in earns you XP and unlocks avatar goodies!"},
   {tab:"game", msg:"Game Bank minutes are earned by cooking meals! Spend them guilt-free on game breaks!"},
-  {tab:"chat", msg:"This is the NeuroMeal community chat! Say hi, share wins, ask for meal ideas!"},
+  {tab:"chat", msg:"This is the FamiliAr community chat! Say hi, share wins, ask for meal ideas!"},
 ];
 
 const AV_BASE = {
@@ -615,7 +615,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `neuromeal-backup-${new Date().toLocaleDateString().replace(/\//g,"-")}.json`;
+  a.download = `familiar-backup-${new Date().toLocaleDateString().replace(/\//g,"-")}.json`;
   a.click();
   showToast("Backup downloaded!", "success");
 }
@@ -696,7 +696,7 @@ function renderTopBar() {
   <div class="tbinner">
     <div style="display:flex;align-items:center;gap:8px">
       <div style="font-size:9px;font-weight:800;color:var(--gray);letter-spacing:1px">FAMILY</div>
-      <div style="font-size:13px;font-weight:800;color:var(--cyan)">${fam?.name||"NeuroMeal"}</div>
+      <div style="font-size:13px;font-weight:800;color:var(--cyan)">${fam?.name||"FamiliAr"}</div>
       ${fam ? `<div style="font-size:10px;color:var(--gray)">· ${(fam?.members||[]).length||1} members</div>` : ""}
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
@@ -722,7 +722,7 @@ function renderHeader() {
   document.getElementById("hdr").innerHTML = `
   <div class="hdri">
     <div class="logo">🧠</div>
-    <div><div class="lt">NeuroMeal</div><div class="ls">FAMILY PLANNER v4</div></div>
+    <div><div class="lt">FamiliAr</div><div class="ls">FAMILY APP</div></div>
     ${currentUser ? `
     <div class="xpw">
       <div class="xpt"><div class="lvl">LVL ${lv}</div><div class="xpn">${xp} XP</div></div>
@@ -747,12 +747,12 @@ function renderNav() {
   const alerts = currentFamily ? getNutrAlerts(UI.selDay).length : 0;
   const chals = (currentFamily?.challenges||[]).filter(c=>c.status==="active").length;
   const tabs = [
-    {id:"dashboard",icon:"🏠",label:"Home"},
-    {id:"plan",icon:"📅",label:"Plan"},
-    {id:"preppi",icon:"🥗",label:"Preppi"},
-    {id:"pantry",icon:"🥫",label:"Pantry"},
-    {id:"family",icon:"👨‍👩‍👧",label:"Family"},
-    {id:"circle",icon:"🫂",label:"Circle"},
+    {id:"dashboard",icon:"🏠",label:"HomEii"},
+    {id:"plan",icon:"📅",label:"PlaNii"},
+    {id:"preppi",icon:"🥗",label:"PrePii"},
+    {id:"pantry",icon:"🥫",label:"GroceRii"},
+    {id:"family",icon:"👨‍👩‍👧",label:"FamLii"},
+    {id:"circle",icon:"🫂",label:"SociaLii"},
   ];
   const roomColors = {dashboard:"var(--room-home)",plan:"var(--room-plan)",preppi:"var(--room-preppi)",pantry:"var(--room-pantry)",family:"var(--room-family)",circle:"var(--room-circle)"};
   document.getElementById("nav").innerHTML = `<div style="display:flex;justify-content:space-around;align-items:center;padding:0 4px;height:100%;max-width:480px;margin:0 auto">${tabs.map(t=>{
@@ -809,7 +809,7 @@ function showPreppiTip(msg) {
   const el = document.createElement("div");
   el.id = "preppi-tip";
   el.style.cssText = "position:fixed;bottom:90px;right:16px;background:var(--card);border:2px solid var(--cyan);border-radius:16px;padding:12px 14px;max-width:240px;z-index:800;animation:slideIn .3s ease;box-shadow:0 8px 32px rgba(105,201,208,.2)";
-  el.innerHTML = `<div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:24px">🥗</div><div><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><div style="font-size:11px;font-weight:900;color:var(--room-preppi);font-family:var(--fd)">Preppi</div><div style="font-size:9px;color:var(--gray)">· Your nutrition guide</div></div><div style="font-size:11px;line-height:1.5;color:var(--white)">${msg}</div></div><button onclick="this.closest('#preppi-tip').remove()" style="background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:14px;padding:0;flex-shrink:0">×</button></div>`;
+  el.innerHTML = `<div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:24px">🥗</div><div><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><div style="font-size:11px;font-weight:900;color:var(--room-preppi);font-family:var(--fd)">PrePii</div><div style="font-size:9px;color:var(--gray)">· Your nutrition guide</div></div><div style="font-size:11px;line-height:1.5;color:var(--white)">${msg}</div></div><button onclick="this.closest('#preppi-tip').remove()" style="background:transparent;border:none;cursor:pointer;color:var(--gray);font-size:14px;padding:0;flex-shrink:0">×</button></div>`;
   document.body.appendChild(el);
   setTimeout(() => { if(el.parentNode) el.remove(); }, 5000);
 }
@@ -817,7 +817,7 @@ function showPreppiTip(msg) {
 
 // ── Onboarding ─────────────────────────────────────────────
 const ONBOARD_STEPS = [
-  { type:'welcome', emoji:'🧠✨', preppi:"Well HELLO there, superstar!! I'm Preppi — your NeuroMeal nutrition guide! I'm about to ask you a few questions so Preppi can make this app feel like it was built JUST for you. Ready to make some magic? ✨" },
+  { type:'welcome', emoji:'🧠✨', preppi:"Well HELLO there, superstar!! I'm Preppi — your FamiliAr nutrition guide! I'm about to ask you a few questions so Preppi can make this app feel like it was built JUST for you. Ready to make some magic? ✨" },
   { type:'text', field:'name', preppi:"First things first — what do we call you? Not just 'hey you' 😄", label:'YOUR NAME', placeholder:"What's your name?" },
   { type:'number', field:'age', preppi:"How many trips around the sun have you taken? 🌍 Preppi just wants to make sure your meal portions are on point!", label:'YOUR AGE', placeholder:'Enter your age' },
   { type:'choice', field:'sex', preppi:"Which best describes you? This helps Preppi nail your nutrition targets! 💪", label:'', options:['Female 👩','Male 👨','Non-binary 🌈','Prefer not to say 🤐'] },
@@ -833,7 +833,7 @@ const ONBOARD_STEPS = [
   { type:'double2', preppi:"Almost done! Want to track your weight goals? This helps Preppi suggest the right meals for where you want to be! Totally optional 💪", labels:['Current Weight (optional)','Target Weight (optional)'], fields:['currentWeight','targetWeight'] },
   { type:'text', field:'phone', preppi:"📱 Last thing — your phone number! SMS meal reminders and daily tips are coming soon. Drop your number and you will be first to know when it launches! 🔔", label:'PHONE NUMBER (optional)', placeholder:'e.g. (555) 123-4567...' },
   { type:'avatar', emoji:'🎨✨', preppi:"Almost done! Let's create your avatar! Tap the button below to customize your look! 🎨" },
-  { type:'complete', emoji:'🎉🧠🔥', preppi:"YESSS!! You did it!! 🎉 Preppi now knows everything she needs to make NeuroMeal feel like it was built just for you! Your meals are about to get SO much smarter!" },
+  { type:'complete', emoji:'🎉🧠🔥', preppi:"YESSS!! You did it!! 🎉 Preppi now knows everything she needs to make FamiliAr feel like it was built just for you! Your meals are about to get SO much smarter!" },
 ];
 
 function renderOnboard() {
@@ -882,7 +882,7 @@ function renderOnboard() {
 
         ${s.type === 'welcome' ? `<div style="text-align:center;padding:10px 0">
           <div style="font-size:56px;margin-bottom:12px">${s.emoji}</div>
-          <div style="font-family:var(--fd);font-size:22px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">Welcome to NeuroMeal!</div>
+          <div style="font-family:var(--fd);font-size:22px;font-weight:900;letter-spacing:-1px;margin-bottom:8px">Welcome to FamiliAr!</div>
           <div style="font-size:13px;color:var(--gray);line-height:1.6">Built for every brain. Powered by AI. Designed to make feeding your family feel less overwhelming and way more fun! 🔥</div>
         </div>` : ''}
 
@@ -1345,7 +1345,7 @@ function bindFamilyMembers() {
     });
   });
 
-  // Head Chef water logging
+  // FamLii Chef water logging
   document.querySelectorAll('[data-hc-water]').forEach(btn => {
     btn.addEventListener('click', async function() {
       const amt = parseInt(this.getAttribute('data-hc-water'));
@@ -1430,7 +1430,7 @@ const FUNNY_FIX_BTNS = {
   "Fruit":    "My fruits are crying 🍎😭",
   "Veggies":  "The vegetables have left the chat 🥦👋",
   "Protein":  "My muscles are filing a complaint 💪😤",
-  "Water":    "I am basically a raisin right now 🍇",
+  "HydratEii":    "I am basically a raisin right now 🍇",
   "Dairy":    "The cows are disappointed 🐄😞",
   "Grains":   "My carbs ghosted me 🍞👻",
   "Fat":      "My brain is running on fumes 🧠💨",
@@ -1466,8 +1466,8 @@ function renderProfile() {
   return `<div style="padding:20px">
     <div style="text-align:center;margin-bottom:20px">
       ${getHeadChefAvatar(80)}
-      <div style="font-size:16px;font-weight:800;margin-top:8px">${profile.name||'Head Chef'}</div>
-      <div style="font-size:11px;color:var(--gray)">Head Chef · Level ${profile.level||1} · ${profile.xp||0} XP</div>
+      <div style="font-size:16px;font-weight:800;margin-top:8px">${profile.name||'FamLii Chef'}</div>
+      <div style="font-size:11px;color:var(--gray)">FamLii Chef · Level ${profile.level||1} · ${profile.xp||0} XP</div>
     </div>
     <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px">
       ${[['Name',profile.name||'Not set'],['Age',profile.age||'Not set'],['Diet',profile.diet||'Standard'],['Goal',profile.goal||'General health'],['Water Goal',(profile.waterGoalOz||64)+'oz/day']].map(([k,v])=>`
@@ -1588,9 +1588,9 @@ function renderMain() {
     const budget = currentFamily?.weeklyBudget || 0;
     const profile = userDoc?.profile || {};
     const hausMembers = currentFamily?.hausMembers || [];
-    const hausSize = (hausMembers||[]).length + 1; // +1 for Head Chef
+    const hausSize = (hausMembers||[]).length + 1; // +1 for FamLii Chef
     const prompt = `Plan a full week of family meals${budget > 0 ? " within a $" + budget + " weekly budget" : " that is budget friendly"} for ${hausSize} people. Diet: ${profile.diet||"Standard"}. Avoid: ${profile.avoid||"none"}. Include estimated cost per meal and a weekly total. Keep meals simple and practical for a busy family.`;
-    this.textContent = '🥗 Preppi is planning...';
+    this.textContent = '🥗 PrePii is planning...';
     this.disabled = true;
     if (resultEl) resultEl.innerHTML = '<div style="font-size:12px;color:var(--gray);padding:10px">Planning your budget week...</div>';
     const reply = await callAI([{role:'user',content:prompt}], getPreppiSystemPrompt());
@@ -1785,9 +1785,9 @@ Keep it practical and actionable.`;
     const code = currentFamily?.inviteCode;
     if (!code) return;
     const url = "https://nueromeal.netlify.app";
-    const msg = "Hey! Join me on NeuroMeal 🧠🥗\nThe AI-powered family meal planning app!\n\nDownload at: " + url + "\n\nUse my family code " + code + " to join the Evans Family when member accounts launch!";
+    const msg = "Hey! Join me on FamiliAr 🧠🥗\nThe AI-powered family meal planning app!\n\nDownload at: " + url + "\n\nUse my family code " + code + " to join the Evans Family when member accounts launch!";
     if (navigator.share) {
-      try { await navigator.share({ title: 'Join NeuroMeal! 🧠🥗', text: msg, url }); }
+      try { await navigator.share({ title: 'Join FamiliAr! 🧠🥗', text: msg, url }); }
       catch(e) { navigator.clipboard?.writeText(msg); showToast('Invite copied to clipboard! 📋', 'success'); }
     } else {
       navigator.clipboard?.writeText(msg);
@@ -1875,7 +1875,7 @@ Keep it practical and actionable.`;
 function renderPlan() {
   const subRooms = [
     {id:"calendar", icon:"📅", label:"Calendar"},
-    {id:"shopping", icon:"🛒", label:"Shopping"},
+    {id:"shopping", icon:"🛒", label:"ShoPii"},
     {id:"nutrients", icon:"🥦", label:"Nutrients"},
   ];
   const sub = UI.planRoom || "calendar";
@@ -1910,7 +1910,7 @@ function renderNutrients(subNav) {
     {label:'Carbs',    icon:'🌾', current: today.carbs||0,    goal: goals.carbs||250,     unit:'g',    color:'#f59e0b'},
     {label:'Fat',      icon:'🥑', current: today.fat||0,      goal: goals.fat||65,        unit:'g',    color:'#a78bfa'},
     {label:'Fiber',    icon:'🥦', current: today.fiber||0,    goal: goals.fiber||25,      unit:'g',    color:'#34d399'},
-    {label:'Water',    icon:'💧', current: today.water||0,    goal: goals.water||8,       unit:'cups', color:'#60a5fa'},
+    {label:'HydratEii',    icon:'💧', current: today.water||0,    goal: goals.water||8,       unit:'cups', color:'#60a5fa'},
   ];
   return `<div class="fu">${subNav||''}
     <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--cyan);margin-bottom:16px;letter-spacing:-0.5px">🥗 Nutrients</div>
@@ -1937,7 +1937,7 @@ function renderNutrients(subNav) {
 
 function renderPreppiRoom() {
   const subRooms = [
-    {id:"chat", icon:"🥗", label:"Preppi"},
+    {id:"chat", icon:"🥗", label:"PrePii"},
     {id:"cookbook", icon:"📖", label:"Cookbook"},
   ];
   const sub = UI.preppiRoom || "chat";
@@ -1964,8 +1964,8 @@ function renderCircle() {
   const subRooms = [
     {id:"feed", icon:"📸", label:"Feed"},
     {id:"chat", icon:"💬", label:"Chat"},
-    {id:"games", icon:"🎮", label:"Games"},
-    {id:"challenges", icon:"🏆", label:"Challenges"},
+    {id:"games", icon:"🎮", label:"GamEii"},
+    {id:"challenges", icon:"🏆", label:"BattlEii"},
   ];
   const sub = UI.circleRoom || "feed";
 
@@ -2049,7 +2049,7 @@ function renderDash() {
   if (!currentUser) {
     return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center">'
       +'<div style="font-size:64px;margin-bottom:16px">🥗</div>'
-      +'<div style="font-size:32px;font-weight:900;background:linear-gradient(135deg,#5ecfdb,#f0195a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">NeuroMeal</div>'
+      +'<div style="font-size:32px;font-weight:900;background:linear-gradient(135deg,#5ecfdb,#f0195a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">FamiliAr</div>'
       +'<div style="font-size:13px;color:#7070a0;margin-bottom:8px;line-height:1.6">Your family health adventure<br>powered by AI</div>'
       +'<div style="display:flex;gap:8px;margin-bottom:28px;font-size:20px">🐟💪👨‍👩‍👧🏆</div>'
       +'<button onclick="signInWithGoogle()" style="width:100%;max-width:280px;padding:16px;background:linear-gradient(135deg,#5ecfdb,#f0195a);border:none;border-radius:14px;color:#000;font-size:15px;font-weight:900;cursor:pointer">🚀 Get Started with Google</button>'
@@ -2069,7 +2069,7 @@ function renderDash() {
   var nPct = 45;
   // Build family array for rings
   var family = {
-    members: [{name:profile.name||firstName,emoji:'👨‍🍳',goal:'Head Chef',waterGoal:myWaterGoal,isHC:true,avatarConfig:profile.avatarConfig},
+    members: [{name:profile.name||firstName,emoji:'👨‍🍳',goal:'FamLii Chef',waterGoal:myWaterGoal,isHC:true,avatarConfig:profile.avatarConfig},
       ...hausMembers.map(function(m){return {name:m.name,emoji:m.emoji||'🧑',goal:m.goal||'',waterGoal:m.waterGoalOz||64,avatarConfig:m.avatarConfig};})],
     weekPlan: weekPlan
   };
@@ -2556,7 +2556,7 @@ function waterScreen() {
   return '<div style="padding:16px">'
   +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
   +'<button onclick="go(\'home\')" style="width:36px;height:36px;border-radius:50%;background:#181828;border:1px solid #22223a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>'
-  +'<div style="font-size:20px;font-weight:900;color:#5ecfdb">💧 Water Tracker</div>'
+  +'<div style="font-size:20px;font-weight:900;color:#5ecfdb">💧 HydratEii Tracker</div>'
   +'</div>'
   +family.members.map(function(m){
     var logged = waterLog[m.name]||0;
@@ -2691,7 +2691,7 @@ function renderCal() {
 
   return `<div class="fu">
   ${hasDraft ? `<div id="draft-banner" style="background:linear-gradient(135deg,rgba(105,201,208,.15),rgba(238,29,82,.1));border:1px solid rgba(105,201,208,.3);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
-    <div><div style="font-size:13px;font-weight:800;color:var(--cyan)">🥗 Preppi has a plan ready!</div>
+    <div><div style="font-size:13px;font-weight:800;color:var(--cyan)">🥗 PrePii has a plan ready!</div>
     <div style="font-size:11px;color:var(--gray);margin-top:2px">Tap to fill your entire week</div></div>
     <button id="load-draft-btn" style="padding:8px 16px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-weight:900;font-size:12px;cursor:pointer;font-family:var(--fd)">Load Week!</button>
   </div>` : ""}
@@ -2834,7 +2834,7 @@ async function generateShoppingList() {
 
   const profile = userDoc?.profile || {};
   const hausMembers = currentFamily?.hausMembers || [];
-  const hausSize = (hausMembers||[]).length + 1; // +1 for Head Chef
+  const hausSize = (hausMembers||[]).length + 1; // +1 for FamLii Chef
 
   const prompt = `Create a complete shopping list for a family of ${hausSize} for these meals: ${meals.join(", ")}.
 Diet: ${profile.diet||"Standard"}. Avoid: ${profile.avoid||"none"}.
@@ -2866,7 +2866,7 @@ function renderShop() {
 
   return `<div class="fu">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--room-plan);margin-bottom:0;letter-spacing:-0.5px">🛒 Shopping</div>
+    <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--room-plan);margin-bottom:0;letter-spacing:-0.5px">🛍️ ShoPii</div>
     <button id="shop-generate-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:12px;color:#000;font-weight:900;font-size:11px;cursor:pointer;font-family:var(--fd)">🥗 Generate List</button>
   </div>
 
@@ -2898,7 +2898,7 @@ function renderShop() {
   </div>`}
   
   <div id="shop-loading" style="display:none;text-align:center;padding:20px;color:var(--gray)">
-    <div style="font-size:13px">🥗 Preppi is building your list...</div>
+    <div style="font-size:13px">🥗 PrePii is building your list...</div>
   </div>
   `}
   </div>`;
@@ -2979,7 +2979,7 @@ function renderCompete() {
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="font-family:var(--fd);font-size:15px;font-weight:800;margin-bottom:12px;letter-spacing:-0.5px">📊 My Stats This Week</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-      ${[{l:"Meals",v:ws.meals,c:"var(--cyan)"},{l:"Nutrition",v:ws.nutrition+"%",c:"var(--green)"},{l:"Cooked",v:ws.cooked,c:"var(--orange)"}].map(s=>`<div style="text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px"><div style="font-family:var(--fd);font-size:22px;font-weight:900;color:${s.c}">${s.v}</div><div style="font-size:9px;color:var(--gray);font-weight:700;margin-top:3px">${s.l.toUpperCase()}</div></div>`).join("")}
+      ${[{l:"MeaLii",v:ws.meals,c:"var(--cyan)"},{l:"Nutrition",v:ws.nutrition+"%",c:"var(--green)"},{l:"Cooked",v:ws.cooked,c:"var(--orange)"}].map(s=>`<div style="text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px"><div style="font-family:var(--fd);font-size:22px;font-weight:900;color:${s.c}">${s.v}</div><div style="font-size:9px;color:var(--gray);font-weight:700;margin-top:3px">${s.l.toUpperCase()}</div></div>`).join("")}
     </div>
   </div>
   <div style="text-align:center;padding:22px;color:var(--gray);font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:14px">No active challenges. Issue one to compete with friends!</div>
@@ -3115,7 +3115,7 @@ async function generateWeeklyPlan() {
   if (!currentUser || !currentFamily) return;
   const profile = userDoc?.profile || {};
   const hausMembers = currentFamily?.hausMembers || [];
-  const hausSize = (hausMembers||[]).length + 1; // +1 for Head Chef
+  const hausSize = (hausMembers||[]).length + 1; // +1 for FamLii Chef
   
   UI.aiLoading = true;
   UI.aiChat = [...UI.aiChat, {role:"user", text:"✨ Generate a full week of meals for my family!"}];
@@ -3332,7 +3332,7 @@ function tapMemCard(idx) {
 
 function renderFamily() {
   if (!currentUser) return `<div style="padding:40px;text-align:center;color:var(--gray)"><div style="font-size:44px;margin-bottom:12px">👨‍👩‍👧</div><button onclick="signInWithGoogle()" class="btn btnp">Get Active</button></div>`;
-  // Declare early so Head Chef card can use them
+  // Declare early so FamLii Chef card can use them
   const profile = userDoc?.profile || {};
   const hausMembers = currentFamily?.hausMembers || [];
   if (!currentFamily) {
@@ -3356,7 +3356,7 @@ function renderFamily() {
   // profile and hausMembers already declared at top of function
   
   return `<div class="fu">
-  <div class="st">👨‍👩‍👧 Family Hub</div>
+  <div class="st">👨‍👩‍👧 FamLii Hub</div>
   
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -3378,13 +3378,13 @@ function renderFamily() {
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px">${members.map(m=>`<div style="background:var(--card2);border:1px solid ${m.color||"var(--cyan)"};border-radius:14px;padding:12px;text-align:center;min-width:80px"><div style="font-size:28px;margin-bottom:4px">${m.emoji||"🧑"}</div><div style="font-size:12px;font-weight:700">${m.name}</div><div style="font-size:9px;color:var(--gray)">${m.diet||"Standard"}</div></div>`).join("")}</div>` : ""}
   </div>
 
-  <!-- Head Chef Card -->
+  <!-- FamLii Chef Card -->
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:1px;margin-bottom:10px">👨‍🍳 HEAD CHEF</div>
     <div onclick="window.toggleHC()" style="display:flex;align-items:center;gap:10px;cursor:pointer">
       <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--pink));overflow:hidden;flex-shrink:0">${getHeadChefAvatar(44)}</div>
       <div style="flex:1">
-        <div style="font-size:14px;font-weight:800">${profile.name||currentUser.displayName||"Head Chef"}</div>
+        <div style="font-size:14px;font-weight:800">${profile.name||currentUser.displayName||"FamLii Chef"}</div>
         <div style="font-size:10px;color:var(--gray)">${profile.age?"Age "+profile.age+" · ":""}${profile.diet||"Standard"}${profile.goal?" · "+profile.goal:""}</div>
         ${profile.allergies?"<div style=\"font-size:10px;color:var(--pink);margin-top:2px\">⚠️ Allergic to: "+profile.allergies+"</div>":""}
       </div>
@@ -3434,7 +3434,7 @@ function renderFamily() {
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
         <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--room-preppi),var(--pink));overflow:hidden">${getPreppiAvatar(56)}</div>
-        <div style="font-size:9px;color:var(--gray);text-align:center">Preppi</div>
+        <div style="font-size:9px;color:var(--gray);text-align:center">PrePii</div>
       </div>
       ${hausMembers.map((m,i) => '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0"><div style="width:56px;height:56px;border-radius:50%;background:var(--card2);overflow:hidden">' + getMemberAvatar(m, 56) + '</div><div style="font-size:9px;color:var(--gray);text-align:center">' + m.name.split(' ')[0] + '</div></div>').join('')}
     </div>
@@ -3442,7 +3442,7 @@ function renderFamily() {
     <div style="margin-top:12px">
       <div style="display:flex;gap:8px;margin-bottom:10px;overflow-x:auto">
         <button onclick="window.setAvatarTab('headchef')" style="padding:6px 12px;border-radius:8px;border:1px solid ${UI.avatarTab==='headchef'?'var(--cyan)':'var(--border)'};background:${UI.avatarTab==='headchef'?'rgba(94,207,219,.1)':'transparent'};color:${UI.avatarTab==='headchef'?'var(--cyan)':'var(--gray)'};font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap">Your Avatar</button>
-        <button onclick="window.setAvatarTab('preppi')" style="padding:6px 12px;border-radius:8px;border:1px solid ${UI.avatarTab==='preppi'?'var(--room-preppi)':'var(--border)'};background:${UI.avatarTab==='preppi'?'rgba(167,139,250,.1)':'transparent'};color:${UI.avatarTab==='preppi'?'var(--room-preppi)':'var(--gray)'};font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap">Preppi</button>
+        <button onclick="window.setAvatarTab('preppi')" style="padding:6px 12px;border-radius:8px;border:1px solid ${UI.avatarTab==='preppi'?'var(--room-preppi)':'var(--border)'};background:${UI.avatarTab==='preppi'?'rgba(167,139,250,.1)':'transparent'};color:${UI.avatarTab==='preppi'?'var(--room-preppi)':'var(--gray)'};font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap">PrePii</button>
         ${hausMembers.map((m,i) => '<button onclick="window.setAvatarTab(\'' + i + '\')" style="padding:6px 12px;border-radius:8px;border:1px solid ' + (UI.avatarTab==i?'var(--green)':'var(--border)') + ';background:' + (UI.avatarTab==i?'rgba(61,214,140,.1)':'transparent') + ';color:' + (UI.avatarTab==i?'var(--green)':'var(--gray)') + ';font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap">' + m.name.split(' ')[0] + '</button>').join('')}
       </div>
       ${UI.avatarTab === 'headchef' ? renderAvatarCustomizer('headchef', userDoc?.profile?.avatarPrefs) :
@@ -3453,7 +3453,7 @@ function renderFamily() {
 
   <div class="card" style="padding:16px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px">🏠 Household Members</div>
+      <div style="font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-0.5px">🏠 My Peeps</div>
       <button id="add-member-btn" style="padding:6px 12px;background:linear-gradient(135deg,var(--cyan),var(--pink));border:none;border-radius:10px;color:#000;font-size:11px;font-weight:900;cursor:pointer;font-family:var(--fd)">+ Add</button>
     </div>
     <div style="font-size:11px;color:var(--gray);margin-bottom:12px">Add family members who won't create their own account — kids, partners, anyone you cook for!</div>
@@ -3575,7 +3575,7 @@ function renderFamily() {
             <div style="font-size:14px;font-weight:800;color:#fff">Create Member Avatar</div>
             <button id="close-member-avaturn" style="padding:6px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;font-size:12px;cursor:pointer">Done</button>
           </div>
-          <iframe id="member-avaturn-frame" src="https://neuromeal.avaturn.dev/?frameApi" allow="camera *; microphone *" style="width:100%;height:calc(100% - 50px);border:none"></iframe>
+          <iframe id="member-avaturn-frame" src="https://familiar.avaturn.dev/?frameApi" allow="camera *; microphone *" style="width:100%;height:calc(100% - 50px);border:none"></iframe>
         </div>
       </div>
       <div>
@@ -3622,7 +3622,7 @@ function getAriaGreeting() {
   const pickyOnes = hausMembers.filter(m => m.pickyEater).map(m => m.name);
   const memberNames = hausMembers.map(m => m.name);
 
-  let greeting = `Hey${firstName ? ' ' + firstName : ''}! 👋 I'm Preppi — your NeuroMeal AI.
+  let greeting = `Hey${firstName ? ' ' + firstName : ''}! 👋 I'm Preppi — your FamiliAr AI.
 
 `;
 
@@ -3701,7 +3701,7 @@ function renderAI() {
     </div>
   </div>` : `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:800;color:var(--cyan)">🥗 Preppi</div>
+    <div style="font-size:13px;font-weight:800;color:var(--cyan)">🥗 PrePii</div>
     <div style="display:flex;gap:6px">
       <button id="qa-recipe-chat" style="padding:6px 10px;background:rgba(105,201,208,.1);border:1px solid rgba(105,201,208,.3);border-radius:10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">🍳 Recipe</button>
       <button id="preppi-clear-chat" style="padding:6px 10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--gray);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--fb)">Clear</button>
@@ -3809,10 +3809,10 @@ function getPreppiSystemPrompt() {
     Object.entries(meals||{}).filter(([,v])=>v).map(([type,meal])=>day+" "+type+": "+meal).join(", ")
   ).filter(Boolean).join("; ");
 
-  return "You are Preppi, the heart and expert guide of NeuroMeal — a certified nutritionist, meal planning specialist, health and fitness coach, and personal success guide all in one warm encouraging personality.\n\n" +
+  return "You are Preppi, the heart and expert guide of FamiliAr — a certified nutritionist, meal planning specialist, health and fitness coach, and personal success guide all in one warm encouraging personality.\n\n" +
   "Your role is to lead this family to their health and wellness goals through smart meal planning, nutrition education, and positive reinforcement.\n\n" +
   "FAMILY PROFILE:\n" +
-  (profile.name ? "Head Chef: " + profile.name + "\n" : "") +
+  (profile.name ? "FamLii Chef: " + profile.name + "\n" : "") +
   (profile.age ? "Age: " + profile.age + "\n" : "") +
   (profile.diet ? "Diet: " + profile.diet + "\n" : "") +
   (profile.goal ? "Health goal: " + profile.goal + "\n" : "") +
@@ -3887,7 +3887,7 @@ function bindAI() {
     const profile = userDoc?.profile || {};
     const hausMembers = currentFamily?.hausMembers || [];
     const pickyOnes = hausMembers.filter(m=>m.pickyEater).map(m=>m.name);
-    const hausSize = (hausMembers||[]).length + 1; // +1 for Head Chef
+    const hausSize = (hausMembers||[]).length + 1; // +1 for FamLii Chef
 
     const prompt = "Give me a complete recipe for " + what + "." +
       (answers.who ? " Serving: " + answers.who + "." : " Serves " + hausSize + ".") +
@@ -4082,7 +4082,7 @@ THIS WEEK'S MEALS: ${Object.entries(weekPlan).map(([day, meals]) =>
   Object.entries(meals || {}).filter(([,v])=>v).map(([type, meal]) => `${day} ${type}: ${meal}`).join(", ")
 ).filter(Boolean).join("; ")}` : "";
 
-  const systemPrompt = `You are Preppi, the NeuroMeal AI — a warm, encouraging meal planning assistant built specifically for AuDHD families. You are practical, never judgmental, and understand that feeding a family with different needs and limited executive function is genuinely hard.
+  const systemPrompt = `You are Preppi, the FamiliAr AI — a warm, encouraging meal planning assistant built specifically for AuDHD families. You are practical, never judgmental, and understand that feeding a family with different needs and limited executive function is genuinely hard.
 ${profileContext}
 ${familyContext}
 ${mealContext}
@@ -4411,7 +4411,7 @@ function renderAddModal() {
     const askBtn = document.getElementById("preppi-ask-btn");
     const resultsEl = document.getElementById("preppi-ask-results");
     
-    askBtn.textContent = "🥗 Preppi is thinking...";
+    askBtn.textContent = "🥗 PrePii is thinking...";
     askBtn.disabled = true;
     resultsEl.innerHTML = "";
 
@@ -4636,7 +4636,7 @@ function renderAddModal_v2() {}
 // ── Init ───────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   initMatch();
-  document.getElementById("app").innerHTML = `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)"><div style="text-align:center"><div style="font-size:56px;animation:bounce 1s ease infinite">🧠</div><div style="font-family:var(--fd);font-size:24px;font-weight:900;margin-top:12px;letter-spacing:-1px;color:var(--cyan)">NeuroMeal</div><div style="font-size:13px;color:var(--gray);margin-top:6px">Loading your playground...</div></div></div>`;
+  document.getElementById("app").innerHTML = `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)"><div style="text-align:center"><div style="font-size:56px;animation:bounce 1s ease infinite">🧠</div><div style="font-family:var(--fd);font-size:24px;font-weight:900;margin-top:12px;letter-spacing:-1px;color:var(--cyan)">FamiliAr</div><div style="font-size:13px;color:var(--gray);margin-top:6px">Loading your playground...</div></div></div>`;
   // Firebase auth state listener handles everything
   // Just render app for guests immediately
   renderApp();

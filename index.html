@@ -8,103 +8,23 @@
 <title>FamiliAr v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <script type="module">
-// ── Canvas Avatar Engine ──────────────────────────────────
-// Renders avatar PNGs with white background removal and skin tone overlay
-const avatarCache = {};
-
-function renderCanvasAvatar(body, skinColor, size, cropFace) {
-  var s = size || 44;
-  var id = 'av_' + body + '_' + (skinColor||'none') + '_' + s + '_' + (cropFace?'f':'b') + '_' + Math.random().toString(36).substr(2,5);
-  var src = 'https://nueromeal.netlify.app/' + body + '_isolated.png';
-  
-  var canvas = '<canvas id="'+id+'" width="'+s+'" height="'+s+'" style="display:block"></canvas>';
-  
-  // Process after render
-  setTimeout(function() {
-    var cv = document.getElementById(id);
-    if (!cv) return;
-    var ctx = cv.getContext('2d');
-    var img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function() {
-      // Source crop - face or full body
-      var sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
-      if (cropFace) {
-        // Crop top 45% for face close up
-        sh = img.naturalHeight * 0.45;
-      }
-      // Draw to offscreen canvas for pixel manipulation
-      var off = document.createElement('canvas');
-      off.width = sw; off.height = sh;
-      var octx = off.getContext('2d');
-      octx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-      
-      // Remove white background
-      var imgData = octx.getImageData(0, 0, sw, sh);
-      var data = imgData.data;
-      for (var i = 0; i < data.length; i += 4) {
-        var r = data[i], g = data[i+1], b = data[i+2];
-        if (r > 220 && g > 220 && b > 220) {
-          data[i+3] = 0;
-        }
-      }
-      octx.putImageData(imgData, 0, 0);
-      
-      // Draw to display canvas
-      ctx.clearRect(0, 0, s, s);
-      ctx.drawImage(off, 0, 0, sw, sh, 0, 0, s, s);
-      
-      // Apply skin tone overlay if set
-      if (skinColor && skinColor !== 'none') {
-        ctx.globalCompositeOperation = 'multiply';
-        ctx.fillStyle = skinColor;
-        ctx.fillRect(0, 0, s, s);
-        ctx.globalCompositeOperation = 'source-over';
-        // Restore transparency
-        var result = ctx.getImageData(0, 0, s, s);
-        var orig = ctx.getImageData(0, 0, s, s);
-        // Use destination-in to maintain transparency
-        var tmp = document.createElement('canvas');
-        tmp.width = s; tmp.height = s;
-        var tctx = tmp.getContext('2d');
-        tctx.drawImage(off, 0, 0, sw, sh, 0, 0, s, s);
-        ctx.clearRect(0, 0, s, s);
-        ctx.drawImage(off, 0, 0, sw, sh, 0, 0, s, s);
-        ctx.globalCompositeOperation = 'multiply';
-        ctx.fillStyle = skinColor;
-        ctx.fillRect(0, 0, s, s);
-        ctx.globalCompositeOperation = 'destination-in';
-        ctx.drawImage(tmp, 0, 0);
-        ctx.globalCompositeOperation = 'source-over';
-      }
-    };
-    img.onerror = function() {
-      // Fallback - draw initials
-      ctx.fillStyle = '#1a1a2e';
-      ctx.fillRect(0, 0, s, s);
-      ctx.fillStyle = '#5ecfdb';
-      ctx.font = 'bold ' + Math.round(s*0.4) + 'px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('?', s/2, s/2 + s*0.15);
-    };
-    img.src = src;
-  }, 50);
-  
-  return canvas;
-}
-
 // Avatar helper functions - defined early for global access
 function getHeadChefAvatar(size) {
   var profile = userDoc && userDoc.profile || {};
   var cfg = profile.avatarConfig || {};
   var s = size || 44;
-  var skinColor = cfg.skinColor || null;
+  var skinFilter = cfg.skinFilter || 'none';
+  // Determine body — use saved config or guess from gender
   var sex = (profile.sex || profile.gender || '').toLowerCase();
+  var age = parseInt(profile.age || '25');
   var defaultBody = 'adult_woman';
   if (sex.includes('male') && !sex.includes('female')) defaultBody = 'adult_man';
   var body = cfg.body || defaultBody;
-  var cropFace = s >= 150;
-  return renderCanvasAvatar(body, skinColor, s, cropFace);
+  // For home screen (large size >= 150) show face close up, otherwise show full body
+  if (s >= 150) {
+    return '<img src="https://nueromeal.netlify.app/'+body+'_isolated.png" style="width:'+(s*1.2)+'px;height:'+(s*2.4)+'px;object-fit:cover;object-position:top center;margin-left:-'+(s*0.1)+'px;filter:'+skinFilter+'" onerror="this.style.opacity=0"/>';
+  }
+  return '<img src="https://nueromeal.netlify.app/'+body+'_isolated.png" style="width:'+s+'px;height:'+(s*1.5)+'px;object-fit:cover;object-position:top center;filter:'+skinFilter+'" onerror="this.style.opacity=0"/>';
 }
 
 
@@ -114,7 +34,7 @@ function getMemberAvatar(member, size) {
   var g = (cfg.g || (member && member.gender) || 'female').toLowerCase();
   var age = parseInt((member && member.age) || '25');
   var s = size || 44;
-  var skinColor = cfg.skinColor || null;
+  var skinFilter = cfg.skinFilter || 'none';
   var defaultBody = 'adult_woman';
   if (g.includes('male') && !g.includes('female')) {
     if (age < 10) defaultBody = 'child_boy';
@@ -128,7 +48,7 @@ function getMemberAvatar(member, size) {
     else defaultBody = 'adult_woman';
   }
   var body = cfg.body || defaultBody;
-  return renderCanvasAvatar(body, skinColor, s, false);
+  return '<img src="https://nueromeal.netlify.app/'+body+'_isolated.png" style="width:'+s+'px;height:'+(s*1.5)+'px;object-fit:cover;object-position:top center;filter:'+skinFilter+'" onerror="this.style.opacity=0"/>';
 }
 
 function getPreppiAvatar(size) {
@@ -731,7 +651,7 @@ function renderAvatarModal() {
       </div>
       <!-- Full body preview -->
       <div style="text-align:center;background:var(--card2);border-radius:16px;padding:20px;margin-bottom:16px">
-        ${cfg.body ? renderCanvasAvatar(cfg.body, cfg.skinColor||null, 200, false) : '<div style="font-size:64px;padding:20px">👤</div>'}
+        ${cfg.body ? `<img src="https://nueromeal.netlify.app/${cfg.body}_isolated.png" style="height:220px;object-fit:contain;filter:${cfg.skinFilter||'none'}" onerror="this.style.opacity=0"/>` : '<div style="font-size:64px;padding:20px">👤</div>'}
         <div style="font-size:11px;color:var(--gray);margin-top:8px">${cfg.hair||'No hair selected'} · ${cfg.outfit||'No outfit'}</div>
       </div>
       ${renderAvatarCustomizer('headchef', cfg)}
@@ -1052,7 +972,7 @@ function renderOnboard() {
             <div id="av-preview" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
               ${UI.onboardData.avatarConfig ? `
                 <div style="position:relative;width:160px;height:200px">
-                  ${renderCanvasAvatar(UI.onboardData.avatarConfig.body, UI.onboardData.avatarConfig.skinColor||null, 150, false)}
+                  <img src="https://nueromeal.netlify.app/${UI.onboardData.avatarConfig.body}_isolated.png" style="width:100%;height:100%;object-fit:contain;filter:${UI.onboardData.avatarConfig.skinFilter||'none'}"/>
                   ${UI.onboardData.avatarConfig.outfit ? `<img src="https://nueromeal.netlify.app/outfits/${UI.onboardData.avatarConfig.outfit}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'"/>` : ''}
                 </div>
               ` : `<div style="font-size:48px">👤</div><div style="font-size:12px;color:var(--gray);position:absolute;bottom:16px">Build your avatar below!</div>`}
@@ -1101,17 +1021,17 @@ function renderOnboard() {
             <div style="font-size:11px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:10px">CHOOSE SKIN TONE</div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
               ${[
-                {label:'Deep',color:'#2c1008'},
-                {label:'Dark',color:'#4a1f0a'},
-                {label:'Med Brown',color:'#7d4018'},
-                {label:'Brown',color:'#a0522d'},
-                {label:'Tan',color:'#c68642'},
-                {label:'Lt Brown',color:'#d4956a'},
-                {label:'Light',color:'#e8b89a'},
-                {label:'Fair',color:'#f5d5c0'},
+                {label:'Deep',color:'#3d1f0d',filter:'brightness(0.55) saturate(1.2)'},
+                {label:'Dark',color:'#6b3a1f',filter:'brightness(0.7) saturate(1.1)'},
+                {label:'Medium',color:'#c68642',filter:'brightness(0.9) saturate(1.0)'},
+                {label:'Tan',color:'#d4956a',filter:'brightness(1.0) saturate(0.95)'},
+                {label:'Light',color:'#e8b89a',filter:'brightness(1.1) saturate(0.85)'},
+                {label:'Fair',color:'#f5d5c0',filter:'brightness(1.25) saturate(0.7)'},
+                {label:'Pale',color:'#fce8dc',filter:'brightness(1.4) saturate(0.5)'},
+                {label:'Porcelain',color:'#fff0e8',filter:'brightness(1.5) saturate(0.3)'},
               ].map(sk => {
-                const sel = UI.onboardData.avatarConfig?.skinColor === sk.color;
-                return `<div onclick="window.setAvSkin('${sk.color}')" style="cursor:pointer;text-align:center">
+                const sel = UI.onboardData.avatarConfig?.skinFilter === sk.filter;
+                return `<div onclick="window.setAvSkin('${sk.filter}','${sk.color}')" style="cursor:pointer;text-align:center">
                   <div style="width:44px;height:44px;border-radius:50%;background:${sk.color};margin:0 auto;border:3px solid ${sel?'var(--cyan)':'transparent'};transition:all .2s"></div>
                   <div style="font-size:9px;color:var(--gray);margin-top:4px">${sk.label}</div>
                 </div>`;
@@ -3726,10 +3646,10 @@ function renderFamily() {
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">🎨 SKIN TONE</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-          ${[{l:'Deep',c:'#2c1008'},{l:'Dark',c:'#4a1f0a'},{l:'Med Brown',c:'#7d4018'},{l:'Brown',c:'#a0522d'},{l:'Tan',c:'#c68642'},{l:'Lt Brown',c:'#d4956a'},{l:'Light',c:'#e8b89a'},{l:'Fair',c:'#f5d5c0'}].map(sk => {
+          ${[{l:'Deep',f:'brightness(0.55) saturate(1.2)',c:'#3d1f0d'},{l:'Dark',f:'brightness(0.7) saturate(1.1)',c:'#6b3a1f'},{l:'Medium',f:'brightness(0.9)',c:'#c68642'},{l:'Tan',f:'brightness(1.0)',c:'#d4956a'},{l:'Light',f:'brightness(1.1)',c:'#e8b89a'},{l:'Fair',f:'brightness(1.25)',c:'#f5d5c0'}].map(sk => {
             const idx = UI.editingMemberIdx;
-            const cur = idx !== null ? ((currentFamily?.hausMembers||[])[idx]?.avatarConfig?.skinColor||'') : '';
-            return '<div onclick="window.saveAvatarPart('+idx+',\'skin\',\''+sk.c+'\')" style="cursor:pointer;text-align:center"><div style="width:30px;height:30px;border-radius:50%;background:'+sk.c+';border:3px solid '+(cur===sk.c?'var(--cyan)':'transparent')+';"></div><div style="font-size:8px;color:var(--gray)">'+sk.l+'</div></div>';
+            const cur = idx !== null ? ((currentFamily?.hausMembers||[])[idx]?.avatarConfig?.skinFilter||'') : '';
+            return '<div onclick="window.saveAvatarPart('+idx+',\'skin\',\''+sk.f+'\')" style="cursor:pointer;text-align:center"><div style="width:30px;height:30px;border-radius:50%;background:'+sk.c+';border:3px solid '+(cur===sk.f?'var(--cyan)':'transparent')+';"></div><div style="font-size:8px;color:var(--gray)">'+sk.l+'</div></div>';
           }).join('')}
         </div>
         <div style="font-size:11px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">💇 HAIR STYLE</div>
@@ -4854,14 +4774,12 @@ function renderAvatarCustomizer(target, prefs) {
 
   const bodies = ['adult_woman','adult_man','teen_girl','teen_boy','preteen_girl','preteen_boy','child_girl','child_boy'];
   const skinTones = [
-    {label:'Deep',color:'#2c1008'},
-    {label:'Dark',color:'#4a1f0a'},
-    {label:'Med Brown',color:'#7d4018'},
-    {label:'Brown',color:'#a0522d'},
-    {label:'Tan',color:'#c68642'},
-    {label:'Lt Brown',color:'#d4956a'},
-    {label:'Light',color:'#e8b89a'},
-    {label:'Fair',color:'#f5d5c0'},
+    {label:'Deep',filter:'brightness(0.55) saturate(1.2)',color:'#3d1f0d'},
+    {label:'Dark',filter:'brightness(0.7) saturate(1.1)',color:'#6b3a1f'},
+    {label:'Medium',filter:'brightness(0.9) saturate(1.0)',color:'#c68642'},
+    {label:'Tan',filter:'brightness(1.0) saturate(0.95)',color:'#d4956a'},
+    {label:'Light',filter:'brightness(1.1) saturate(0.85)',color:'#e8b89a'},
+    {label:'Fair',filter:'brightness(1.25) saturate(0.7)',color:'#f5d5c0'},
   ];
   const hairStyles = ['Natural Afro 🌿','Box Braids 🔗','Locs 🌀','Curly 〰️','Straight ↕️','Low Cut ✂️','TWA 🌸','Puffs 🫧','Waves 🌊'];
   const outfits = [
@@ -4878,7 +4796,7 @@ function renderAvatarCustomizer(target, prefs) {
     
     <!-- Preview -->
     <div style="text-align:center;background:var(--card2);border-radius:12px;padding:16px;margin-bottom:12px;height:160px;display:flex;align-items:center;justify-content:center">
-      ${cfg.body ? renderCanvasAvatar(cfg.body, cfg.skinColor||null, 140, false) : '<div style="font-size:40px">👤</div>'}
+      ${cfg.body ? `<img src="https://nueromeal.netlify.app/${cfg.body}_isolated.png" style="height:140px;object-fit:contain;filter:${cfg.skinFilter||'none'}"/>` : '<div style="font-size:40px">👤</div>'}
     </div>
 
     <!-- Body -->
@@ -4893,8 +4811,8 @@ function renderAvatarCustomizer(target, prefs) {
     <!-- Skin -->
     <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">SKIN TONE</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-      ${skinTones.map(sk => `<div onclick="window.saveAvatarPart('${target}','skin','${sk.color}')" style="cursor:pointer;text-align:center">
-        <div style="width:36px;height:36px;border-radius:50%;background:${sk.color};border:3px solid ${cfg.skinColor===sk.color?'var(--cyan)':'transparent'}"></div>
+      ${skinTones.map(sk => `<div onclick="window.saveAvatarPart('${target}','skin','${sk.filter}')" style="cursor:pointer;text-align:center">
+        <div style="width:36px;height:36px;border-radius:50%;background:${sk.color};border:3px solid ${cfg.skinFilter===sk.filter?'var(--cyan)':'transparent'}"></div>
         <div style="font-size:8px;color:var(--gray);margin-top:2px">${sk.label}</div>
       </div>`).join('')}
     </div>
@@ -4918,7 +4836,7 @@ window.saveAvatarPart = async function(target, part, value) {
     if (target === 'headchef' || target === 'me') {
       const profile = userDoc?.profile || {};
       const cfg = { ...(profile.avatarConfig || {}) };
-      if (part === 'skin') cfg.skinColor = value;
+      if (part === 'skin') cfg.skinFilter = value;
       else cfg[part] = value;
       const updatedProfile = { ...profile, avatarConfig: cfg };
       await saveUserDoc({ profile: updatedProfile });
@@ -4931,7 +4849,7 @@ window.saveAvatarPart = async function(target, part, value) {
       const members = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
       if (members[idx]) {
         if (!members[idx].avatarConfig) members[idx].avatarConfig = {};
-        if (part === 'skin') members[idx].avatarConfig.skinColor = value;
+        if (part === 'skin') members[idx].avatarConfig.skinFilter = value;
         else members[idx].avatarConfig[part] = value;
         await saveUserDoc({ hausMembers: members });
         if (currentFamily) currentFamily.hausMembers = members;
@@ -4958,8 +4876,9 @@ window.setAvBody = function(body) {
   renderOnboard();
 };
 
-window.setAvSkin = function(color) {
+window.setAvSkin = function(filter, color) {
   if (!UI.onboardData.avatarConfig) UI.onboardData.avatarConfig = {};
+  UI.onboardData.avatarConfig.skinFilter = filter;
   UI.onboardData.avatarConfig.skinColor = color;
   renderOnboard();
 };

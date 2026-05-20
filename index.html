@@ -161,17 +161,32 @@ const AV_TONES = [
   {label:"Dark", mod:"\u{1F3FF}", swatch:"#4A2912"},
 ];
 const AV_HAIR = [
-  {id:"hair_wavy_medium",emoji:"🌊",label:"Wavy Medium",png:"hair_wavy_medium.PNG",stages:["adult","teen"]},
-  {id:"hair_short_brushed",emoji:"✂️",label:"Short Brushed",png:"hair_short_brushed.PNG",stages:["adult","teen"]},
-  {id:"hair_long_shaggy",emoji:"🌿",label:"Long Shaggy",png:"hair_long_shaggy.PNG",stages:["adult","teen"]},
-  {id:"hair_bob_straight",emoji:"💇",label:"Bob Straight",png:"hair_bob_straight.PNG",stages:["adult","teen"]},
-  {id:"hair_taper_straight",emoji:"🪒",label:"Taper Straight",png:"hair_taper_straight.PNG",stages:["adult","teen"]},
-  {id:"hair_locs_long",emoji:"🌀",label:"Locs Long",png:"hair_locs_long.PNG",stages:["adult","teen"]},
-  {id:"hair_curly_updo",emoji:"🌸",label:"Curly Updo",png:"hair_curly_updo.PNG",stages:["adult","teen"]},
-  {id:"hair_taper_textured",emoji:"🔥",label:"Taper Textured",png:"hair_taper_textured.PNG",stages:["adult","teen"]},
-  {id:"hair_cornrows",emoji:"⚡",label:"Cornrows",png:"hair_cornrows.PNG",stages:["adult","teen"]},
-  {id:"hair_box_braids_long",emoji:"🔗",label:"Box Braids",png:"hair_box_braids_long.PNG",stages:["adult","teen"]},
+  {id:"hair_wavy_medium",emoji:"🌊",label:"Wavy Medium",png:"hair_wavy_medium.PNG",scale:0.45,xOffset:0,yOffset:-30,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_short_brushed",emoji:"✂️",label:"Short Brushed",png:"hair_short_brushed.PNG",scale:0.35,xOffset:0,yOffset:-15,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_long_shaggy",emoji:"🌿",label:"Long Shaggy",png:"hair_long_shaggy.PNG",scale:0.45,xOffset:0,yOffset:-30,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_bob_straight",emoji:"💇",label:"Bob Straight",png:"hair_bob_straight.PNG",scale:0.40,xOffset:0,yOffset:-25,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_taper_straight",emoji:"🪒",label:"Taper Straight",png:"hair_taper_straight.PNG",scale:0.35,xOffset:0,yOffset:-15,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_locs_long",emoji:"🌀",label:"Locs Long",png:"hair_locs_long.PNG",scale:0.50,xOffset:0,yOffset:-35,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_curly_updo",emoji:"🌸",label:"Curly Updo",png:"hair_curly_updo.PNG",scale:0.45,xOffset:0,yOffset:-30,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_taper_textured",emoji:"🔥",label:"Taper Textured",png:"hair_taper_textured.PNG",scale:0.35,xOffset:0,yOffset:-15,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_cornrows",emoji:"⚡",label:"Cornrows",png:"hair_cornrows.PNG",scale:0.38,xOffset:0,yOffset:-20,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_box_braids_long",emoji:"🔗",label:"Box Braids",png:"hair_box_braids_long.PNG",scale:0.50,xOffset:0,yOffset:-35,zIndex:5,stages:["adult","teen"]},
 ];
+
+// Helper: render hair PNG layer with per-hair positioning
+function renderHairLayer(hairId, avatarHeight) {
+  const h = AV_HAIR.find(h => h.id === hairId);
+  if (!h || !h.png) return '';
+  const ht = avatarHeight || 220;
+  return `<img src="https://nueromeal.netlify.app/${h.png}" 
+    style="position:absolute;top:0;left:50%;
+    transform:translate(calc(-50% + ${h.xOffset}px), ${h.yOffset}px) scale(${h.scale});
+    transform-origin:top center;
+    height:${ht}px;object-fit:contain;
+    z-index:${h.zIndex};
+    mix-blend-mode:normal;pointer-events:none"
+    onerror="this.style.display='none'"/>`;
+}
 const AV_OUTFITS = [
   {id:"casual",emoji:"\u{1F455}",label:"Casual Tee",stages:["adult","teen","child"],unlock:"starter",unlockDesc:"Welcome gift!"},
   {id:"chef",emoji:"\u{1F97C}",label:"Chef Apron",stages:["adult","teen"],unlock:"cook5",unlockDesc:"Cook 5 meals"},
@@ -651,7 +666,7 @@ function renderAvatarModal() {
       <div style="text-align:center;background:var(--card2);border-radius:16px;padding:20px;margin-bottom:16px">
         ${cfg.body ? `<div style="position:relative;display:inline-block;height:220px">
   <img src="https://nueromeal.netlify.app/${cfg.body}_isolated.png" style="height:220px;object-fit:contain;filter:${cfg.skinFilter||'none'}" onerror="this.style.opacity=0"/>
-  ${cfg.hair ? `<img src="https://nueromeal.netlify.app/${AV_HAIR.find(h=>h.id===cfg.hair)?.png||''}" style="position:absolute;top:0;left:50%;transform:translateX(-50%);height:220px;object-fit:contain;mix-blend-mode:multiply" onerror="this.style.display='none'"/>` : ''}
+  ${cfg.hair ? renderHairLayer(cfg.hair, 220) : ''}
 </div>` : '<div style="font-size:64px;padding:20px">👤</div>'}
         <div style="font-size:11px;color:var(--gray);margin-top:8px">${cfg.hair||'No hair selected'} · ${cfg.outfit||'No outfit'}</div>
       </div>
@@ -974,7 +989,7 @@ function renderOnboard() {
               ${UI.onboardData.avatarConfig ? `
                 <div style="position:relative;width:160px;height:200px">
                   <img src="https://nueromeal.netlify.app/${UI.onboardData.avatarConfig.body}_isolated.png" style="width:100%;height:100%;object-fit:contain;filter:${UI.onboardData.avatarConfig.skinFilter||'none'}"/>
-                  ${UI.onboardData.avatarConfig.hair ? `<img src="https://nueromeal.netlify.app/${AV_HAIR.find(h=>h.id===UI.onboardData.avatarConfig.hair)?.png||''}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply" onerror="this.style.display='none'"/>` : ''}
+                  ${UI.onboardData.avatarConfig.hair ? renderHairLayer(UI.onboardData.avatarConfig.hair, 220) : ''}
                   ${UI.onboardData.avatarConfig.outfit ? `<img src="https://nueromeal.netlify.app/outfits/${UI.onboardData.avatarConfig.outfit}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'"/>` : ''}
                 </div>
               ` : `<div style="font-size:48px">👤</div><div style="font-size:12px;color:var(--gray);position:absolute;bottom:16px">Build your avatar below!</div>`}
@@ -4800,7 +4815,7 @@ function renderAvatarCustomizer(target, prefs) {
     <div style="text-align:center;background:var(--card2);border-radius:12px;padding:16px;margin-bottom:12px;height:160px;display:flex;align-items:center;justify-content:center">
       ${cfg.body ? `<div style="position:relative;display:inline-block;height:140px">
   <img src="https://nueromeal.netlify.app/${cfg.body}_isolated.png" style="height:140px;object-fit:contain;filter:${cfg.skinFilter||'none'}"/>
-  ${cfg.hair ? `<img src="https://nueromeal.netlify.app/${AV_HAIR.find(h=>h.id===cfg.hair)?.png||''}" style="position:absolute;top:0;left:50%;transform:translateX(-50%);height:140px;object-fit:contain;mix-blend-mode:multiply" onerror="this.style.display='none'"/>` : ''}
+  ${cfg.hair ? renderHairLayer(cfg.hair, 140) : ''}
 </div>` : '<div style="font-size:40px">👤</div>'}
     </div>
 

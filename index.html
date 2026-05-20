@@ -161,16 +161,16 @@ const AV_TONES = [
   {label:"Dark", mod:"\u{1F3FF}", swatch:"#4A2912"},
 ];
 const AV_HAIR = [
-  {id:"hair_wavy_medium",emoji:"🌊",label:"Wavy Medium",png:"hair_wavy_medium.PNG",scale:0.38,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
-  {id:"hair_short_brushed",emoji:"✂️",label:"Short Brushed",png:"hair_short_brushed.PNG",scale:0.38,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
-  {id:"hair_long_shaggy",emoji:"🌿",label:"Long Shaggy",png:"hair_long_shaggy.PNG",scale:0.38,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
-  {id:"hair_bob_straight",emoji:"💇",label:"Bob Straight",png:"hair_bob_straight.PNG",scale:0.38,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
-  {id:"hair_taper_straight",emoji:"🪒",label:"Taper Straight",png:"hair_taper_straight.PNG",scale:0.38,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
-  {id:"hair_locs_long",emoji:"🌀",label:"Locs Long",png:"hair_locs_long.PNG",scale:0.38,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
-  {id:"hair_curly_updo",emoji:"🌸",label:"Curly Updo",png:"hair_curly_updo.PNG",scale:0.38,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
-  {id:"hair_taper_textured",emoji:"🔥",label:"Taper Textured",png:"hair_taper_textured.PNG",scale:0.38,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
-  {id:"hair_cornrows",emoji:"⚡",label:"Cornrows",png:"hair_cornrows.PNG",scale:0.38,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
-  {id:"hair_box_braids_long",emoji:"🔗",label:"Box Braids",png:"hair_box_braids_long.PNG",scale:0.38,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_wavy_medium",emoji:"🌊",label:"Wavy Medium",png:"hair_wavy_medium.PNG",scale:0.30,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_short_brushed",emoji:"✂️",label:"Short Brushed",png:"hair_short_brushed.PNG",scale:0.30,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_long_shaggy",emoji:"🌿",label:"Long Shaggy",png:"hair_long_shaggy.PNG",scale:0.30,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_bob_straight",emoji:"💇",label:"Bob Straight",png:"hair_bob_straight.PNG",scale:0.30,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_taper_straight",emoji:"🪒",label:"Taper Straight",png:"hair_taper_straight.PNG",scale:0.30,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_locs_long",emoji:"🌀",label:"Locs Long",png:"hair_locs_long.PNG",scale:0.30,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_curly_updo",emoji:"🌸",label:"Curly Updo",png:"hair_curly_updo.PNG",scale:0.30,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_taper_textured",emoji:"🔥",label:"Taper Textured",png:"hair_taper_textured.PNG",scale:0.30,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_cornrows",emoji:"⚡",label:"Cornrows",png:"hair_cornrows.PNG",scale:0.30,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
+  {id:"hair_box_braids_long",emoji:"🔗",label:"Box Braids",png:"hair_box_braids_long.PNG",scale:0.30,xOffset:0,yOffset:2,zIndex:5,stages:["adult","teen"]},
 ];
 
 // Helper: render hair PNG layer with per-hair positioning
@@ -664,7 +664,7 @@ function renderAvatarModal() {
         <button onclick="window.closeAvatarModal()" style="padding:6px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:12px;cursor:pointer;font-family:var(--fb)">✕ Close</button>
       </div>
       <!-- Full body preview -->
-      <div style="text-align:center;background:var(--card2);border-radius:16px;padding:20px;margin-bottom:16px">
+      <div style="text-align:center;background:#4a4a6a;border-radius:16px;padding:20px;margin-bottom:16px">
         ${cfg.body ? `<div style="position:relative;display:inline-block;height:220px">
   <img src="https://nueromeal.netlify.app/${cfg.body}_isolated.png" style="height:220px;object-fit:contain;filter:${cfg.skinFilter||'none'}" onerror="this.style.opacity=0"/>
   ${cfg.hair ? renderHairLayer(cfg.hair, 220) : ''}

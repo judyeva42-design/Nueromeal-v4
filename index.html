@@ -686,12 +686,12 @@ function renderAvatarModal() {
         <button onclick="window.closeAvatarModal()" style="padding:6px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:12px;cursor:pointer;font-family:var(--fb)">✕ Close</button>
       </div>
       <!-- Full body preview -->
-      <div style="text-align:center;background:#4a4a6a;border-radius:16px;padding:20px;margin-bottom:16px;overflow:hidden">
-        ${cfg.body ? `<div style="position:relative;display:inline-block;height:220px">
+      <div style="text-align:center;background:#3a3a5c;border-radius:16px;padding:20px;margin-bottom:16px;overflow:hidden">
+        ${cfg.body ? `<div style="position:relative;display:inline-block;height:220px;background:transparent">
   <img src="https://nueromeal.netlify.app/${cfg.body.includes('_deep')||cfg.body.includes('_medium')||cfg.body.includes('_light') ? cfg.body+'.png' : cfg.body+'_ISOLATED.png'}" style="height:220px;object-fit:contain;filter:${cfg.skinFilter||'none'}" onerror="this.style.opacity=0"/>
-  ${cfg.hair && !cfg.body.includes('_deep') && !cfg.body.includes('_medium') && !cfg.body.includes('_light') ? renderHairLayer(cfg.hair, 220, cfg.body) : ''}
+  
 </div>` : '<div style="font-size:64px;padding:20px">👤</div>'}
-        <div style="font-size:11px;color:var(--gray);margin-top:8px">${cfg.outfit||'No outfit selected'}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:8px">${cfg.outfit ? cfg.outfit : ''}</div>
       </div>
       ${renderAvatarCustomizer('headchef', cfg)}
     </div>`;
@@ -1012,7 +1012,7 @@ function renderOnboard() {
               ${UI.onboardData.avatarConfig ? `
                 <div style="position:relative;width:160px;height:200px">
                   <img src="https://nueromeal.netlify.app/${UI.onboardData.avatarConfig.body}_isolated.png" style="width:100%;height:100%;object-fit:contain;filter:${UI.onboardData.avatarConfig.skinFilter||'none'}"/>
-                  ${UI.onboardData.avatarConfig.hair ? renderHairLayer(UI.onboardData.avatarConfig.hair, 220, UI.onboardData.avatarConfig.body) : ''}
+                  
                   ${UI.onboardData.avatarConfig.outfit ? `<img src="https://nueromeal.netlify.app/outfits/${UI.onboardData.avatarConfig.outfit}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'"/>` : ''}
                 </div>
               ` : `<div style="font-size:48px">👤</div><div style="font-size:12px;color:var(--gray);position:absolute;bottom:16px">Build your avatar below!</div>`}
@@ -4838,7 +4838,7 @@ function renderAvatarCustomizer(target, prefs) {
     <div style="text-align:center;background:var(--card2);border-radius:12px;padding:16px;margin-bottom:12px;height:160px;display:flex;align-items:center;justify-content:center">
       ${cfg.body ? `<div style="position:relative;display:inline-block;height:140px">
   <img src="https://nueromeal.netlify.app/${cfg.body.includes('_deep')||cfg.body.includes('_medium')||cfg.body.includes('_light') ? cfg.body+'.png' : cfg.body+'_ISOLATED.png'}" style="height:140px;object-fit:contain;filter:${cfg.skinFilter||'none'}"/>
-  ${cfg.hair ? renderHairLayer(cfg.hair, 140, cfg.body) : ''}
+  
 </div>` : '<div style="font-size:40px">👤</div>'}
     </div>
 

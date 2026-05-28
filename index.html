@@ -688,7 +688,7 @@ function renderAvatarModal() {
       <!-- Full body preview -->
       <div style="text-align:center;background:#3a3a5c;border-radius:16px;padding:20px;margin-bottom:16px;overflow:hidden">
         ${cfg.body ? `<div style="position:relative;display:inline-block;height:220px;background:transparent">
-  <img src="https://nueromeal.netlify.app/${cfg.body.includes('_deep')||cfg.body.includes('_medium')||cfg.body.includes('_light') ? cfg.body+'.png' : cfg.body+'_ISOLATED.png'}" style="height:220px;object-fit:contain;filter:${cfg.skinFilter||'none'}" onerror="this.style.opacity=0"/>
+  <img src="https://nueromeal.netlify.app/${cfg.body+'.png'}" style="height:220px;object-fit:contain;filter:${cfg.skinFilter||'none'}" onerror="this.style.opacity=0"/>
   
 </div>` : '<div style="font-size:64px;padding:20px">👤</div>'}
         <div style="font-size:11px;color:var(--gray);margin-top:8px">${cfg.outfit ? cfg.outfit : ''}</div>
@@ -1011,7 +1011,7 @@ function renderOnboard() {
             <div id="av-preview" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
               ${UI.onboardData.avatarConfig ? `
                 <div style="position:relative;width:160px;height:200px">
-                  <img src="https://nueromeal.netlify.app/${UI.onboardData.avatarConfig.body}_isolated.png" style="width:100%;height:100%;object-fit:contain;filter:${UI.onboardData.avatarConfig.skinFilter||'none'}"/>
+                  <img src="https://nueromeal.netlify.app/${UI.onboardData.avatarConfig.body}.png" style="width:100%;height:100%;object-fit:contain;filter:${UI.onboardData.avatarConfig.skinFilter||'none'}"/>
                   
                   ${UI.onboardData.avatarConfig.outfit ? `<img src="https://nueromeal.netlify.app/outfits/${UI.onboardData.avatarConfig.outfit}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'"/>` : ''}
                 </div>
@@ -1048,7 +1048,7 @@ function renderOnboard() {
                   const label = b.replace('_ISOLATED','').replace(/_/g,' ');
                   const sel = UI.onboardData.avatarConfig?.body === b;
                   return `<div onclick="window.setAvBody('${b}')" style="border:2px solid ${sel?'var(--cyan)':'var(--border)'};border-radius:12px;padding:8px;cursor:pointer;text-align:center;background:${sel?'rgba(94,207,219,.1)':'var(--card2)'};transition:all .2s">
-                    <img src="https://nueromeal.netlify.app/${b.includes('_deep')||b.includes('_medium')||b.includes('_light') ? b+'.png' : b+'_ISOLATED.png'}" style="width:60px;height:90px;object-fit:contain"/>
+                    <img src="https://nueromeal.netlify.app/${b+'.png'}" style="width:60px;height:90px;object-fit:contain"/>
                     <div style="font-size:9px;color:var(--gray);margin-top:4px;text-transform:capitalize">${label}</div>
                   </div>`;
                 }).join('');
@@ -4812,15 +4812,19 @@ function renderAvatarCustomizer(target, prefs) {
   const memberName = isHC ? (userDoc?.profile?.name || 'You') :
     (typeof target === 'number' ? ((currentFamily?.hausMembers||[])[target]?.name || 'Member') : target);
 
-  const bodies = ['adult_woman_deep','adult_woman','adult_man','teen_girl','teen_boy','preteen_girl','preteen_boy','child_girl','child_boy'];
+  const bodies = ['adult_woman_deep','adult_man_deep','teen_girl_deep','teen_boy_deep','preteen_girl_deep','preteen_boy_deep','child_girl_deep','child_boy_deep'];
+  const bodyLabels = {'adult_woman_deep':'Adult Woman','adult_man_deep':'Adult Man','teen_girl_deep':'Teen Girl','teen_boy_deep':'Teen Boy','preteen_girl_deep':'Preteen Girl','preteen_boy_deep':'Preteen Boy','child_girl_deep':'Child Girl','child_boy_deep':'Child Boy'};
+  // Get base body from current selection
+  function getBase(b){ return b ? b.replace(/_deep$|_medium_deep$|_medium$|_light$/,'') : 'adult_woman'; }
+  const currentBase = getBase(cfg.body);
   const skinTones = [
-    {label:'Deep',filter:'brightness(0.55) saturate(1.2)',color:'#3d1f0d'},
-    {label:'Dark',filter:'brightness(0.7) saturate(1.1)',color:'#6b3a1f'},
-    {label:'Medium',filter:'brightness(0.9) saturate(1.0)',color:'#c68642'},
-    {label:'Tan',filter:'brightness(1.0) saturate(0.95)',color:'#d4956a'},
-    {label:'Light',filter:'brightness(1.1) saturate(0.85)',color:'#e8b89a'},
-    {label:'Fair',filter:'brightness(1.25) saturate(0.7)',color:'#f5d5c0'},
+    {label:'Deep',value:'deep',color:'#3d1f0d'},
+    {label:'Med Deep',value:'medium_deep',color:'#6b3a1f'},
+    {label:'Medium',value:'medium',color:'#c68642'},
+    {label:'Light',value:'light',color:'#e8b89a'},
   ];
+  // Get current skin tone from body name
+  const currentSkin = cfg.body ? (cfg.body.includes('medium_deep') ? 'medium_deep' : cfg.body.includes('medium') ? 'medium' : cfg.body.includes('light') ? 'light' : 'deep') : 'deep';
   const hairStyles = ['Natural Afro 🌿','Box Braids 🔗','Locs 🌀','Curly 〰️','Straight ↕️','Low Cut ✂️','TWA 🌸','Puffs 🫧','Waves 🌊'];
   const outfits = [
     {id:'casual',label:'Casual 👕'},
@@ -4837,7 +4841,7 @@ function renderAvatarCustomizer(target, prefs) {
     <!-- Preview -->
     <div style="text-align:center;background:var(--card2);border-radius:12px;padding:16px;margin-bottom:12px;height:160px;display:flex;align-items:center;justify-content:center">
       ${cfg.body ? `<div style="position:relative;display:inline-block;height:140px">
-  <img src="https://nueromeal.netlify.app/${cfg.body.includes('_deep')||cfg.body.includes('_medium')||cfg.body.includes('_light') ? cfg.body+'.png' : cfg.body+'_ISOLATED.png'}" style="height:140px;object-fit:contain;filter:${cfg.skinFilter||'none'}"/>
+  <img src="https://nueromeal.netlify.app/${cfg.body+'.png'}" style="height:140px;object-fit:contain;filter:${cfg.skinFilter||'none'}"/>
   
 </div>` : '<div style="font-size:40px">👤</div>'}
     </div>
@@ -4845,17 +4849,17 @@ function renderAvatarCustomizer(target, prefs) {
     <!-- Body -->
     <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">BODY TYPE</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
-      ${bodies.map(b => `<div onclick="window.saveAvatarPart('${target}','body','${b}')" style="border:2px solid ${cfg.body===b?'var(--cyan)':'var(--border)'};border-radius:8px;padding:4px;cursor:pointer;text-align:center;background:${cfg.body===b?'rgba(94,207,219,.1)':'var(--card2)'}">
-        <img src="https://nueromeal.netlify.app/${b.includes('_deep')||b.includes('_medium')||b.includes('_light') ? b+'.png' : b+'_ISOLATED.png'}" style="width:36px;height:54px;object-fit:contain"/>
-        <div style="font-size:7px;color:var(--gray);text-transform:capitalize;margin-top:2px">${b.replace(/_/g,' ')}</div>
-      </div>`).join('')}
+      ${bodies.map(b => { const base = getBase(b); return `<div onclick="window.saveAvatarPart('${target}','body','${base}_${currentSkin}')" style="border:2px solid ${currentBase===base?'var(--cyan)':'var(--border)'};border-radius:8px;padding:4px;cursor:pointer;text-align:center;background:${currentBase===base?'rgba(94,207,219,.1)':'var(--card2)'}">
+        <img src="https://nueromeal.netlify.app/${b+'.png'}" style="width:36px;height:54px;object-fit:contain"/>
+        <div style="font-size:7px;color:var(--gray);text-transform:capitalize;margin-top:2px">${bodyLabels[b]||b.replace(/_/g,' ')}</div>
+      </div>`; }).join('')}
     </div>
 
     <!-- Skin -->
     <div style="font-size:10px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:8px">SKIN TONE</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-      ${skinTones.map(sk => `<div onclick="window.saveAvatarPart('${target}','skin','${sk.filter}')" style="cursor:pointer;text-align:center">
-        <div style="width:36px;height:36px;border-radius:50%;background:${sk.color};border:3px solid ${cfg.skinFilter===sk.filter?'var(--cyan)':'transparent'}"></div>
+      ${skinTones.map(sk => `<div onclick="window.saveAvatarPart('${target}','skin','${sk.value}')" style="cursor:pointer;text-align:center">
+        <div style="width:36px;height:36px;border-radius:50%;background:${sk.color};border:3px solid ${currentSkin===sk.value?'var(--cyan)':'transparent'}"></div>
         <div style="font-size:8px;color:var(--gray);margin-top:2px">${sk.label}</div>
       </div>`).join('')}
     </div>
@@ -4879,11 +4883,24 @@ function renderAvatarCustomizer(target, prefs) {
 
 window.saveAvatarPart = async function(target, part, value) {
   try {
+    // Helper: get base body type (strip skin tone suffix)
+    function getBaseBody(body) {
+      if (!body) return 'adult_woman';
+      return body.replace(/_deep$|_medium_deep$|_medium$|_light$/, '');
+    }
+    // Helper: swap body to new skin tone
+    function swapBodySkin(currentBody, skinTone) {
+      const base = getBaseBody(currentBody);
+      return base + '_' + skinTone;
+    }
+
     if (target === 'headchef' || target === 'me') {
       const profile = userDoc?.profile || {};
       const cfg = { ...(profile.avatarConfig || {}) };
-      if (part === 'skin') cfg.skinFilter = value;
-      else cfg[part] = value;
+      if (part === 'skin') {
+        cfg.body = swapBodySkin(cfg.body, value);
+        cfg.skinFilter = 'none';
+      } else cfg[part] = value;
       const updatedProfile = { ...profile, avatarConfig: cfg };
       await saveUserDoc({ profile: updatedProfile });
       if (!userDoc) userDoc = {};
@@ -4895,8 +4912,10 @@ window.saveAvatarPart = async function(target, part, value) {
       const members = JSON.parse(JSON.stringify(currentFamily?.hausMembers || []));
       if (members[idx]) {
         if (!members[idx].avatarConfig) members[idx].avatarConfig = {};
-        if (part === 'skin') members[idx].avatarConfig.skinFilter = value;
-        else members[idx].avatarConfig[part] = value;
+        if (part === 'skin') {
+          members[idx].avatarConfig.body = swapBodySkin(members[idx].avatarConfig.body, value);
+          members[idx].avatarConfig.skinFilter = 'none';
+        } else members[idx].avatarConfig[part] = value;
         await saveUserDoc({ hausMembers: members });
         if (currentFamily) currentFamily.hausMembers = members;
         showToast('Avatar updated! ✨', 'success');

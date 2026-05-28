@@ -4815,16 +4815,18 @@ function renderAvatarCustomizer(target, prefs) {
   const bodies = ['adult_woman_deep','adult_man_deep','teen_girl_deep','teen_boy_deep','preteen_girl_deep','preteen_boy_deep','child_girl_deep','child_boy_deep'];
   const bodyLabels = {'adult_woman_deep':'Adult Woman','adult_man_deep':'Adult Man','teen_girl_deep':'Teen Girl','teen_boy_deep':'Teen Boy','preteen_girl_deep':'Preteen Girl','preteen_boy_deep':'Preteen Boy','child_girl_deep':'Child Girl','child_boy_deep':'Child Boy'};
   // Get base body from current selection
-  function getBase(b){ return b ? b.replace(/_deep$|_medium_deep$|_medium$|_light$/,'') : 'adult_woman'; }
+  function getBase(b){ return b ? b.replace(/_deep$|_medium_deep$|_medium$|_tan$|_light$|_fair$/,'') : 'adult_woman'; }
   const currentBase = getBase(cfg.body);
   const skinTones = [
     {label:'Deep',value:'deep',color:'#3d1f0d'},
     {label:'Med Deep',value:'medium_deep',color:'#6b3a1f'},
     {label:'Medium',value:'medium',color:'#c68642'},
+    {label:'Tan',value:'tan',color:'#d4956a'},
     {label:'Light',value:'light',color:'#e8b89a'},
+    {label:'Fair',value:'fair',color:'#f5d5c0'},
   ];
   // Get current skin tone from body name
-  const currentSkin = cfg.body ? (cfg.body.includes('medium_deep') ? 'medium_deep' : cfg.body.includes('medium') ? 'medium' : cfg.body.includes('light') ? 'light' : 'deep') : 'deep';
+  const currentSkin = cfg.body ? (cfg.body.includes('medium_deep') ? 'medium_deep' : cfg.body.includes('medium') ? 'medium' : cfg.body.includes('tan') ? 'tan' : cfg.body.includes('light') ? 'light' : cfg.body.includes('fair') ? 'fair' : 'deep') : 'deep';
   const hairStyles = ['Natural Afro 🌿','Box Braids 🔗','Locs 🌀','Curly 〰️','Straight ↕️','Low Cut ✂️','TWA 🌸','Puffs 🫧','Waves 🌊'];
   const outfits = [
     {id:'casual',label:'Casual 👕'},
@@ -4886,7 +4888,7 @@ window.saveAvatarPart = async function(target, part, value) {
     // Helper: get base body type (strip skin tone suffix)
     function getBaseBody(body) {
       if (!body) return 'adult_woman';
-      return body.replace(/_deep$|_medium_deep$|_medium$|_light$/, '');
+      return body.replace(/_deep$|_medium_deep$|_medium$|_tan$|_light$|_fair$/, '');
     }
     // Helper: swap body to new skin tone
     function swapBodySkin(currentBody, skinTone) {

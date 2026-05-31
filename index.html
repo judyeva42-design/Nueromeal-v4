@@ -22,9 +22,9 @@ function getHeadChefAvatar(size) {
   var body = cfg.body || defaultBody;
   // For home screen (large size >= 150) show face close up, otherwise show full body
   if (s >= 150) {
-    return '<img src="https://nueromeal.netlify.app/'+body+'_isolated.png" style="width:'+(s*1.2)+'px;height:'+(s*2.4)+'px;object-fit:cover;object-position:top center;margin-left:-'+(s*0.1)+'px;filter:'+skinFilter+'" onerror="this.style.opacity=0"/>';
+    return '<img src="https://nueromeal.netlify.app/'+body+'.png" style="width:'+(s*1.2)+'px;height:'+(s*2.4)+'px;object-fit:cover;object-position:top center;margin-left:-'+(s*0.1)+'px" onerror="this.style.opacity=0"/>';
   }
-  return '<img src="https://nueromeal.netlify.app/'+body+'_isolated.png" style="width:'+s+'px;height:'+(s*1.5)+'px;object-fit:cover;object-position:top center;filter:'+skinFilter+'" onerror="this.style.opacity=0"/>';
+  return '<img src="https://nueromeal.netlify.app/'+body+'.png" style="width:'+s+'px;height:'+(s*1.5)+'px;object-fit:contain" onerror="this.style.opacity=0"/>';
 }
 
 
@@ -37,18 +37,16 @@ function getMemberAvatar(member, size) {
   var skinFilter = cfg.skinFilter || 'none';
   var defaultBody = 'adult_woman';
   if (g.includes('male') && !g.includes('female')) {
-    if (age < 10) defaultBody = 'child_boy';
-    else if (age < 13) defaultBody = 'preteen_boy';
+    if (age < 13) defaultBody = 'teen_boy';
     else if (age < 18) defaultBody = 'teen_boy';
     else defaultBody = 'adult_man';
   } else {
-    if (age < 10) defaultBody = 'child_girl';
-    else if (age < 13) defaultBody = 'preteen_girl';
+    if (age < 13) defaultBody = 'teen_girl';
     else if (age < 18) defaultBody = 'teen_girl';
     else defaultBody = 'adult_woman';
   }
   var body = cfg.body || defaultBody;
-  return '<img src="https://nueromeal.netlify.app/'+body+'_isolated.png" style="width:'+s+'px;height:'+(s*1.5)+'px;object-fit:cover;object-position:top center;filter:'+skinFilter+'" onerror="this.style.opacity=0"/>';
+  return '<img src="https://nueromeal.netlify.app/'+body+'.png" style="width:'+s+'px;height:'+(s*1.5)+'px;object-fit:contain" onerror="this.style.opacity=0"/>';
 }
 
 function getPreppiAvatar(size) {
@@ -173,8 +171,8 @@ const HAIR_RIG = {
 };
 
 // Gender groups for filtering hair by body type
-const FEMALE_BODIES = ['adult_woman','teen_girl','preteen_girl','child_girl'];
-const MALE_BODIES   = ['adult_man','teen_boy','preteen_boy','child_boy'];
+const FEMALE_BODIES = ['adult_woman','teen_girl'];
+const MALE_BODIES   = ['adult_man','teen_boy'];
 
 const AV_HAIR = [
   {id:"hair_wavy_medium",emoji:"🌊",label:"Wavy Medium",png:"hair_wavy_medium.PNG",zIndex:5,gender:"female",bodies:["adult_woman","teen_girl","preteen_girl"]},
@@ -1035,8 +1033,7 @@ function renderOnboard() {
                 const age = parseInt(UI.onboardData.age||'25');
                 const isMale = sex.includes('male') && !sex.includes('female') && !sex.includes('non');
                 let bodies = [];
-                if(age < 10) bodies = isMale ? ['child_boy'] : ['child_girl'];
-                else if(age < 13) bodies = isMale ? ['preteen_boy'] : ['preteen_girl'];
+                if(age < 13) bodies = isMale ? ['teen_boy'] : ['teen_girl'];
                 else if(age < 18) bodies = isMale ? ['teen_boy'] : ['teen_girl'];
                 else bodies = isMale ? ['adult_man'] : ['adult_woman'];
                 // Always show at least 2 options
@@ -2191,7 +2188,7 @@ function renderDash() {
   +'<circle cx="90" cy="90" r="82" fill="none" stroke="#5ecfdb" stroke-width="7" stroke-dasharray="'+(2*Math.PI*82)+'" stroke-dashoffset="'+(2*Math.PI*82*(1-wPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
   +'<circle cx="90" cy="90" r="68" fill="none" stroke="#a78bfa" stroke-width="6" stroke-dasharray="'+(2*Math.PI*68)+'" stroke-dashoffset="'+(2*Math.PI*68*(1-nPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
   +'</svg>'
-  +'<div style="position:absolute;top:0;left:0;width:180px;height:180px;overflow:hidden;border-radius:50%;background:var(--card2)">'
+  +'<div style="position:absolute;top:0;left:0;width:180px;height:180px;overflow:hidden;border-radius:50%;background:var(--card2);display:flex;align-items:flex-end;justify-content:center">'
   +getHeadChefAvatar(180)
   +'</div>'
   +'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px">✏️</div>'
@@ -4812,8 +4809,8 @@ function renderAvatarCustomizer(target, prefs) {
   const memberName = isHC ? (userDoc?.profile?.name || 'You') :
     (typeof target === 'number' ? ((currentFamily?.hausMembers||[])[target]?.name || 'Member') : target);
 
-  const bodies = ['adult_woman_deep','adult_man_deep','teen_girl_deep','teen_boy_deep','preteen_girl_deep','preteen_boy_deep','child_girl_deep','child_boy_deep'];
-  const bodyLabels = {'adult_woman_deep':'Adult Woman','adult_man_deep':'Adult Man','teen_girl_deep':'Teen Girl','teen_boy_deep':'Teen Boy','preteen_girl_deep':'Preteen Girl','preteen_boy_deep':'Preteen Boy','child_girl_deep':'Child Girl','child_boy_deep':'Child Boy'};
+  const bodies = ['adult_woman_deep','adult_man_deep','teen_girl_deep','teen_boy_deep'];
+  const bodyLabels = {'adult_woman_deep':'Adult Woman','adult_man_deep':'Adult Man','teen_girl_deep':'Teen Girl','teen_boy_deep':'Teen Boy'};
   // Get base body from current selection
   function getBase(b){ return b ? b.replace(/_deep$|_medium_deep$|_medium$|_tan$|_light$|_fair$/,'') : 'adult_woman'; }
   const currentBase = getBase(cfg.body);

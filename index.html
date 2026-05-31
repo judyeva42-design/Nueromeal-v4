@@ -20,11 +20,8 @@ function getHeadChefAvatar(size) {
   var defaultBody = 'adult_woman';
   if (sex.includes('male') && !sex.includes('female')) defaultBody = 'adult_man';
   var body = cfg.body || defaultBody;
-  // For home screen (large size >= 150) show face close up, otherwise show full body
-  if (s >= 150) {
-    return '<img src="https://nueromeal.netlify.app/'+body+'.png" style="width:'+(s*1.2)+'px;height:'+(s*2.4)+'px;object-fit:cover;object-position:top center;margin-left:-'+(s*0.1)+'px" onerror="this.style.opacity=0"/>';
-  }
-  return '<img src="https://nueromeal.netlify.app/'+body+'.png" style="width:'+s+'px;height:'+(s*1.5)+'px;object-fit:contain" onerror="this.style.opacity=0"/>';
+  // Show full body fitted inside circle
+  return '<img src="https://nueromeal.netlify.app/'+body+'.png" style="width:'+s+'px;height:'+s+'px;object-fit:contain;object-position:center" onerror="this.style.opacity=0"/>';
 }
 
 

@@ -239,8 +239,6 @@ let currentFamily = null;
 let PREPPI_WEEK_PLAN = {}; // Global storage for Aria weekly plan
 let familyId = null;
 let unsubscribers = [];
-// Exterior welcome screen state — true once the user has tapped "Enter Homeii" this session
-let hasEnteredHomeii = (sessionStorage.getItem('hasEnteredHomeii') === 'true');
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
@@ -653,14 +651,6 @@ function exportData() {
 
 // ── Render ─────────────────────────────────────────────────
 function renderApp() {
-  // ── HOMEII EXTERIOR GATE ──
-  // Show the exterior welcome screen until the user taps "Enter Homeii".
-  // Tapping the button either logs them in (if needed) or goes straight
-  // to the dashboard if a session already exists.
-  if (!hasEnteredHomeii) {
-    renderExteriorScreen();
-    return;
-  }
   const _app = document.getElementById("app"); if(!_app) return;
   _app.innerHTML = `
   <div class="shell">
@@ -676,48 +666,6 @@ function renderApp() {
   // Render avatar modal if open
   if (UI.showAvatarModal) renderAvatarModal();
 }
-
-function renderExteriorScreen() {
-  const _app = document.getElementById("app"); if(!_app) return;
-  _app.innerHTML = `
-  <div class="homeii-exterior">
-    <div class="exterior-topbar"></div>
-    <div class="exterior-bottom">
-      <div class="tagline">Your family's wellness journey starts here</div>
-      <button class="enter-btn" onclick="window.handleEnterHomeii()">Enter Homeii</button>
-      <div class="secondary-row">
-        <div class="secondary-btn" style="flex:1" onclick="window.showFamilyCodeEntry()">👨‍👩‍👧 Have a Family Code?</div>
-        <div class="secondary-btn" style="flex:none;padding:10px 14px" onclick="window.openExteriorSettings()">⚙️</div>
-      </div>
-    </div>
-  </div>`;
-}
-
-// Tapping "Enter Homeii":
-// - If a session already exists (currentUser is set), skip straight to the dashboard.
-// - If not, trigger Google sign-in; onAuthStateChanged will call initUserSession,
-//   which calls renderApp() again once login completes, landing on the dashboard.
-window.handleEnterHomeii = function() {
-  hasEnteredHomeii = true;
-  sessionStorage.setItem('hasEnteredHomeii', 'true');
-  if (currentUser) {
-    renderApp();
-  } else {
-    signInWithGoogle();
-    // renderApp() runs again automatically via onAuthStateChanged -> initUserSession
-    // once sign-in completes. Re-render now so the user isn't stuck on a blank
-    // exterior screen while the Google popup is open.
-    renderApp();
-  }
-};
-
-window.showFamilyCodeEntry = function() {
-  alert('Family invite codes are coming soon! 👨‍👩‍👧');
-};
-
-window.openExteriorSettings = function() {
-  alert('Settings coming soon!');
-};
 
 function renderAvatarModal() {
   const existing = document.getElementById('avatar-modal');
@@ -744,6 +692,77 @@ function renderAvatarModal() {
     </div>`;
   document.body.appendChild(modal);
   // Close button uses onclick directly
+}
+
+// ── JUST ME SCREEN ──
+// Standalone full-screen overlay (same pattern as the avatar modal above).
+// Built as a SAFE PLACEHOLDER first — it does not touch avatar assets, avatar
+// data, avatar logic, or saved avatar state. The existing avatar system
+// (openAvatarBuilder / renderAvatarModal) remains fully intact and unchanged.
+// The plan is for the full avatar experience to eventually live inside this
+// central preview area instead of on the main dashboard.
+window.openJustMe = function() {
+  UI.showJustMe = true;
+  renderJustMeScreen();
+};
+
+window.closeJustMe = function() {
+  UI.showJustMe = false;
+  const el = document.getElementById('justme-screen');
+  if (el) el.remove();
+};
+
+function renderJustMeScreen() {
+  const existing = document.getElementById('justme-screen');
+  if (existing) existing.remove();
+  const cfg = userDoc?.profile?.avatarConfig || {};
+  const screen = document.createElement('div');
+  screen.id = 'justme-screen';
+  screen.style.cssText = 'position:fixed;inset:0;z-index:9998;background-image:url(\'/just-me-studio.png\');background-size:cover;background-position:center;background-repeat:no-repeat;display:flex;flex-direction:column;overflow-y:auto';
+  screen.innerHTML = `
+    <div style="background:linear-gradient(180deg,rgba(10,5,15,.75) 0%,rgba(10,5,15,.35) 40%,transparent 70%);min-height:100%;display:flex;flex-direction:column">
+
+      <!-- Back button -->
+      <div style="padding:16px 16px 0">
+        <button onclick="window.closeJustMe()" style="background:rgba(20,10,25,.6);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:8px 16px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--fb)">← Back</button>
+      </div>
+
+      <div style="text-align:center;margin-top:8px">
+        <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.5)">💅 Just Me</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:2px">Your personal space</div>
+      </div>
+
+      <!-- Central avatar preview area -->
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px 16px">
+        <div onclick="window.closeJustMe();window.openAvatarBuilder('headchef')" style="cursor:pointer;text-align:center">
+          <div style="width:200px;height:280px;background:rgba(20,10,25,.35);backdrop-filter:blur(4px);border:1.5px solid rgba(255,255,255,.2);border-radius:20px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;margin:0 auto">
+            ${cfg.body ? getHeadChefAvatar(260) : '<div style="font-size:64px;padding-bottom:20px">👤</div>'}
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:10px">Tap to edit your avatar</div>
+        </div>
+      </div>
+
+      <!-- Placeholder sections -->
+      <div style="padding:0 16px 28px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        ${justMeCard('👗','Looks','Coming soon')}
+        ${justMeCard('🧥','Closet','Coming soon')}
+        ${justMeCard('🙂','Mood','Coming soon')}
+        ${justMeCard('📸','Snap','Coming soon')}
+        ${justMeCard('⭐','Saved Looks','Coming soon')}
+        ${justMeCard('🎨','Edit Avatar','Tap to open',"window.closeJustMe();window.openAvatarBuilder('headchef')")}
+      </div>
+
+    </div>`;
+  document.body.appendChild(screen);
+}
+
+function justMeCard(icon, label, sub, onclick) {
+  const click = onclick || "alert('Coming soon! ✨')";
+  return `<div onclick="${click}" style="background:rgba(20,10,25,.55);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:12px 8px;text-align:center;cursor:pointer">
+    <div style="font-size:22px">${icon}</div>
+    <div style="font-size:11px;font-weight:800;color:#fff;margin-top:4px">${label}</div>
+    <div style="font-size:8px;color:rgba(255,255,255,.5);margin-top:1px">${sub}</div>
+  </div>`;
 }
 
 function renderFamilySetup() {
@@ -2241,6 +2260,14 @@ function renderDash() {
   var waterLog = wLog[todayStr] || {};
   
   return '<div style="padding:0 0 20px">'
+  // Just Me entry card — leads to the standalone Just Me screen (safe overlay, does not touch avatar logic)
+  +'<div onclick="window.openJustMe()" style="margin:16px 16px 0;background:linear-gradient(135deg,#2a1840,#3a1f4a);border:1.5px solid rgba(200,120,255,.35);border-radius:16px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">'
+  +'<div style="display:flex;align-items:center;gap:10px">'
+  +'<div style="font-size:22px">💅</div>'
+  +'<div><div style="font-size:13px;font-weight:800;color:#fff">Just Me</div><div style="font-size:10px;color:rgba(255,255,255,.5)">Your personal space</div></div>'
+  +'</div>'
+  +'<div style="font-size:18px;color:rgba(255,255,255,.4)">›</div>'
+  +'</div>'
   // Avatar + Rings
   +'<div style="text-align:center;padding:20px 16px 8px">'
   +'<div onclick="window.openAvatarBuilder(\'headchef\')" style="cursor:pointer;position:relative;width:180px;height:180px;margin:0 auto" title="Tap to edit avatar">'
@@ -5258,101 +5285,6 @@ body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:10
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
-}
-/* ── HOMEII EXTERIOR WELCOME SCREEN ── */
-.homeii-exterior {
-  min-height: 100vh;
-  width: 100%;
-  background-image: url('/homeii-exterior.png');
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-.homeii-exterior::before {
-  content: '';
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 38%;
-  background: linear-gradient(180deg, transparent 0%, rgba(8,8,20,0.55) 55%, rgba(8,8,20,0.88) 100%);
-  pointer-events: none;
-  z-index: 1;
-}
-.exterior-topbar {
-  position: relative;
-  z-index: 3;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 16px 0;
-}
-.exterior-bottom {
-  position: relative;
-  z-index: 3;
-  padding: 0 24px 36px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.tagline {
-  font-size: 11px;
-  color: rgba(255,255,255,0.55);
-  text-align: center;
-  letter-spacing: 0.5px;
-  font-family: var(--fb);
-}
-.enter-btn {
-  width: 100%;
-  max-width: 320px;
-  background: linear-gradient(135deg, #a78bfa, #f0195a);
-  border: none;
-  border-radius: 16px;
-  padding: 16px 20px;
-  font-family: var(--fd);
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  color: #fff;
-  cursor: pointer;
-  box-shadow: 0 4px 24px rgba(167,139,250,0.4), 0 2px 8px rgba(0,0,0,0.3);
-  transition: transform 0.15s, box-shadow 0.2s;
-}
-.enter-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 28px rgba(167,139,250,0.5), 0 2px 8px rgba(0,0,0,0.3);
-}
-.enter-btn:active {
-  transform: scale(0.97);
-}
-.secondary-row {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-  max-width: 320px;
-}
-.secondary-btn {
-  flex: 1;
-  background: rgba(20,16,35,0.7);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 12px;
-  padding: 10px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.9);
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.2s;
-  font-family: var(--fb);
-}
-.secondary-btn:hover {
-  background: rgba(255,255,255,0.12);
-  border-color: rgba(255,255,255,0.4);
 }
 </style>
 </body>

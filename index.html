@@ -713,13 +713,24 @@ function renderAvatarModal() {
   const existing = document.getElementById('avatar-modal');
   if (existing) existing.remove();
   const cfg = userDoc?.profile?.avatarConfig || {};
+  // Resolve a display name for the title only — purely visible wording,
+  // does not touch avatar data/assets/rendering logic.
+  // 'headchef' (or no target) = the signed-in user editing their own look.
+  // Otherwise UI.avatarBuilderTarget is a hausMembers index for another family member.
+  let studioOwnerName = null;
+  const target = UI.avatarBuilderTarget;
+  if (target !== 'headchef' && target !== undefined && target !== null && !isNaN(parseInt(target))) {
+    const member = (currentFamily?.hausMembers || [])[parseInt(target)];
+    if (member?.name) studioOwnerName = member.name;
+  }
+  const studioTitle = studioOwnerName ? `${studioOwnerName}'s Style Studio` : 'My Style Studio';
   const modal = document.createElement('div');
   modal.id = 'avatar-modal';
   modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(10,10,20,.97);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:20px 16px 40px';
   modal.innerHTML = `
     <div style="width:100%;max-width:420px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--cyan)">🎨 Your Avatar</div>
+        <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:var(--cyan)">🎨 ${studioTitle}</div>
         <button onclick="window.closeAvatarModal()" style="padding:6px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:12px;cursor:pointer;font-family:var(--fb)">✕ Close</button>
       </div>
       <!-- Full body preview -->
@@ -796,7 +807,7 @@ function renderJustMeScreen() {
         ${justMeCard('🙂','Mood','Coming soon')}
         ${justMeCard('📸','Snap','Coming soon')}
         ${justMeCard('⭐','Saved Looks','Coming soon')}
-        ${justMeCard('🎨','Edit Avatar','Tap to open',"window.closeJustMe();window.openAvatarBuilder('headchef')")}
+        ${justMeCard('🎨','Re-Style','Open My Style Studio',"window.closeJustMe();window.openAvatarBuilder('headchef')")}
       </div>
 
     </div>`;

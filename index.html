@@ -239,8 +239,6 @@ let currentFamily = null;
 let PREPPI_WEEK_PLAN = {}; // Global storage for Aria weekly plan
 let familyId = null;
 let unsubscribers = [];
-// Exterior welcome screen state — true once the user has tapped "Enter Homeii" this session
-let hasEnteredHomeii = (sessionStorage.getItem('hasEnteredHomeii') === 'true');
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
@@ -653,12 +651,6 @@ function exportData() {
 
 // ── Render ─────────────────────────────────────────────────
 function renderApp() {
-  // ── HOMEII EXTERIOR GATE ──
-  // Show the exterior welcome screen until the user taps "Enter Homeii".
-  if (!hasEnteredHomeii) {
-    renderExteriorScreen();
-    return;
-  }
   const _app = document.getElementById("app"); if(!_app) return;
   _app.innerHTML = `
   <div class="shell">
@@ -674,41 +666,6 @@ function renderApp() {
   // Render avatar modal if open
   if (UI.showAvatarModal) renderAvatarModal();
 }
-
-function renderExteriorScreen() {
-  const _app = document.getElementById("app"); if(!_app) return;
-  _app.innerHTML = `
-  <div class="homeii-exterior">
-    <div class="exterior-topbar"></div>
-    <div class="exterior-bottom">
-      <div class="tagline">Your family's wellness journey starts here</div>
-      <button class="enter-btn" onclick="window.handleEnterHomeii()">Enter Homeii</button>
-      <div class="secondary-row">
-        <div class="secondary-btn" style="flex:1" onclick="window.showFamilyCodeEntry()">👨‍👩‍👧 Have a Family Code?</div>
-        <div class="secondary-btn" style="flex:none;padding:10px 14px" onclick="window.openExteriorSettings()">⚙️</div>
-      </div>
-    </div>
-  </div>`;
-}
-
-window.handleEnterHomeii = function() {
-  hasEnteredHomeii = true;
-  sessionStorage.setItem('hasEnteredHomeii', 'true');
-  if (currentUser) {
-    renderApp();
-  } else {
-    signInWithGoogle();
-    renderApp();
-  }
-};
-
-window.showFamilyCodeEntry = function() {
-  alert('Family invite codes are coming soon! 👨‍👩‍👧');
-};
-
-window.openExteriorSettings = function() {
-  alert('Settings coming soon!');
-};
 
 function renderAvatarModal() {
   const existing = document.getElementById('avatar-modal');
@@ -775,13 +732,18 @@ function renderJustMeScreen() {
         <div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:2px">Your personal space</div>
       </div>
 
-      <!-- Central avatar preview area -->
-      <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px 16px">
-        <div onclick="window.closeJustMe();window.openAvatarBuilder('headchef')" style="cursor:pointer;text-align:center">
-          <div style="width:200px;height:280px;background:rgba(20,10,25,.35);backdrop-filter:blur(4px);border:1.5px solid rgba(255,255,255,.2);border-radius:20px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;margin:0 auto">
-            ${cfg.body ? getHeadChefAvatar(260) : '<div style="font-size:64px;padding-bottom:20px">👤</div>'}
+      <!-- Central avatar — layered directly over the room, no framed box.
+           The avatar PNG already has a transparent background, so it stands
+           naturally in the open floor space of the studio. -->
+      <div style="flex:1;position:relative;display:flex;align-items:flex-end;justify-content:center;padding:0 16px 16px">
+        <div style="position:relative;width:220px">
+          <!-- soft floor shadow so the avatar feels grounded in the room -->
+          <div style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:120px;height:18px;background:radial-gradient(ellipse,rgba(0,0,0,.45),transparent 70%);border-radius:50%;filter:blur(2px)"></div>
+          <div style="position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:center">
+            ${cfg.body ? getHeadChefAvatar(300) : '<div style="font-size:80px">👤</div>'}
           </div>
-          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:10px">Tap to edit your avatar</div>
+          <!-- small floating edit control, avatar builder logic is untouched -->
+          <button onclick="window.closeJustMe();window.openAvatarBuilder('headchef')" style="position:absolute;bottom:10px;right:-6px;z-index:2;width:38px;height:38px;border-radius:50%;background:rgba(20,10,25,.75);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.4)" title="Edit avatar">✏️</button>
         </div>
       </div>
 
@@ -2311,21 +2273,10 @@ function renderDash() {
   +'</div>'
   +'<div style="font-size:18px;color:rgba(255,255,255,.4)">›</div>'
   +'</div>'
-  // Avatar + Rings
-  +'<div style="text-align:center;padding:20px 16px 8px">'
-  +'<div onclick="window.openAvatarBuilder(\'headchef\')" style="cursor:pointer;position:relative;width:180px;height:180px;margin:0 auto" title="Tap to edit avatar">'
-  +'<svg width="180" height="180" viewBox="0 0 180 180" style="position:absolute;top:0;left:0">'
-  +'<circle cx="90" cy="90" r="82" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="7"/>'
-  +'<circle cx="90" cy="90" r="68" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="6"/>'
-  +'<circle cx="90" cy="90" r="82" fill="none" stroke="#5ecfdb" stroke-width="7" stroke-dasharray="'+(2*Math.PI*82)+'" stroke-dashoffset="'+(2*Math.PI*82*(1-wPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
-  +'<circle cx="90" cy="90" r="68" fill="none" stroke="#a78bfa" stroke-width="6" stroke-dasharray="'+(2*Math.PI*68)+'" stroke-dashoffset="'+(2*Math.PI*68*(1-nPct/100))+'" stroke-linecap="round" transform="rotate(-90 90 90)"/>'
-  +'</svg>'
-  +'<div style="position:absolute;top:0;left:0;width:180px;height:180px;overflow:hidden;border-radius:50%;background:var(--card2);display:flex;align-items:flex-end;justify-content:center">'
-  +getHeadChefAvatar(180)
-  +'</div>'
-  +'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px">✏️</div>'
-  +'</div>'
-  +'<div style="font-size:15px;font-weight:800;margin-top:6px">Judy Evans 👨‍🍳</div>'
+  // Slim name/stats line — the large avatar preview now lives in Just Me, not the dashboard.
+  // Avatar data, rendering logic, and the builder (openAvatarBuilder) are untouched.
+  +'<div style="text-align:center;padding:16px 16px 4px">'
+  +'<div style="font-size:15px;font-weight:800">Judy Evans 👨‍🍳</div>'
   +'<div style="font-size:11px;color:#5ecfdb;margin-top:2px">💧'+wPct+'% · 🥗'+nPct+'% · ⚡ LVL 7</div>'
   +'</div>'
   
@@ -5328,101 +5279,6 @@ body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:10
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
-}
-/* ── HOMEII EXTERIOR WELCOME SCREEN ── */
-.homeii-exterior {
-  min-height: 100vh;
-  width: 100%;
-  background-image: url('/homeii-exterior.png');
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-.homeii-exterior::before {
-  content: '';
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 38%;
-  background: linear-gradient(180deg, transparent 0%, rgba(8,8,20,0.55) 55%, rgba(8,8,20,0.88) 100%);
-  pointer-events: none;
-  z-index: 1;
-}
-.exterior-topbar {
-  position: relative;
-  z-index: 3;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 16px 0;
-}
-.exterior-bottom {
-  position: relative;
-  z-index: 3;
-  padding: 0 24px 36px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.tagline {
-  font-size: 11px;
-  color: rgba(255,255,255,0.55);
-  text-align: center;
-  letter-spacing: 0.5px;
-  font-family: var(--fb);
-}
-.enter-btn {
-  width: 100%;
-  max-width: 320px;
-  background: linear-gradient(135deg, #a78bfa, #f0195a);
-  border: none;
-  border-radius: 16px;
-  padding: 16px 20px;
-  font-family: var(--fd);
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  color: #fff;
-  cursor: pointer;
-  box-shadow: 0 4px 24px rgba(167,139,250,0.4), 0 2px 8px rgba(0,0,0,0.3);
-  transition: transform 0.15s, box-shadow 0.2s;
-}
-.enter-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 28px rgba(167,139,250,0.5), 0 2px 8px rgba(0,0,0,0.3);
-}
-.enter-btn:active {
-  transform: scale(0.97);
-}
-.secondary-row {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-  max-width: 320px;
-}
-.secondary-btn {
-  flex: 1;
-  background: rgba(20,16,35,0.7);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 12px;
-  padding: 10px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.9);
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.2s;
-  font-family: var(--fb);
-}
-.secondary-btn:hover {
-  background: rgba(255,255,255,0.12);
-  border-color: rgba(255,255,255,0.4);
 }
 </style>
 </body>

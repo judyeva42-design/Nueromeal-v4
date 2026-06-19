@@ -239,6 +239,8 @@ let currentFamily = null;
 let PREPPI_WEEK_PLAN = {}; // Global storage for Aria weekly plan
 let familyId = null;
 let unsubscribers = [];
+// Exterior welcome screen state — true once the user has tapped "Enter Homeii" this session
+let hasEnteredHomeii = (sessionStorage.getItem('hasEnteredHomeii') === 'true');
 
 let UI = {
   tab:"dashboard", selDay:"Mon", nutrDay:"Mon",
@@ -651,6 +653,11 @@ function exportData() {
 
 // ── Render ─────────────────────────────────────────────────
 function renderApp() {
+  // ── HOMEII EXTERIOR GATE ──
+  if (!hasEnteredHomeii) {
+    renderExteriorScreen();
+    return;
+  }
   const _app = document.getElementById("app"); if(!_app) return;
   _app.innerHTML = `
   <div class="shell">
@@ -666,6 +673,41 @@ function renderApp() {
   // Render avatar modal if open
   if (UI.showAvatarModal) renderAvatarModal();
 }
+
+function renderExteriorScreen() {
+  const _app = document.getElementById("app"); if(!_app) return;
+  _app.innerHTML = `
+  <div class="homeii-exterior">
+    <div class="exterior-topbar"></div>
+    <div class="exterior-bottom">
+      <div class="tagline">Your family's wellness journey starts here</div>
+      <button class="enter-btn" onclick="window.handleEnterHomeii()">Enter Homeii</button>
+      <div class="secondary-row">
+        <div class="secondary-btn" style="flex:1" onclick="window.showFamilyCodeEntry()">👨‍👩‍👧 Have a Family Code?</div>
+        <div class="secondary-btn" style="flex:none;padding:10px 14px" onclick="window.openExteriorSettings()">⚙️</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+window.handleEnterHomeii = function() {
+  hasEnteredHomeii = true;
+  sessionStorage.setItem('hasEnteredHomeii', 'true');
+  if (currentUser) {
+    renderApp();
+  } else {
+    signInWithGoogle();
+    renderApp();
+  }
+};
+
+window.showFamilyCodeEntry = function() {
+  alert('Family invite codes are coming soon! 👨‍👩‍👧');
+};
+
+window.openExteriorSettings = function() {
+  alert('Settings coming soon!');
+};
 
 function renderAvatarModal() {
   const existing = document.getElementById('avatar-modal');
@@ -5279,6 +5321,101 @@ body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:10
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
+}
+/* ── HOMEII EXTERIOR WELCOME SCREEN ── */
+.homeii-exterior {
+  min-height: 100vh;
+  width: 100%;
+  background-image: url('/homeii-exterior.png');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.homeii-exterior::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 38%;
+  background: linear-gradient(180deg, transparent 0%, rgba(8,8,20,0.55) 55%, rgba(8,8,20,0.88) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+.exterior-topbar {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 16px 0;
+}
+.exterior-bottom {
+  position: relative;
+  z-index: 3;
+  padding: 0 24px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.tagline {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  text-align: center;
+  letter-spacing: 0.5px;
+  font-family: var(--fb);
+}
+.enter-btn {
+  width: 100%;
+  max-width: 320px;
+  background: linear-gradient(135deg, #a78bfa, #f0195a);
+  border: none;
+  border-radius: 16px;
+  padding: 16px 20px;
+  font-family: var(--fd);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(167,139,250,0.4), 0 2px 8px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.enter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(167,139,250,0.5), 0 2px 8px rgba(0,0,0,0.3);
+}
+.enter-btn:active {
+  transform: scale(0.97);
+}
+.secondary-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+.secondary-btn {
+  flex: 1;
+  background: rgba(20,16,35,0.7);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 12px;
+  padding: 10px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  font-family: var(--fb);
+}
+.secondary-btn:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.4);
 }
 </style>
 </body>

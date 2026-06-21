@@ -2317,63 +2317,74 @@ function renderDash() {
   var judy = family.members[0];
   var waterLog = wLog[todayStr] || {};
   
-  return '<div class="homeii-interior-bg" style="padding:0 0 20px;position:relative">'
-  // Just Me entry card — glassy overlay, mirror nook zone. Leads to the standalone
-  // Just Me screen (safe overlay, does not touch avatar logic).
-  +'<div onclick="window.openJustMe()" style="margin:16px 16px 0;background:rgba(30,16,45,.45);backdrop-filter:blur(8px);border:1.5px solid rgba(200,120,255,.35);border-radius:16px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">'
-  +'<div style="display:flex;align-items:center;gap:10px">'
-  +'<div style="font-size:22px">💅</div>'
-  +'<div><div style="font-size:13px;font-weight:800;color:#fff">Just Me</div><div style="font-size:10px;color:rgba(255,255,255,.6)">Your personal space</div></div>'
+  return '<div class="homeii-interior-bg" style="padding:0;position:relative">'
+  // Slim name/stats header — sits above the room image, not on top of it
+  +'<div style="text-align:center;padding:16px 16px 10px">'
+  +'<div style="font-size:15px;font-weight:800;color:#fff">Judy Evans 👨‍🍳</div>'
+  +'<div style="font-size:11px;color:#5ecfdb;margin-top:2px">💧'+wPct+'% · 🥗'+nPct+'% · ⚡ LVL 7</div>'
   +'</div>'
-  +'<div style="font-size:18px;color:rgba(255,255,255,.5)">›</div>'
+
+  // ── HOMEII INTERIOR ROOM — zone tap-points ──
+  // Positions are % of the room image (homeii-interior.png), placed to align
+  // with their matching visual zone. Small glassy labels only — no opaque
+  // cards — so the room stays visible. Click handlers/routing unchanged.
+  +'<div style="position:relative;width:100%;aspect-ratio:952/1466;overflow:hidden">'
+
+    // Kitchen / fridge / "Preppii" neon → PrePii
+    +zoneTap('preppi','PrePii','🥗','#a78bfa', 6,16)
+
+    // Wall calendar "Our Plan" → Goals/calendar (opens existing calendar screen)
+    +zoneTap('cal-zone','This Week','📅','#5ecfdb', 38,20, "go('calendar')")
+
+    // Trophy shelf "You've Got This!" → Rewards / BattlEii
+    +zoneTap('challenges','BattlEii','🏆','#ffd700', 62,17)
+
+    // Couch / photo wall "Family" → FamLii
+    +zoneTap('family','FamLii','👨‍👩‍👧','#3dd68c', 80,30)
+
+    // Game table "GAME ON" → GamEii
+    +zoneTap('games','GamEii','🎮','#a78bfa', 80,54)
+
+    // Yoga mat / dumbbells → FiTii
+    +zoneTap('fitti','FiTii','💪','#f0195a', 18,62)
+
+    // "Hydrate" station → HydratEii
+    +zoneTap('water','HydratEii','💧','#5ecfdb', 8,86, null, wPct<50?'!':'')
+
+    // Mirror nook → Just Me (avatar/persona lives here, not on the dashboard)
+    +zoneTap('justme-zone','Just Me','💅','#cc44ff', 84,84, "window.openJustMe()")
+
   +'</div>'
-  // Slim name/stats line — the large avatar preview now lives in Just Me, not the dashboard.
-  // Avatar data, rendering logic, and the builder (openAvatarBuilder) are untouched.
-  +'<div style="text-align:center;padding:16px 16px 4px">'
-  +'<div style="font-size:15px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)">Judy Evans 👨‍🍳</div>'
-  +'<div style="font-size:11px;color:#5ecfdb;margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,.6)">💧'+wPct+'% · 🥗'+nPct+'% · ⚡ LVL 7</div>'
-  +'</div>'
-  
-  // Calendar strip — glassy, wall calendar/planning board zone
-  +'<div style="margin:0 16px 16px;background:rgba(17,17,32,.55);backdrop-filter:blur(8px);border:1.5px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 14px">'
-  +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
-  +'<div style="font-size:12px;font-weight:800;color:#fff">📅 This Week</div>'
-  +'<button onclick="go(\'calendar\')" style="font-size:10px;color:#5ecfdb;font-weight:700;background:none;border:none;cursor:pointer">View full →</button>'
-  +'</div>'
-  +'<div style="display:flex;justify-content:space-between;gap:4px">'
-  +['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d){
-    var hasMeal = Object.values(weekPlan[d]||{}).some(Boolean);
-    var isToday = d===today;
-    var bg = isToday?'linear-gradient(135deg,#5ecfdb,#f0195a)':hasMeal?'rgba(94,207,219,.15)':'rgba(255,255,255,.06)';
-    var color = isToday?'#000':hasMeal?'#5ecfdb':'#9090b0';
-    var icon = isToday?'✦':hasMeal?'🍽':'+';
-    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">'
-      +'<div style="font-size:8px;font-weight:800;color:#c0c0d8;text-shadow:0 1px 3px rgba(0,0,0,.6)">'+d.toUpperCase()+'</div>'
-      +'<div onclick="go(\'calendar\')" style="width:30px;height:30px;border-radius:50%;background:'+bg+';color:'+color+';display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">'+icon+'</div>'
-      +'</div>';
-  }).join('')
-  +'</div></div>'
-  
-  // Tile grid — glassy tap zones layered over the Homeii interior room.
-  // Zone mapping (visual alignment only, no layout/logic changes):
-  // Kitchen/fridge → PrePii · Yoga mat/dumbbells → FiTii · Hydration station → HydratEii
-  // Game table → GamEii · Couch/photo wall → FamLii · Trophy shelf → BattlEii/Rewards
-  +'<div class="tile-grid" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);padding:14px 16px;border-radius:20px 20px 0 0;margin-top:8px">'
-  +tile('preppi','🥗','PrePii','#a78bfa')
-  +tile('fitti','💪','FiTii','#f0195a')
-  +tile('water','💧','HydratEii','#5ecfdb',wPct<50?'!':'')
+
+  // ── Secondary row ── features with no dedicated zone in the room art yet.
+  // Kept as a simple slim strip below the room, not floating on top of it.
+  +'<div style="padding:14px 16px 8px">'
+  +'<div style="font-size:9px;font-weight:800;color:#7070a0;letter-spacing:1.5px;margin-bottom:8px">MORE</div>'
+  +'<div class="tile-grid" style="grid-template-columns:repeat(4,1fr);gap:10px">'
   +tile('meals','🍽️','MeaLii','#fbbf24')
   +tile('recipes','📖','RecipEii','#fb923c')
   +tile('pantry','🥫','GroceRii','#fbbf24')
-  +tile('family','👨‍👩‍👧','FamLii','#3dd68c')
   +tile('circle','🫂','SociaLii','#60a5fa')
-  +tile('challenges','⚔️','BattlEii','#fbbf24')
-  +tile('games','🎮','GamEii','#a78bfa')
   +tile('shopping','🛍️','ShoPii','#3dd68c')
   +tile('settings','⚙️','Settings','#7070a0')
   +'</div>'
+  +'</div>'
   +'<div style="height:20px"></div>'
   +'</div>';
+}
+
+// Small glassy zone tap-point for the Homeii interior room.
+// x/y are percentages of the room image (top-left origin) so the label sits
+// near its matching visual zone (kitchen, trophy shelf, couch, etc).
+function zoneTap(id, label, icon, color, xPct, yPct, onclickOverride, badge) {
+  var click = onclickOverride || ("go('"+id+"')");
+  return '<div onclick="'+click+'" style="position:absolute;left:'+xPct+'%;top:'+yPct+'%;transform:translate(-50%,-50%);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;z-index:2">'
+    +'<div style="position:relative;width:50px;height:50px;border-radius:14px;background:rgba(15,10,25,.4);backdrop-filter:blur(8px);border:1.5px solid '+color+';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 12px rgba(0,0,0,.35)">'
+    +icon
+    +(badge?'<div style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:#f0195a;border-radius:50%;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid #080810">'+badge+'</div>':'')
+    +'</div>'
+    +'<div style="font-family:\'Bebas Neue\',\'Syne\',sans-serif;font-size:9px;font-weight:900;color:#fff;letter-spacing:1px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);padding:2px 7px;border-radius:8px;white-space:nowrap">'+label+'</div>'
+    +'</div>';
 }
 
 

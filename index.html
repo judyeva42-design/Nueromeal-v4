@@ -2276,16 +2276,12 @@ const TILE_FRAMES = {
   settings:   {border:'3px solid #7070a0',radius:'4px',shadow:'none',extra:'',labelBg:'rgba(112,112,160,0.25)',labelBorder:'rgba(112,112,160,0.5)'},
 };
 function tile(id, icon, label, color, badge) {
-  // Glassy tap-zone style — keeps the homeii-interior.png room visible behind
-  // the dashboard instead of using large opaque cards. Same data-tid/go()
-  // routing as before, only the visual treatment changed.
-  return '<div class="tile" data-tid="'+id+'" onclick="window.goTile(this)">'
-    +'<div class="tc" style="background:rgba(15,12,28,0.45);backdrop-filter:blur(6px);border:1.5px solid '+color+'66;box-shadow:0 2px 10px rgba(0,0,0,0.25)">'
-    +icon
-    +(badge?'<div style="position:absolute;top:2px;right:2px;width:20px;height:20px;background:#f0195a;border-radius:50%;font-size:10px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid rgba(15,12,28,0.9)">'+badge+'</div>':'')
-    +'</div>'
-    +'<div class="tl" style="background:rgba(10,8,18,0.55);backdrop-filter:blur(4px);border:1px solid '+color+'55;border-radius:10px;padding:2px 9px;font-size:11px">'+label+'</div>'
-    +'</div>';
+  var f = TILE_FRAMES[id] || {border:'3px solid '+color,radius:'8px',shadow:'none',extra:'',labelBg:'rgba(255,255,255,0.15)',labelBorder:'rgba(255,255,255,0.4)'};
+  var extraStyle = '';
+  if(f.extra==='tag') extraStyle = 'position:relative;';
+  if(f.extra==='throw') extraStyle = 'outline:4px solid '+color+';outline-offset:3px;';
+  if(f.extra==='wild') extraStyle = 'clip-path:polygon(6px 0%,calc(100% - 6px) 0%,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px),0 6px);';
+  return '<div class="tile" data-tid="'+id+'" onclick="window.goTile(this)">'    +'<div class="tc" style="background:rgba(15,10,25,0.5);backdrop-filter:blur(6px);border:'+f.border+';border-radius:'+f.radius+';box-shadow:'+f.shadow+';'+extraStyle+'">'     +icon    +(badge?'<div style="position:absolute;top:2px;right:2px;width:20px;height:20px;background:#f0195a;border-radius:50%;font-size:10px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid #080810">'+badge+'</div>':'')    +(f.extra==='tag'?'<div style="position:absolute;top:-6px;left:10px;right:10px;height:3px;background:#ff3030;border-radius:2px"></div>':'')    +(f.extra==='drip'?'<div style="position:absolute;bottom:-10px;left:14px;width:6px;height:10px;background:'+color+';border-radius:0 0 4px 4px;box-shadow:20px 0 0 '+color+'"></div>':'')    +'</div>'    +'<div class="tl" style="background:'+f.labelBg+';backdrop-filter:blur(4px);border:1px solid '+f.labelBorder+';border-radius:4px;padding:2px 8px;font-size:11px">'+label+'</div>'    +'</div>';
 }
 window.goTile = function(el) { go(el.getAttribute('data-tid')); };
 
@@ -2321,45 +2317,48 @@ function renderDash() {
   var judy = family.members[0];
   var waterLog = wLog[todayStr] || {};
   
-  return '<div class="homeii-interior" style="padding:0 0 20px">'
-  // Just Me entry card — leads to the standalone Just Me screen (safe overlay, does not touch avatar logic)
-  +'<div onclick="window.openJustMe()" style="margin:16px 16px 0;background:rgba(42,24,64,0.45);backdrop-filter:blur(8px);border:1.5px solid rgba(200,120,255,.4);border-radius:16px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">'
+  return '<div class="homeii-interior-bg" style="padding:0 0 20px;position:relative">'
+  // Just Me entry card — glassy overlay, mirror nook zone. Leads to the standalone
+  // Just Me screen (safe overlay, does not touch avatar logic).
+  +'<div onclick="window.openJustMe()" style="margin:16px 16px 0;background:rgba(30,16,45,.45);backdrop-filter:blur(8px);border:1.5px solid rgba(200,120,255,.35);border-radius:16px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">'
   +'<div style="display:flex;align-items:center;gap:10px">'
   +'<div style="font-size:22px">💅</div>'
-  +'<div><div style="font-size:13px;font-weight:800;color:#fff">Just Me</div><div style="font-size:10px;color:rgba(255,255,255,.5)">Your personal space</div></div>'
+  +'<div><div style="font-size:13px;font-weight:800;color:#fff">Just Me</div><div style="font-size:10px;color:rgba(255,255,255,.6)">Your personal space</div></div>'
   +'</div>'
-  +'<div style="font-size:18px;color:rgba(255,255,255,.4)">›</div>'
+  +'<div style="font-size:18px;color:rgba(255,255,255,.5)">›</div>'
   +'</div>'
   // Slim name/stats line — the large avatar preview now lives in Just Me, not the dashboard.
   // Avatar data, rendering logic, and the builder (openAvatarBuilder) are untouched.
   +'<div style="text-align:center;padding:16px 16px 4px">'
-  +'<div style="font-size:15px;font-weight:800">Judy Evans 👨‍🍳</div>'
-  +'<div style="font-size:11px;color:#5ecfdb;margin-top:2px">💧'+wPct+'% · 🥗'+nPct+'% · ⚡ LVL 7</div>'
+  +'<div style="font-size:15px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)">Judy Evans 👨‍🍳</div>'
+  +'<div style="font-size:11px;color:#5ecfdb;margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,.6)">💧'+wPct+'% · 🥗'+nPct+'% · ⚡ LVL 7</div>'
   +'</div>'
   
-  // Calendar strip
-  +'<div style="margin:0 16px 16px;background:rgba(17,17,32,0.45);backdrop-filter:blur(8px);border:1.5px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 14px">'
+  // Calendar strip — glassy, wall calendar/planning board zone
+  +'<div style="margin:0 16px 16px;background:rgba(17,17,32,.55);backdrop-filter:blur(8px);border:1.5px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 14px">'
   +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
-  +'<div style="font-size:12px;font-weight:800">📅 This Week</div>'
+  +'<div style="font-size:12px;font-weight:800;color:#fff">📅 This Week</div>'
   +'<button onclick="go(\'calendar\')" style="font-size:10px;color:#5ecfdb;font-weight:700;background:none;border:none;cursor:pointer">View full →</button>'
   +'</div>'
   +'<div style="display:flex;justify-content:space-between;gap:4px">'
   +['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d){
     var hasMeal = Object.values(weekPlan[d]||{}).some(Boolean);
     var isToday = d===today;
-    var bg = isToday?'linear-gradient(135deg,#5ecfdb,#f0195a)':hasMeal?'rgba(94,207,219,.1)':'rgba(255,255,255,.04)';
-    var color = isToday?'#000':hasMeal?'#5ecfdb':'#454565';
+    var bg = isToday?'linear-gradient(135deg,#5ecfdb,#f0195a)':hasMeal?'rgba(94,207,219,.15)':'rgba(255,255,255,.06)';
+    var color = isToday?'#000':hasMeal?'#5ecfdb':'#9090b0';
     var icon = isToday?'✦':hasMeal?'🍽':'+';
     return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">'
-      +'<div style="font-size:8px;font-weight:800;color:#7070a0">'+d.toUpperCase()+'</div>'
+      +'<div style="font-size:8px;font-weight:800;color:#c0c0d8;text-shadow:0 1px 3px rgba(0,0,0,.6)">'+d.toUpperCase()+'</div>'
       +'<div onclick="go(\'calendar\')" style="width:30px;height:30px;border-radius:50%;background:'+bg+';color:'+color+';display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">'+icon+'</div>'
       +'</div>';
   }).join('')
   +'</div></div>'
   
-  // Tile grid — sits directly on the homeii-interior.png background, glassy
-  // zone buttons keep the room visible (no opaque mural image, no opaque panel)
-  +'<div class="tile-grid" style="padding:14px 16px;">'
+  // Tile grid — glassy tap zones layered over the Homeii interior room.
+  // Zone mapping (visual alignment only, no layout/logic changes):
+  // Kitchen/fridge → PrePii · Yoga mat/dumbbells → FiTii · Hydration station → HydratEii
+  // Game table → GamEii · Couch/photo wall → FamLii · Trophy shelf → BattlEii/Rewards
+  +'<div class="tile-grid" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);padding:14px 16px;border-radius:20px 20px 0 0;margin-top:8px">'
   +tile('preppi','🥗','PrePii','#a78bfa')
   +tile('fitti','💪','FiTii','#f0195a')
   +tile('water','💧','HydratEii','#5ecfdb',wPct<50?'!':'')
@@ -5329,32 +5328,9 @@ body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:10
 /* ── CIRCLE TILE GRID ─────────────────────────────────────── */
 .tile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:0}
 .tile{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0)}
-.tc{width:86px;height:86px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:32px;position:relative;transition:transform .15s;cursor:pointer}
+.tc{width:86px;height:86px;display:flex;align-items:center;justify-content:center;font-size:32px;position:relative;transition:transform .15s;cursor:pointer}
 .tc:active{transform:scale(.91)}
 .tl{font-family:'Bebas Neue','Syne',sans-serif;font-size:11px;font-weight:900;color:#fff;text-align:center;letter-spacing:1.5px;text-shadow:1px 1px 3px rgba(0,0,0,0.9),-1px -1px 2px rgba(0,0,0,0.9)}
-
-/* ── HOMEII INTERIOR (shared dashboard) BACKGROUND ──
-   Visual-only: the main dashboard now sits on top of homeii-interior.png so
-   the shared family hub room is visible behind all the existing feature
-   tiles/cards. No feature logic, routing, or data changed — tiles still call
-   the same go()/data-tid system as before via window.goTile(). */
-.homeii-interior{
-  position:relative;
-  min-height:100vh;
-  background-image:url('./homeii-interior.png');
-  background-size:cover;
-  background-position:center top;
-  background-repeat:no-repeat;
-}
-.homeii-interior::before{
-  content:'';
-  position:absolute;
-  inset:0;
-  background:linear-gradient(180deg, rgba(8,8,20,0.35) 0%, rgba(8,8,20,0.15) 30%, rgba(8,8,20,0.45) 100%);
-  pointer-events:none;
-  z-index:0;
-}
-.homeii-interior > *{position:relative;z-index:1}
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -5453,6 +5429,19 @@ body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:10
 .secondary-btn:hover {
   background: rgba(255,255,255,0.12);
   border-color: rgba(255,255,255,0.4);
+}
+/* ── HOMEII INTERIOR SHARED DASHBOARD BACKGROUND ──
+   Open-concept family wellness room: kitchen/pantry (Preppii), yoga mat/dumbbells
+   (Fittii), game table (GamEii), couch/photo wall (FamLii), planning board
+   (Goals/calendar), trophy shelf (Rewards/BattlEii), hydration station, mirror
+   nook (Just Me). Feature buttons sit on top as glassy tap zones, not opaque
+   cards, so the room stays visible underneath. */
+.homeii-interior-bg {
+  background-image: url('./homeii-interior.png');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  min-height: 100vh;
 }
 </style>
 </body>

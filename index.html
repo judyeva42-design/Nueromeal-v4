@@ -851,7 +851,12 @@ function renderFamilySetup() {
 }
 
 function renderTopBar() {
-  if (!document.getElementById('topbar')) return;
+  const tbEl = document.getElementById('topbar');
+  if (!tbEl) return;
+  // HomEii: tuck the family/account bar so the room breathes. Its only actions
+  // (Invite, Sign out) stay on every other screen's top bar. Hidden on dashboard.
+  if (UI.tab === 'dashboard') { tbEl.style.display = 'none'; tbEl.innerHTML = ''; return; }
+  tbEl.style.display = '';
   const fam = currentFamily;
   document.getElementById("topbar").innerHTML = `
   <div class="tbinner">
@@ -902,7 +907,14 @@ function renderHeader() {
 }
 
 function renderNav() {
-  if (!document.getElementById('nav')) return;
+  const navEl = document.getElementById('nav');
+  if (!navEl) return;
+  // HomEii redundancy fix: on the dashboard the room hotspots + quiet strip
+  // already reach every destination, so the top tab strip is a duplicate layer.
+  // Hide it on HomEii only — it stays on every other screen, where it's the
+  // sole way to move between rooms.
+  if (UI.tab === 'dashboard') { navEl.style.display = 'none'; navEl.innerHTML = ''; return; }
+  navEl.style.display = '';
   const alerts = currentFamily ? getNutrAlerts(UI.selDay).length : 0;
   const chals = (currentFamily?.challenges||[]).filter(c=>c.status==="active").length;
   const tabs = [
@@ -954,6 +966,7 @@ function setTab(t) {
   if (t === "alerts") { UI.tab = "alerts"; }
   if (t === "pickyfish") { UI.tab = "pickyfish"; }
   if (t === "profile") { UI.tab = "profile"; }
+  renderTopBar();
   renderNav();
   renderMain();
   // Show Preppi tip

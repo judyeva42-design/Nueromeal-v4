@@ -2356,18 +2356,16 @@ function renderDash() {
 
   +'</div>'
 
-  // ── Secondary row ── features with no dedicated zone in the room art yet.
-  // Kept as a simple slim strip below the room, not floating on top of it.
-  +'<div style="padding:14px 16px 8px">'
-  +'<div style="font-size:9px;font-weight:800;color:#7070a0;letter-spacing:1.5px;margin-bottom:8px">MORE</div>'
-  +'<div class="tile-grid" style="grid-template-columns:repeat(4,1fr);gap:10px">'
-  +tile('meals','🍽️','MeaLii','#fbbf24')
-  +tile('recipes','📖','RecipEii','#fb923c')
-  +tile('pantry','🥫','GroceRii','#fbbf24')
-  +tile('circle','🫂','SociaLii','#60a5fa')
-  +tile('shopping','🛍️','ShoPii','#3dd68c')
-  +tile('settings','⚙️','Settings','#7070a0')
-  +'</div>'
+  // ── Quiet "more rooms" strip ── features with no dedicated zone in the room
+  // art yet. Greatly reduced from the old card grid so it reads as a small,
+  // secondary shortcut row — NOT a second dashboard. Same go() routes preserved.
+  +'<div style="padding:12px 14px 6px;display:flex;flex-wrap:wrap;gap:7px;justify-content:center">'
+  +moreChip('meals','🍽️','MeaLii')
+  +moreChip('recipes','📖','RecipEii')
+  +moreChip('pantry','🥫','GroceRii')
+  +moreChip('circle','🫂','SociaLii')
+  +moreChip('shopping','🛍️','ShoPii')
+  +moreChip('settings','⚙️','Settings')
   +'</div>'
   +'<div style="height:20px"></div>'
   +'</div>';
@@ -2378,13 +2376,25 @@ function renderDash() {
 // near its matching visual zone (kitchen, trophy shelf, couch, etc).
 function zoneTap(id, label, icon, color, xPct, yPct, onclickOverride, badge) {
   var click = onclickOverride || ("go('"+id+"')");
-  return '<div onclick="'+click+'" style="position:absolute;left:'+xPct+'%;top:'+yPct+'%;transform:translate(-50%,-50%);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;z-index:2">'
-    +'<div style="position:relative;width:50px;height:50px;border-radius:14px;background:rgba(15,10,25,.4);backdrop-filter:blur(8px);border:1.5px solid '+color+';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 12px rgba(0,0,0,.35)">'
-    +icon
-    +(badge?'<div style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:#f0195a;border-radius:50%;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid #080810">'+badge+'</div>':'')
+  // True frosted pill: icon + label inside ONE small translucent, blurred,
+  // fully-rounded chip with a faint zone-colored rim. No framed square tile,
+  // so the room art shows through. Routing/handlers unchanged.
+  return '<div onclick="'+click+'" style="position:absolute;left:'+xPct+'%;top:'+yPct+'%;transform:translate(-50%,-50%);cursor:pointer;z-index:2">'
+    +'<div style="position:relative;display:inline-flex;align-items:center;gap:5px;padding:5px 11px 5px 9px;border-radius:999px;background:rgba(16,12,26,.42);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid '+color+'66;box-shadow:0 2px 10px rgba(0,0,0,.3)">'
+      +'<span style="font-size:14px;line-height:1">'+icon+'</span>'
+      +'<span style="font-family:var(--fb);font-size:10px;font-weight:800;color:#fff;letter-spacing:.4px;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.65)">'+label+'</span>'
+      +(badge?'<div style="position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;padding:0 3px;background:#f0195a;border-radius:999px;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid #080810;box-sizing:border-box">'+badge+'</div>':'')
     +'</div>'
-    +'<div style="font-family:\'Bebas Neue\',\'Syne\',sans-serif;font-size:9px;font-weight:900;color:#fff;letter-spacing:1px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);padding:2px 7px;border-radius:8px;white-space:nowrap">'+label+'</div>'
-    +'</div>';
+  +'</div>';
+}
+
+// Small, de-emphasized frosted chip for the quiet "more rooms" strip below the
+// room. Same go() routing as the old MORE tiles — just visually secondary.
+function moreChip(id, icon, label) {
+  return '<div onclick="go(\''+id+'\')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;background:rgba(16,12,26,.32);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);cursor:pointer">'
+    +'<span style="font-size:12px;line-height:1">'+icon+'</span>'
+    +'<span style="font-family:var(--fb);font-size:10px;font-weight:700;color:#c2c2da;white-space:nowrap">'+label+'</span>'
+  +'</div>';
 }
 
 

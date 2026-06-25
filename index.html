@@ -2344,25 +2344,25 @@ function renderDash() {
   +'<div style="position:relative;width:100%;aspect-ratio:952/1466;overflow:hidden">'
 
     // Kitchen / fridge / "Preppii" neon → PrePii
-    +zoneTap('preppi','PrePii','🥗','#a78bfa', 6,16)
+    +zoneTap('preppi','Prep It','🥗','#a78bfa', 6,16)
 
     // Wall calendar "Our Plan" → Goals/calendar (opens existing calendar screen)
-    +zoneTap('cal-zone','This Week','📅','#5ecfdb', 38,20, "go('calendar')")
+    +zoneTap('cal-zone','Game Plan','📅','#5ecfdb', 38,20, "go('calendar')")
 
     // Trophy shelf "You've Got This!" → Rewards / BattlEii
-    +zoneTap('challenges','BattlEii','🏆','#ffd700', 62,17)
+    +zoneTap('challenges','Rewards','🏆','#ffd700', 62,17)
 
     // Couch / photo wall "Family" → FamLii
-    +zoneTap('family','FamLii','👨‍👩‍👧','#3dd68c', 80,30)
+    +zoneTap('family','Family','👨‍👩‍👧','#3dd68c', 80,30)
 
     // Game table "GAME ON" → GamEii
-    +zoneTap('games','GamEii','🎮','#a78bfa', 80,54)
+    +zoneTap('games','Playtime','🎮','#a78bfa', 80,54)
 
     // Yoga mat / dumbbells → FiTii
-    +zoneTap('fitti','FiTii','💪','#f0195a', 18,62)
+    +zoneTap('fitti','Get Active','💪','#f0195a', 18,62)
 
     // "Hydrate" station → HydratEii
-    +zoneTap('water','HydratEii','💧','#5ecfdb', 8,86, null, wPct<50?'!':'')
+    +zoneTap('water','Hydrate','💧','#5ecfdb', 8,86, null, wPct<50?'!':'')
 
     // Mirror nook → Just Me (avatar/persona lives here, not on the dashboard)
     +zoneTap('justme-zone','Just Me','💅','#cc44ff', 84,84, "window.openJustMe()")
@@ -2373,11 +2373,11 @@ function renderDash() {
   // art yet. Greatly reduced from the old card grid so it reads as a small,
   // secondary shortcut row — NOT a second dashboard. Same go() routes preserved.
   +'<div style="padding:12px 14px 6px;display:flex;flex-wrap:wrap;gap:7px;justify-content:center">'
-  +moreChip('meals','🍽️','MeaLii')
-  +moreChip('recipes','📖','RecipEii')
-  +moreChip('pantry','🥫','GroceRii')
-  +moreChip('circle','🫂','SociaLii')
-  +moreChip('shopping','🛍️','ShoPii')
+  +moreChip('meals','🍽️','Meals')
+  +moreChip('recipes','📖','Recipes')
+  +moreChip('pantry','🥫','Groceries')
+  +moreChip('circle','🫂','Social')
+  +moreChip('shopping','🛍️','Shop')
   +moreChip('settings','⚙️','Settings')
   +'</div>'
   +'<div style="height:20px"></div>'
@@ -2389,11 +2389,12 @@ function renderDash() {
 // near its matching visual zone (kitchen, trophy shelf, couch, etc).
 function zoneTap(id, label, icon, color, xPct, yPct, onclickOverride, badge) {
   var click = onclickOverride || ("go('"+id+"')");
-  // True frosted pill: icon + label inside ONE small translucent, blurred,
-  // fully-rounded chip with a faint zone-colored rim. No framed square tile,
-  // so the room art shows through. Routing/handlers unchanged.
+  // Hybrid hotspot: a soft, slowly-pulsing colored glow sits ON the object to
+  // signal "tappable," with the frosted label pill anchored on top. The pill
+  // (text, icon, routing, badge) is unchanged — only the glow is new.
   return '<div onclick="'+click+'" style="position:absolute;left:'+xPct+'%;top:'+yPct+'%;transform:translate(-50%,-50%);cursor:pointer;z-index:2">'
-    +'<div style="position:relative;display:inline-flex;align-items:center;gap:5px;padding:5px 11px 5px 9px;border-radius:999px;background:rgba(16,12,26,.42);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid '+color+'66;box-shadow:0 2px 10px rgba(0,0,0,.3)">'
+    +'<div class="hs-glow" style="position:absolute;left:50%;top:50%;width:64px;height:64px;border-radius:50%;background:radial-gradient(circle,'+color+'40 0%,'+color+'1c 45%,transparent 70%);box-shadow:0 0 16px '+color+'55;pointer-events:none;z-index:0"></div>'
+    +'<div style="position:relative;z-index:1;display:inline-flex;align-items:center;gap:5px;padding:5px 11px 5px 9px;border-radius:999px;background:rgba(16,12,26,.42);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid '+color+'66;box-shadow:0 2px 10px rgba(0,0,0,.3)">'
       +'<span style="font-size:14px;line-height:1">'+icon+'</span>'
       +'<span style="font-family:var(--fb);font-size:10px;font-weight:800;color:#fff;letter-spacing:.4px;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.65)">'+label+'</span>'
       +(badge?'<div style="position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;padding:0 3px;background:#f0195a;border-radius:999px;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid #080810;box-sizing:border-box">'+badge+'</div>':'')
@@ -5132,6 +5133,8 @@ window.setAvOutfit = function(outfit) {
 window.handleSignOut = handleSignOut;
 window.showGetActiveModal = showGetActiveModal;
 window.setTab = setTab;
+window.go = go;
+window.quickMsg = quickMsg;
 window.setDay = setDay;
 window.openAdd = openAdd;
 window.addMeal = addMeal;
@@ -5358,6 +5361,10 @@ body{background:var(--bg);color:var(--white);font-family:var(--fb);min-height:10
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(105,201,208,.4)}50%{box-shadow:0 0 0 8px rgba(105,201,208,0)}}
 @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+/* HomEii hotspot "this is tappable" glow — soft, slow, centered on the object */
+@keyframes hsPulse{0%,100%{opacity:.5;transform:translate(-50%,-50%) scale(.9)}50%{opacity:.95;transform:translate(-50%,-50%) scale(1.08)}}
+.hs-glow{transform:translate(-50%,-50%);animation:hsPulse 2.8s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.hs-glow{animation:none;opacity:.7}}
 
 /* ── CIRCLE TILE GRID ─────────────────────────────────────── */
 .tile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:0}
